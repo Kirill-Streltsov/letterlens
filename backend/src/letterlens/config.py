@@ -65,3 +65,37 @@ class Settings(BaseSettings):
     pipeline_runner: PipelineRunner = PipelineRunner.INPROCESS
     state_machine_arn: str = ""
 
+    # --- LLM gateway ----------------------------------------------------
+    # "fake" is deterministic and offline. "mistral" is the free EU default.
+    llm_provider: Literal["fake", "mistral", "openai_compat", "anthropic", "bedrock"] = "fake"
+    llm_api_key: SecretStr | None = None
+    llm_base_url: str = "https://api.mistral.ai/v1"
+    llm_model_extract: str = "mistral-small-latest"
+    llm_model_explain: str = "mistral-medium-latest"
+    llm_model_guard: str = "mistral-small-latest"
+    llm_fallback_models: list[str] = Field(default_factory=lambda: ["mistral-small-latest"])
+    llm_timeout_seconds: float = 45.0
+    # The operator confirms that the provider account does not train on API data.
+    llm_training_opt_out_confirmed: bool = False
+    embedding_model: str = "mistral-embed"
+    embedding_dim: int = 1024
+
+    # --- Budgets and limits ----------------------------------------------
+    monthly_llm_budget_usd: float = 20.0
+    user_daily_token_budget: int = 200_000
+    free_letters_per_month: int = 3
+    rate_limit_per_minute: int = 30
+
+    # --- Data protection -------------------------------------------------
+    default_retention_days: int = 30
+    share_default_days: int = 30
+
+    # --- Billing ---------------------------------------------------------
+    stripe_secret_key: SecretStr | None = None
+    stripe_webhook_secret: SecretStr | None = None
+    stripe_price_plus: str = ""
+    stripe_price_seat: str = ""
+    appstore_bundle_id: str = "app.letterlens.ios"
+    appstore_product_plus: str = "app.letterlens.plus.monthly"
+    appstore_environment: Literal["Sandbox", "Production"] = "Sandbox"
+
