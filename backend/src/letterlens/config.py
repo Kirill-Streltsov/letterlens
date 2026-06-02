@@ -46,3 +46,22 @@ class Settings(BaseSettings):
     # Owner role URL. Only the migration command uses it.
     database_admin_url: SecretStr | None = None
 
+    # --- Auth -----------------------------------------------------------
+    auth_mode: AuthMode = AuthMode.DEV
+    cognito_region: str = "eu-central-1"
+    cognito_user_pool_id: str = ""
+    cognito_client_ids: list[str] = Field(default_factory=list)
+
+    # --- Encryption -----------------------------------------------------
+    # 32-byte key encryption key, base64. In AWS it comes from SSM Parameter Store.
+    kek_base64: SecretStr | None = None
+    kek_ssm_parameter: str = ""
+
+    # --- Storage --------------------------------------------------------
+    letters_bucket: str = ""
+    aws_region: str = "eu-central-1"
+
+    # --- Pipeline -------------------------------------------------------
+    pipeline_runner: PipelineRunner = PipelineRunner.INPROCESS
+    state_machine_arn: str = ""
+
