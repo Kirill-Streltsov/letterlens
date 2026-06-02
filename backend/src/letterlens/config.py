@@ -99,3 +99,24 @@ class Settings(BaseSettings):
     appstore_product_plus: str = "app.letterlens.plus.monthly"
     appstore_environment: Literal["Sandbox", "Production"] = "Sandbox"
 
+    # --- Languages -------------------------------------------------------
+    languages_file: str = ""
+
+    @model_validator(mode="after")
+    def _guard_prod(self) -> Settings:
+        if self.env is Environment.PROD:
+            if self.auth_mode is AuthMode.DEV:
+                raise ValueError("auth_mode=dev is not allowed when env=prod")
+            if self.llm_provider == "fake":
+                raise ValueError("llm_provider=fake is not allowed when env=prod")
+            if self.llm_provider == "mistral" and not self.llm_training_opt_out_confirmed:
+                raise ValueError(
+                    "Confirm the Mistral training opt-out "
+                    "(LETTERLENS_LLM_TRAINING_OPT_OUT_CONFIRMED=true) before env=prod"
+                )
+        return self
+
+
+@lru_cache(maxsize=1)
+def get_settings() -> Settings:
+    return Settings()
