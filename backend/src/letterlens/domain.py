@@ -99,3 +99,24 @@ class Classification(Frozen):
     abstained: bool = False
 
 
+# --------------------------------------------------------------------------
+# Extraction (LLM output, before verification)
+# --------------------------------------------------------------------------
+
+
+class ExtractedText(Frozen):
+    value: str | None
+    line_ids: list[str]
+
+
+class ExtractedReference(Frozen):
+    label: str
+    value: str
+    line_ids: list[str]
+
+
+class ExtractedDate(Frozen):
+    value: str | None = Field(description="ISO date YYYY-MM-DD as written in the letter")
+    line_ids: list[str]
+
+
