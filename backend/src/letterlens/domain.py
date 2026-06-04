@@ -70,3 +70,32 @@ class OcrLine(Frozen):
         return f"p{self.page}-l{self.index}"
 
 
+class LetterDocument(Frozen):
+    """The OCR result of one letter. Clients produce it on the device."""
+
+    lines: list[OcrLine] = Field(min_length=1, max_length=2000)
+    ocr_engine: str = Field(default="unknown", max_length=64)
+
+    def line_map(self) -> dict[str, OcrLine]:
+        return {line.id: line for line in self.lines}
+
+    def as_numbered_text(self) -> str:
+        return "\n".join(f"[{line.id}] {line.text}" for line in self.lines)
+
+    def plain_text(self) -> str:
+        return "\n".join(line.text for line in self.lines)
+
+
+# --------------------------------------------------------------------------
+# Classification
+# --------------------------------------------------------------------------
+
+
+class Classification(Frozen):
+    letter_type: LetterType
+    confidence: float = Field(ge=0, le=1)
+    probabilities: dict[LetterType, float]
+    model_version: str
+    abstained: bool = False
+
+
