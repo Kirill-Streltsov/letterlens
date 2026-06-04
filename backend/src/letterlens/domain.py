@@ -120,3 +120,26 @@ class ExtractedDate(Frozen):
     line_ids: list[str]
 
 
+class ExtractedDeadline(Frozen):
+    kind: str = Field(description="explicit_date | relative")
+    date: str | None = Field(description="ISO date for explicit deadlines, else null")
+    relative_expression: str | None = Field(
+        description="The German period text for relative deadlines, else null"
+    )
+    description: str = Field(description="Short English description of what is due")
+    line_ids: list[str]
+
+
+class ExtractedAmount(Frozen):
+    value: str = Field(description="Decimal with a dot, for example 1234.56")
+    currency: str
+    description: str
+    direction: str = Field(description="to_pay | to_receive | info")
+    line_ids: list[str]
+
+
+class ExtractedAction(Frozen):
+    description: str
+    line_ids: list[str]
+
+
