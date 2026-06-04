@@ -49,3 +49,24 @@ class Frozen(BaseModel):
 # --------------------------------------------------------------------------
 
 
+class BBox(Frozen):
+    """Normalized bounding box. The origin is the top-left corner of the page."""
+
+    x: float = Field(ge=0, le=1)
+    y: float = Field(ge=0, le=1)
+    w: float = Field(ge=0, le=1)
+    h: float = Field(ge=0, le=1)
+
+
+class OcrLine(Frozen):
+    page: int = Field(ge=1, le=50)
+    index: int = Field(ge=1, le=500)
+    text: str = Field(max_length=2000)
+    bbox: BBox | None = None
+    confidence: float | None = Field(default=None, ge=0, le=1)
+
+    @property
+    def id(self) -> str:
+        return f"p{self.page}-l{self.index}"
+
+
