@@ -21,3 +21,31 @@ class LetterType(StrEnum):
     OTHER = "other"
 
 
+class LetterStatus(StrEnum):
+    RECEIVED = "received"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+
+
+class FactStatus(StrEnum):
+    """Trust state of one extracted fact.
+
+    VERIFIED: the value occurs in the cited source line.
+    NEEDS_CHECK: the value is estimated, or the source line does not contain it.
+    The client shows NEEDS_CHECK facts as "please check", never as facts.
+    """
+
+    VERIFIED = "verified"
+    NEEDS_CHECK = "needs_check"
+
+
+class Frozen(BaseModel):
+    model_config = ConfigDict(frozen=True, extra="forbid")
+
+
+# --------------------------------------------------------------------------
+# Input
+# --------------------------------------------------------------------------
+
+
