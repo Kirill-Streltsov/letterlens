@@ -143,3 +143,30 @@ class ExtractedAction(Frozen):
     line_ids: list[str]
 
 
+class Extraction(Frozen):
+    sender: ExtractedText
+    subject: ExtractedText
+    letter_date: ExtractedDate
+    reference_numbers: list[ExtractedReference]
+    deadlines: list[ExtractedDeadline]
+    amounts: list[ExtractedAmount]
+    required_actions: list[ExtractedAction]
+
+
+# --------------------------------------------------------------------------
+# Verified facts (after the deterministic grounding check)
+# --------------------------------------------------------------------------
+
+
+class VerifiedDeadline(Frozen):
+    id: str
+    due_date: date | None
+    status: FactStatus
+    is_estimate: bool
+    description: str
+    source_text: str | None
+    line_ids: list[str]
+    rule: str | None = None
+    note: str | None = None
+
+
