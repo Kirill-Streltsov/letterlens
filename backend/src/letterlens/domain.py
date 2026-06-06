@@ -246,3 +246,27 @@ class ExplanationDraft(Frozen):
     amount_labels: list[FactLabel]
 
 
+class Explanation(Frozen):
+    language: str
+    headline: str
+    letter_kind: str
+    summary: list[SummarySentence]
+    next_steps: list[NextStep]
+    deadline_labels: dict[str, str]
+    amount_labels: dict[str, str]
+    citations: list[Citation]
+    counselling_hint: str
+    disclaimer: str
+    faithfulness: float | None = None
+    model: str
+
+
+class LetterResult(Frozen):
+    letter_id: str
+    status: LetterStatus
+    classification: Classification | None = None
+    facts: VerifiedFacts | None = None
+    explanation: Explanation | None = None
+    created_at: datetime
+    expires_at: datetime
+    error: str | None = None
