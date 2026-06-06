@@ -198,3 +198,27 @@ class VerifiedFacts(Frozen):
 # --------------------------------------------------------------------------
 
 
+class Passage(Frozen):
+    id: str
+    doc_id: str
+    title: str
+    text: str
+    source_url: str
+    source_name: str
+    checked_on: date
+    score: float = 0.0
+
+
+class Citation(Frozen):
+    id: str
+    title: str
+    source_url: str
+    source_name: str
+    checked_on: date
+
+
+class SummarySentence(Frozen):
+    text: str
+    line_ids: list[str]
+
+
