@@ -53,3 +53,22 @@ def languages() -> dict[str, Language]:
     }
 
 
+def is_available(code: str) -> bool:
+    lang = languages().get(code)
+    return lang is not None and lang.status is not LanguageStatus.DISABLED
+
+
+REFUSAL: dict[str, str] = {
+    "en": (
+        "I can explain what the letter says, but I cannot assess your personal case or tell "
+        "you what to decide. A counselling service can do this for free. Tap "
+        "\"Talk to a counsellor\" to share this letter with one."
+    ),
+    "de": (
+        "Ich kann erklären, was im Brief steht. Ich kann aber Ihren persönlichen Fall nicht "
+        "rechtlich prüfen und Ihnen keine Entscheidung empfehlen. Eine Beratungsstelle hilft "
+        "Ihnen kostenlos. Tippen Sie auf \"Mit Beratung sprechen\"."
+    ),
+    "tr": (
+        "Mektupta ne yazdığını açıklayabilirim, ancak kişisel durumunuzu hukuki olarak "
+        "değerlendiremem ve size ne karar vermeniz gerektiğini söyleyemem. Bir danışma "
