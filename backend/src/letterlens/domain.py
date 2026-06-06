@@ -222,3 +222,27 @@ class SummarySentence(Frozen):
     line_ids: list[str]
 
 
+class NextStep(Frozen):
+    text: str
+    citation_ids: list[str]
+
+
+class FactLabel(Frozen):
+    id: str = Field(description="Fact id from the verified facts, for example d1 or a2")
+    label: str
+
+
+class ExplanationDraft(Frozen):
+    """LLM output for the explanation step. Validated before use.
+
+    Labels are lists, not maps: strict structured outputs do not allow open objects.
+    """
+
+    headline: str
+    letter_kind: str
+    summary: list[SummarySentence]
+    next_steps: list[NextStep]
+    deadline_labels: list[FactLabel]
+    amount_labels: list[FactLabel]
+
+
