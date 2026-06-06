@@ -170,3 +170,31 @@ class VerifiedDeadline(Frozen):
     note: str | None = None
 
 
+class VerifiedAmount(Frozen):
+    id: str
+    value: Decimal
+    currency: str
+    direction: str
+    status: FactStatus
+    description: str
+    line_ids: list[str]
+    note: str | None = None
+
+
+class VerifiedFacts(Frozen):
+    sender: ExtractedText
+    subject: ExtractedText
+    letter_date: date | None
+    letter_date_status: FactStatus
+    reference_numbers: list[ExtractedReference]
+    deadlines: list[VerifiedDeadline]
+    amounts: list[VerifiedAmount]
+    required_actions: list[ExtractedAction]
+    grounding_rate: float = Field(ge=0, le=1)
+
+
+# --------------------------------------------------------------------------
+# Retrieval and explanation
+# --------------------------------------------------------------------------
+
+
