@@ -23,3 +23,33 @@ class LanguageStatus(StrEnum):
     DISABLED = "disabled"
 
 
+@dataclass(frozen=True, slots=True)
+class Language:
+    code: str
+    name: str
+    native_name: str
+    rtl: bool
+    status: LanguageStatus
+    faithfulness: float | None
+
+
+_DEFAULT_FILE = Path(__file__).with_name("languages.yaml")
+
+
+@lru_cache(maxsize=1)
+def languages() -> dict[str, Language]:
+    path = Path(get_settings().languages_file or _DEFAULT_FILE)
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return {
+        code: Language(
+            code=code,
+            name=item["name"],
+            native_name=item["native_name"],
+            rtl=bool(item.get("rtl", False)),
+            status=LanguageStatus(item["status"]),
+            faithfulness=item.get("faithfulness"),
+        )
+        for code, item in raw["languages"].items()
+    }
+
+
