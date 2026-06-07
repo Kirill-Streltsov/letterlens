@@ -92,3 +92,33 @@ REFUSAL: dict[str, str] = {
     ),
 }
 
+COUNSELLING_HINT: dict[str, str] = {
+    "en": "Free help: migration counselling services (MBE, JMD), social counselling and "
+    "tenant associations can check your case.",
+    "de": "Kostenlose Hilfe: Migrationsberatung (MBE, JMD), Sozialberatung und Mietervereine "
+    "können Ihren Fall prüfen.",
+    "tr": "Ücretsiz yardım: göçmen danışma hizmetleri (MBE, JMD), sosyal danışma ve kiracı "
+    "dernekleri durumunuzu inceleyebilir.",
+    "ar": "مساعدة مجانية: يمكن لخدمات استشارة المهاجرين (MBE وJMD) والاستشارات الاجتماعية "
+    "وجمعيات المستأجرين فحص حالتك.",
+    "uk": "Безкоштовна допомога: міграційні консультації (MBE, JMD), соціальні консультації "
+    "та спілки орендарів можуть перевірити вашу ситуацію.",
+    "ru": "Бесплатная помощь: миграционные консультации (MBE, JMD), социальные консультации "
+    "и союзы арендаторов могут проверить вашу ситуацию.",
+}
+
+DISCLAIMER: dict[str, str] = {
+    "en": "General information, not legal advice. Always check dates and amounts in the original.",
+    "de": "Allgemeine Information, keine Rechtsberatung. Prüfen Sie Daten und Beträge im Original.",
+    "tr": "Genel bilgidir, hukuki danışmanlık değildir. Tarihleri ve tutarları her zaman "
+    "orijinal mektupta kontrol edin.",
+    "ar": "معلومات عامة وليست استشارة قانونية. تحقق دائماً من التواريخ والمبالغ في الخطاب الأصلي.",
+    "uk": "Загальна інформація, не юридична консультація. Завжди перевіряйте дати й суми в "
+    "оригіналі.",
+    "ru": "Общая информация, не юридическая консультация. Всегда проверяйте даты и суммы в "
+    "оригинале.",
+}
+
+
+def localized(table: dict[str, str], code: str) -> str:
+    return table.get(code) or table["en"]
