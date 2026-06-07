@@ -70,3 +70,35 @@ def parse_json_output[M: BaseModel](text: str, schema_model: type[M]) -> M:
     return schema_model.model_validate(json.loads(cleaned))
 
 
+class Gateway:
+    def __init__(
+        self,
+        provider: Provider,
+        settings: Settings,
+        ledger: UsageLedger,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
+        self.provider = provider
+        self.settings = settings
+        self.ledger = ledger
+        self._sleep = sleep
+        self._schemas: dict[type[BaseModel], dict[str, Any]] = {}
+
+    def models_for(self, task: Task) -> list[str]:
+        s = self.settings
+        primary = {
+            Task.EXTRACT: s.llm_model_extract,
+            Task.EXPLAIN: s.llm_model_explain,
+            Task.ANSWER: s.llm_model_explain,
+            Task.TRANSLATE_REPLY: s.llm_model_explain,
+            Task.GUARD: s.llm_model_guard,
+            Task.BACKTRANSLATE: s.llm_model_guard,
+        }[task]
+        return list(dict.fromkeys([primary, *s.llm_fallback_models]))
+
+    def _check_budget(self, user_id: str | None) -> None:
+        if self.ledger.month_spend_usd() >= self.settings.monthly_llm_budget_usd:
+            raise BudgetExceededError("monthly LLM budget reached")
+        if user_id and self.ledger.user_tokens_today(user_id) >= self.settings.user_daily_token_budget:
+            raise BudgetExceededError("daily token budget for this user reached")
+
