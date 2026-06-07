@@ -51,3 +51,22 @@ class UsageLedger(Protocol):
     def record(self, call: LLMCall) -> None: ...
 
 
+@dataclass
+class InMemoryLedger:
+    calls: list[LLMCall] = field(default_factory=list)
+
+    def month_spend_usd(self) -> float:
+        return sum(c.list_price_usd for c in self.calls)
+
+    def user_tokens_today(self, user_id: str) -> int:
+        return sum(c.input_tokens + c.output_tokens for c in self.calls if c.user_id == user_id)
+
+    def record(self, call: LLMCall) -> None:
+        self.calls.append(call)
+
+
+def parse_json_output[M: BaseModel](text: str, schema_model: type[M]) -> M:
+    cleaned = _FENCE.sub("", text.strip())
+    return schema_model.model_validate(json.loads(cleaned))
+
+
