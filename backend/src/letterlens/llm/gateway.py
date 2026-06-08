@@ -102,3 +102,32 @@ class Gateway:
         if user_id and self.ledger.user_tokens_today(user_id) >= self.settings.user_daily_token_budget:
             raise BudgetExceededError("daily token budget for this user reached")
 
+    def _schema(self, model: type[BaseModel]) -> dict[str, Any]:
+        if model not in self._schemas:
+            self._schemas[model] = strict_schema(model)
+        return self._schemas[model]
+
+    def generate[M: BaseModel](
+        self,
+        task: Task,
+        schema_model: type[M],
+        system: str,
+        user: str,
+        prompt_version: str,
+        context: dict[str, Any] | None = None,
+        user_id: str | None = None,
+        letter_id: str | None = None,
+        max_tokens: int = 4000,
+    ) -> M:
+        self._check_budget(user_id)
+        chain = self.models_for(task)
+        last_error: Exception | None = None
+        for model_index, model in enumerate(chain):
+            request = LLMRequest(
+                task=task,
+                model=model,
+                system=system,
+                user=user,
+                json_schema=self._schema(schema_model),
+                schema_name=schema_model.__name__,
+                max_tokens=max_tokens,
