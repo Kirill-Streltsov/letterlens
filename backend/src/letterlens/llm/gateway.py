@@ -131,3 +131,22 @@ class Gateway:
                 json_schema=self._schema(schema_model),
                 schema_name=schema_model.__name__,
                 max_tokens=max_tokens,
+                context=context or {},
+            )
+            repaired = False
+            attempt = 0
+            while attempt < MAX_ATTEMPTS_PER_MODEL:
+                attempt += 1
+                started = time.perf_counter()
+                try:
+                    response = self.provider.complete(request, self.settings.llm_timeout_seconds)
+                except RetryableError as exc:
+                    last_error = exc
+                    self._record(task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started)
+                    self._sleep(min(8.0, 0.5 * 2 ** (attempt - 1)) + random.uniform(0, 0.25))  # noqa: S311
+                    continue
+                except PermanentError as exc:
+                    last_error = exc
+                    self._record(task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started)
+                    break
+
