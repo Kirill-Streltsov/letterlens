@@ -150,3 +150,39 @@ class Gateway:
                     self._record(task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started)
                     break
 
+                call = LLMCall(
+                    task=task,
+                    provider=response.provider,
+                    model=response.model,
+                    prompt_version=prompt_version,
+                    input_tokens=response.input_tokens,
+                    output_tokens=response.output_tokens,
+                    list_price_usd=list_price_usd(
+                        response.model, response.input_tokens, response.output_tokens
+                    ),
+                    latency_ms=response.latency_ms,
+                    attempts=attempt,
+                    fallback_used=model_index > 0,
+                    ok=True,
+                    user_id=user_id,
+                    letter_id=letter_id,
+                )
+                try:
+                    result = parse_json_output(response.text, schema_model)
+                except (json.JSONDecodeError, ValidationError) as exc:
+                    self.ledger.record(_replace(call, ok=False, error="schema"))
+                    last_error = SchemaError(f"{type(exc).__name__}")
+                    if repaired:
+                        break
+                    repaired = True
+                    request = _with_repair(request, exc)
+                    continue
+                self.ledger.record(call)
+                return result
+        raise last_error if isinstance(last_error, LLMError) else LLMError("no model available")
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        return self.provider.embed(
+            texts, self.settings.embedding_model, self.settings.llm_timeout_seconds
+        )
+
