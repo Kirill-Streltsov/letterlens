@@ -186,3 +186,27 @@ class Gateway:
             texts, self.settings.embedding_model, self.settings.llm_timeout_seconds
         )
 
+    def _record(
+        self,
+        task: Task,
+        model: str,
+        prompt_version: str,
+        attempt: int,
+        model_index: int,
+        exc: Exception,
+        user_id: str | None,
+        letter_id: str | None,
+        started: float,
+    ) -> None:
+        log.warning("llm call failed", extra={"task": task.value, "model": model, "error": str(exc)})
+        self.ledger.record(
+            LLMCall(
+                task=task,
+                provider=self.provider.name,
+                model=model,
+                prompt_version=prompt_version,
+                input_tokens=0,
+                output_tokens=0,
+                list_price_usd=0.0,
+                latency_ms=int((time.perf_counter() - started) * 1000),
+                attempts=attempt,
