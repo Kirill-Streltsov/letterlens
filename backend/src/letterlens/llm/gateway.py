@@ -210,3 +210,30 @@ class Gateway:
                 list_price_usd=0.0,
                 latency_ms=int((time.perf_counter() - started) * 1000),
                 attempts=attempt,
+                fallback_used=model_index > 0,
+                ok=False,
+                error=type(exc).__name__,
+                user_id=user_id,
+                letter_id=letter_id,
+            )
+        )
+
+
+def _replace(call: LLMCall, **changes: Any) -> LLMCall:
+    from dataclasses import replace
+
+    return replace(call, **changes)
+
+
+def _with_repair(request: LLMRequest, exc: Exception) -> LLMRequest:
+    from dataclasses import replace
+
+    hint = (
+        "\n\nYour previous answer was not valid JSON for the required schema "
+        f"({type(exc).__name__}). Answer again with valid JSON only."
+    )
+    return replace(request, user=request.user + hint)
+
+
+def now_utc() -> datetime:
+    return datetime.now(UTC)
