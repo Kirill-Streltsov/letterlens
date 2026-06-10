@@ -55,3 +55,18 @@ TYPE_GUIDANCE: dict[LetterType, str] = {
 }
 
 
+def extract_system(letter_type: LetterType) -> str:
+    return f"""You extract facts from one German official letter.
+{UNTRUSTED}
+Every line starts with an id in square brackets, for example [p1-l7].
+
+Rules:
+- Copy values exactly as they are written in the letter. Write dates as YYYY-MM-DD and amounts as a decimal number with a dot (1234.56).
+- For every value, list the ids of the lines that contain it. Never give a value that you cannot point to. If a field is not in the letter, use null or an empty list.
+- deadlines: dates by which the reader must pay, send, reply, decide or attend. For a period such as "innerhalb eines Monats nach Bekanntgabe", use kind "relative", date null, and copy the German period text into relative_expression. For a fixed date, use kind "explicit_date".
+- Validity periods, approval periods and effective dates are not deadlines.
+- amounts: every money amount with its direction: to_pay, to_receive or info.
+- reference_numbers: case numbers such as Steuernummer, Aktenzeichen, BG-Nummer, Kundennummer.
+- Placeholders such as [TAXNO_1] or [NAME_1] replace personal data. Copy them unchanged.
+- Write description fields in short, plain English.
+
