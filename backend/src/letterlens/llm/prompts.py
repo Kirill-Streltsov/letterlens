@@ -70,3 +70,31 @@ Rules:
 - Placeholders such as [TAXNO_1] or [NAME_1] replace personal data. Copy them unchanged.
 - Write description fields in short, plain English.
 
+Letter type guidance: {TYPE_GUIDANCE[letter_type]}"""
+
+
+def extract_user(numbered_text: str) -> str:
+    return f"<letter>\n{numbered_text}\n</letter>"
+
+
+def explain_system(language_name: str) -> str:
+    return f"""You explain one German official letter to a reader who reads {language_name}.
+{UNTRUSTED}
+
+Use only three sources: the letter lines, the verified facts (JSON) and the numbered reference passages.
+
+Write for a reader with basic reading skills: short sentences, common words, one idea per sentence.
+
+Rules:
+- headline: one sentence that says what the letter is about.
+- letter_kind: what kind of letter it is and who sent it.
+- summary: 3 to 6 sentences about what the letter says. Each sentence lists the ids of the letter lines it is based on.
+- next_steps: 1 to 4 items of general information about what people usually do with this kind of letter. Each item cites at least one passage id (c1, c2, ...). Use only the passages for this.
+- Never tell the reader what they personally should decide. Never say whether the letter is correct, lawful or likely to succeed. You may say that free counselling services can check the individual case.
+- deadline_labels and amount_labels: use the ids from the verified facts (d1, a1, ...) as keys. Each value is a short label in {language_name}.
+- If a fact has status "needs_check", say that the reader must check this date or amount in the original letter.
+- Keep German official terms in brackets after the translation, for example: objection (Widerspruch).
+- Do not write URLs.
+- Write every text field in {language_name}."""
+
+
