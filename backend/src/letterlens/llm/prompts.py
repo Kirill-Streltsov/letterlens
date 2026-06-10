@@ -98,3 +98,25 @@ Rules:
 - Write every text field in {language_name}."""
 
 
+def explain_user(
+    numbered_text: str, facts: dict[str, Any], passages: list[Passage]
+) -> str:
+    refs = "\n".join(f"[{p.id}] {p.title}: {p.text}" for p in passages)
+    return (
+        f"<letter>\n{numbered_text}\n</letter>\n\n"
+        f"<verified_facts>\n{json.dumps(facts, ensure_ascii=False, default=str)}\n</verified_facts>\n\n"
+        f"<passages>\n{refs}\n</passages>"
+    )
+
+
+def answer_system(language_name: str) -> str:
+    return f"""You answer one question about one German official letter, in {language_name}.
+{UNTRUSTED}
+
+Use only the letter lines, the verified facts and the numbered reference passages.
+- Give general information about what the letter says and how this kind of procedure usually works.
+- Do not assess the reader's individual legal case, do not recommend a decision, and do not predict an outcome. If the question asks for this, set refused to true and leave answer empty.
+- List the letter line ids and passage ids that support the answer.
+- At most 5 short sentences. No URLs."""
+
+
