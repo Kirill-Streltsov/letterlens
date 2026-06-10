@@ -71,3 +71,20 @@ class AnthropicProvider:
             raise PermanentError(f"{self.name}: HTTP {exc.status_code}") from exc
         latency = int((time.perf_counter() - started) * 1000)
 
+        if response.stop_reason == "refusal":
+            raise PermanentError(f"{self.name}: refusal")
+        if response.stop_reason == "max_tokens":
+            raise RetryableError(f"{self.name}: output truncated at max_tokens")
+        text = next((b.text for b in response.content if b.type == "text"), "")
+        return LLMResponse(
+            text=text,
+            model=response.model,
+            provider=self.name,
+            input_tokens=response.usage.input_tokens,
+            output_tokens=response.usage.output_tokens,
+            latency_ms=latency,
+            request_id=getattr(response, "_request_id", None),
+        )
+
+    def embed(self, texts: list[str], model: str, timeout: float) -> list[list[float]]:
+        raise PermanentError("Claude has no embedding endpoint; retrieval uses BM25 only")
