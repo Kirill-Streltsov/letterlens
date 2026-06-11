@@ -114,3 +114,30 @@ class FakeProvider:
             "refused": False,
         }
 
+    @staticmethod
+    def _guard(ctx: dict[str, Any]) -> dict[str, Any]:
+        result = check_question_rules(ctx.get("question", ""))
+        category = {
+            Verdict.ALLOW: "general_information",
+            Verdict.LEGAL_ADVICE: "individual_legal_advice",
+            Verdict.INJECTION: "prompt_injection",
+        }[result.verdict]
+        return {"category": category, "rationale": f"offline rules ({result.layer})"}
+
+    @staticmethod
+    def _echo(ctx: dict[str, Any]) -> dict[str, Any]:
+        return {"text": ctx.get("text", "")}
+
+    @staticmethod
+    def _translate(ctx: dict[str, Any]) -> dict[str, Any]:
+        return {"translation": f"[{ctx.get('language', 'en')}] {ctx.get('text', '')}"}
+
+
+def hash_embedding(text: str, dim: int = 256) -> list[float]:
+    """Deterministic bag-of-words vector. Only for tests; it has no semantic quality."""
+    vec = [0.0] * dim
+    for token in re.findall(r"\w{3,}", text.lower()):
+        h = int(hashlib.blake2b(token.encode(), digest_size=8).hexdigest(), 16)
+        vec[h % dim] += 1.0 if (h >> 8) % 2 else -1.0
+    norm = math.sqrt(sum(v * v for v in vec)) or 1.0
+    return [v / norm for v in vec]
