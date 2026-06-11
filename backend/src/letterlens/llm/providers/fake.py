@@ -51,3 +51,22 @@ class FakeProvider:
             latency_ms=1,
         )
 
+    def embed(self, texts: list[str], model: str, timeout: float) -> list[list[float]]:
+        return [hash_embedding(t) for t in texts]
+
+    # -- task handlers ------------------------------------------------------
+
+    @staticmethod
+    def _extract(ctx: dict[str, Any]) -> dict[str, Any]:
+        doc = LetterDocument.model_validate(ctx["document"])
+        return extract_with_rules(doc).model_dump(mode="json")
+
+    @staticmethod
+    def _explain(ctx: dict[str, Any]) -> dict[str, Any]:
+        facts = ctx["facts"]
+        passages: list[dict[str, str]] = ctx.get("passages", [])
+        sender = (facts.get("sender") or {}).get("value") or "an authority"
+        subject = (facts.get("subject") or {}).get("value") or "your case"
+        first_line = (facts.get("sender") or {}).get("line_ids") or []
+        summary = [
+            {"text": f"This letter is from {sender}.", "line_ids": first_line},
