@@ -21,3 +21,33 @@ from letterlens.safety.guardrail import Verdict, check_question_rules
 _DIRECTION_TEXT = {"to_pay": "to pay", "to_receive": "you receive", "info": "for information"}
 
 
+class FakeProvider:
+    name = "fake"
+
+    def __init__(self, fail_tasks: set[Task] | None = None) -> None:
+        self.fail_tasks = fail_tasks or set()
+        self.calls: list[LLMRequest] = []
+
+    def complete(self, request: LLMRequest, timeout: float) -> LLMResponse:
+        self.calls.append(request)
+        if request.task in self.fail_tasks:
+            raise PermanentError("fake: configured failure")
+        handler = {
+            Task.EXTRACT: self._extract,
+            Task.EXPLAIN: self._explain,
+            Task.ANSWER: self._answer,
+            Task.GUARD: self._guard,
+            Task.BACKTRANSLATE: self._echo,
+            Task.TRANSLATE_REPLY: self._translate,
+        }[request.task]
+        payload = handler(request.context)
+        text = json.dumps(payload, ensure_ascii=False)
+        return LLMResponse(
+            text=text,
+            model=request.model,
+            provider=self.name,
+            input_tokens=len(request.system + request.user) // 4,
+            output_tokens=len(text) // 4,
+            latency_ms=1,
+        )
+
