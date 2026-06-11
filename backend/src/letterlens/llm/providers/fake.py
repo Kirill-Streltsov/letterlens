@@ -70,3 +70,32 @@ class FakeProvider:
         first_line = (facts.get("sender") or {}).get("line_ids") or []
         summary = [
             {"text": f"This letter is from {sender}.", "line_ids": first_line},
+            {
+                "text": f"The subject is: {subject}.",
+                "line_ids": (facts.get("subject") or {}).get("line_ids") or [],
+            },
+        ]
+        for d in facts.get("deadlines", []):
+            when = d.get("due_date") or "a date that you must check"
+            check = " Please check this date in the original." if d["status"] != "verified" else ""
+            summary.append({"text": f"Deadline: {when}.{check}", "line_ids": d["line_ids"]})
+        for a in facts.get("amounts", [])[:3]:
+            label = _DIRECTION_TEXT.get(a["direction"], "")
+            summary.append({"text": f"Amount {label}: {a['value']} EUR.", "line_ids": a["line_ids"]})
+        next_steps = [
+            {"text": f"General information: {p['title']}.", "citation_ids": [p["id"]]}
+            for p in passages[:3]
+        ]
+        return {
+            "headline": f"Letter from {sender}",
+            "letter_kind": f"{ctx.get('letter_type', 'other')} letter from {sender}",
+            "summary": summary[:6],
+            "next_steps": next_steps,
+            "deadline_labels": [
+                {"id": d["id"], "label": d["description"]} for d in facts.get("deadlines", [])
+            ],
+            "amount_labels": [
+                {"id": a["id"], "label": a["description"][:60]} for a in facts.get("amounts", [])
+            ],
+        }
+
