@@ -99,3 +99,18 @@ class FakeProvider:
             ],
         }
 
+    @staticmethod
+    def _answer(ctx: dict[str, Any]) -> dict[str, Any]:
+        question = ctx.get("question", "")
+        if check_question_rules(question).blocked:
+            return {"answer": "", "line_ids": [], "citation_ids": [], "refused": True}
+        passages = ctx.get("passages", [])
+        cite = [passages[0]["id"]] if passages else []
+        title = passages[0]["title"] if passages else "this kind of letter"
+        return {
+            "answer": f"General information about {title}. The letter itself names the details.",
+            "line_ids": [],
+            "citation_ids": cite,
+            "refused": False,
+        }
+
