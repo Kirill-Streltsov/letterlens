@@ -29,3 +29,34 @@ class LLMRequest:
     context: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class LLMResponse:
+    text: str
+    model: str
+    provider: str
+    input_tokens: int
+    output_tokens: int
+    latency_ms: int
+    request_id: str | None = None
+
+
+@dataclass(frozen=True)
+class LLMCall:
+    """One gateway call. Stored in the cost ledger (table llm_calls). Contains no letter text."""
+
+    task: Task
+    provider: str
+    model: str
+    prompt_version: str
+    input_tokens: int
+    output_tokens: int
+    list_price_usd: float
+    latency_ms: int
+    attempts: int
+    fallback_used: bool
+    ok: bool
+    error: str | None = None
+    user_id: str | None = None
+    letter_id: str | None = None
+
+
