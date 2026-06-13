@@ -54,3 +54,31 @@ class OpenAICompatibleProvider:
         if request.json_schema is not None:
             payload["response_format"] = {
                 "type": "json_schema",
+                "json_schema": {
+                    "name": request.schema_name,
+                    "schema": request.json_schema,
+                    "strict": True,
+                },
+            }
+        started = time.perf_counter()
+        response = self._post("/chat/completions", payload, timeout)
+        latency = int((time.perf_counter() - started) * 1000)
+        body = response.json()
+        choice = body["choices"][0]
+        if choice.get("finish_reason") == "length":
+            raise RetryableError(f"{self.name}: output truncated at max_tokens")
+        usage = body.get("usage") or {}
+        return LLMResponse(
+            text=choice["message"]["content"] or "",
+            model=body.get("model", request.model),
+            provider=self.name,
+            input_tokens=int(usage.get("prompt_tokens", 0)),
+            output_tokens=int(usage.get("completion_tokens", 0)),
+            latency_ms=latency,
+            request_id=response.headers.get("x-request-id"),
+        )
+
+    def embed(self, texts: list[str], model: str, timeout: float) -> list[list[float]]:
+        response = self._post("/embeddings", {"model": model, "input": texts}, timeout)
+        data = sorted(response.json()["data"], key=lambda item: item["index"])
+        return [item["embedding"] for item in data]
