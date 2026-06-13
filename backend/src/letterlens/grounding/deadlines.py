@@ -21,3 +21,27 @@ documented limitation, and a reason the date stays "please check".
 
 from __future__ import annotations
 
+import calendar
+import re
+from dataclasses import dataclass
+from datetime import date, timedelta
+from enum import StrEnum
+
+NOTIFICATION_FICTION_DAYS = 4
+
+
+def easter_sunday(year: int) -> date:
+    """Anonymous Gregorian algorithm (Meeus/Jones/Butcher)."""
+    a = year % 19
+    b, c = divmod(year, 100)
+    d, e = divmod(b, 4)
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = divmod(c, 4)
+    ell = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * ell) // 451
+    month, day = divmod(h + ell - 7 * m + 114, 31)
+    return date(year, month, day + 1)
+
+
