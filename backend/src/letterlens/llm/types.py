@@ -60,3 +60,29 @@ class LLMCall:
     letter_id: str | None = None
 
 
+class LLMError(Exception):
+    """Base class for gateway errors."""
+
+
+class RetryableError(LLMError):
+    """Timeouts, rate limits and server errors. The gateway retries and then falls back."""
+
+
+class PermanentError(LLMError):
+    """Bad request, auth error, refusal. The gateway does not retry the same model."""
+
+
+class SchemaError(LLMError):
+    """The model output does not match the schema after the repair attempt."""
+
+
+class BudgetExceededError(LLMError):
+    """A spend or token budget would be exceeded. The pipeline switches to degraded mode."""
+
+
+class Provider(Protocol):
+    name: str
+
+    def complete(self, request: LLMRequest, timeout: float) -> LLMResponse: ...
+
+    def embed(self, texts: list[str], model: str, timeout: float) -> list[list[float]]: ...
