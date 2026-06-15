@@ -123,3 +123,30 @@ _ANCHOR_RECEIPT = re.compile(r"erhalt|eingang", re.IGNORECASE)
 _ANCHOR_LETTER = re.compile(r"datum|ab\s+heute|dieses\s+schreibens", re.IGNORECASE)
 
 
+def parse_relative_period(text: str) -> RelativePeriod | None:
+    """Find a period like ``innerhalb eines Monats nach Bekanntgabe`` in ``text``."""
+    match = _PERIOD.search(text)
+    if match is None:
+        return None
+    raw_num = match["num"].lower()
+    amount = int(raw_num) if raw_num.isdigit() else _NUMBER_WORDS[raw_num]
+    unit = _UNIT_WORDS[match["unit"].lower()]
+    tail = text[match.end() : match.end() + 80]
+    if _ANCHOR_NOTIFICATION.search(tail):
+        anchor = Anchor.NOTIFICATION
+    elif _ANCHOR_RECEIPT.search(tail):
+        anchor = Anchor.RECEIPT
+    elif _ANCHOR_LETTER.search(tail):
+        anchor = Anchor.LETTER_DATE
+    else:
+        anchor = Anchor.NOTIFICATION
+    return RelativePeriod(amount=amount, unit=unit, anchor=anchor)
+
+
+@dataclass(frozen=True, slots=True)
+class DeadlineEstimate:
+    due_date: date
+    start_date: date
+    rule: str
+
+
