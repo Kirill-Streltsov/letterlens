@@ -27,3 +27,23 @@ MONTHS: dict[str, int] = {
     "dezember": 12, "dez": 12,
 }  # fmt: skip
 
+_MONTH_ALT = "|".join(sorted(MONTHS, key=len, reverse=True))
+
+# 15.12.2026 | 15.12.26 | 15. 12. 2026 | 5.1.2027
+_NUMERIC_DATE = re.compile(r"(?<!\d)(\d{1,2})\s?\.\s?(\d{1,2})\s?\.\s?(\d{4}|\d{2})(?!\d)")
+# 15. Dezember 2026 | 15 Dez. 2026
+_WORD_DATE = re.compile(
+    rf"(?<!\d)(\d{{1,2}})\.?\s+({_MONTH_ALT})\.?\s+(\d{{4}})(?!\d)", re.IGNORECASE
+)
+# 2026-12-15
+_ISO_DATE = re.compile(r"(?<!\d)(\d{4})-(\d{2})-(\d{2})(?!\d)")
+
+# 1.234,56 € | 1234,56 EUR | EUR 1.234,56 | 12 € | 1 234,56 Euro
+_AMOUNT_NUMBER = r"\d{1,3}(?:[.\s  ]\d{3})+(?:,\d{1,2})?|\d+(?:,\d{1,2})?"
+_CURRENCY = r"(?:€|EUR|Euro)"
+_AMOUNT = re.compile(
+    rf"(?:{_CURRENCY}\s?(?P<a>{_AMOUNT_NUMBER})(?:\s?€)?)|(?:(?P<b>{_AMOUNT_NUMBER})\s?{_CURRENCY})",
+    re.IGNORECASE,
+)
+
+
