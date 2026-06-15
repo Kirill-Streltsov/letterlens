@@ -150,3 +150,26 @@ class DeadlineEstimate:
     rule: str
 
 
+def estimate_deadline(period: RelativePeriod, letter_date: date) -> DeadlineEstimate:
+    """Estimate the last day of ``period`` for a letter dated ``letter_date``."""
+    if period.anchor in (Anchor.NOTIFICATION, Anchor.RECEIPT):
+        start = next_working_day(letter_date + timedelta(days=NOTIFICATION_FICTION_DAYS))
+        start_rule = (
+            f"received on {start.isoformat()} "
+            f"(letter date + {NOTIFICATION_FICTION_DAYS} days, next working day)"
+        )
+    else:
+        start = letter_date
+        start_rule = f"counted from the letter date {start.isoformat()}"
+
+    if period.unit is Unit.MONTHS:
+        raw_end = add_months(start, period.amount)
+    elif period.unit is Unit.WEEKS:
+        raw_end = start + timedelta(weeks=period.amount)
+    else:
+        raw_end = start + timedelta(days=period.amount)
+
+    end = next_working_day(raw_end)
+    shift = "" if end == raw_end else f", moved from {raw_end.isoformat()} to a working day"
+    rule = f"{period.amount} {period.unit.value}; {start_rule}{shift}"
+    return DeadlineEstimate(due_date=end, start_date=start, rule=rule)
