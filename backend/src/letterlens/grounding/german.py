@@ -47,3 +47,31 @@ _AMOUNT = re.compile(
 )
 
 
+def normalize(text: str) -> str:
+    """Normalize Unicode, whitespace and common OCR quirks for matching."""
+    text = unicodedata.normalize("NFKC", text)
+    text = text.replace(" ", " ").replace(" ", " ")
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _two_digit_year(year: int) -> int:
+    return 2000 + year if year < 70 else 1900 + year
+
+
+def find_dates(text: str) -> list[date]:
+    """Return every valid calendar date written in ``text``, in order of appearance."""
+    text = normalize(text)
+    found: list[tuple[int, date]] = []
+    for match in _NUMERIC_DATE.finditer(text):
+        day, month, year_s = int(match[1]), int(match[2]), match[3]
+        year = int(year_s) if len(year_s) == 4 else _two_digit_year(int(year_s))
+        _append_date(found, match.start(), year, month, day)
+    for match in _WORD_DATE.finditer(text):
+        month = MONTHS[match[2].lower()]
+        _append_date(found, match.start(), int(match[3]), month, int(match[1]))
+    for match in _ISO_DATE.finditer(text):
+        _append_date(found, match.start(), int(match[1]), int(match[2]), int(match[3]))
+    found.sort(key=lambda item: item[0])
+    return [d for _, d in found]
+
+
