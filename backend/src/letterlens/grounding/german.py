@@ -75,3 +75,19 @@ def find_dates(text: str) -> list[date]:
     return [d for _, d in found]
 
 
+def _append_date(found: list[tuple[int, date]], pos: int, y: int, m: int, d: int) -> None:
+    try:
+        found.append((pos, date(y, m, d)))
+    except ValueError:
+        return
+
+
+def parse_amount(raw: str) -> Decimal | None:
+    """Parse a German-formatted number such as ``1.234,56`` into a Decimal."""
+    cleaned = re.sub(r"[.\s  ]", "", raw).replace(",", ".")
+    try:
+        return Decimal(cleaned).quantize(Decimal("0.01"))
+    except InvalidOperation:
+        return None
+
+
