@@ -72,3 +72,30 @@ def next_working_day(day: date) -> date:
     return day
 
 
+def add_months(start: date, months: int) -> date:
+    month_index = start.month - 1 + months
+    year = start.year + month_index // 12
+    month = month_index % 12 + 1
+    last_day = calendar.monthrange(year, month)[1]
+    return date(year, month, min(start.day, last_day))
+
+
+class Unit(StrEnum):
+    DAYS = "days"
+    WEEKS = "weeks"
+    MONTHS = "months"
+
+
+class Anchor(StrEnum):
+    NOTIFICATION = "notification"  # "nach Bekanntgabe", "nach Zugang", "nach Zustellung"
+    LETTER_DATE = "letter_date"  # "ab Datum dieses Schreibens"
+    RECEIPT = "receipt"  # "nach Erhalt"
+
+
+@dataclass(frozen=True, slots=True)
+class RelativePeriod:
+    amount: int
+    unit: Unit
+    anchor: Anchor
+
+
