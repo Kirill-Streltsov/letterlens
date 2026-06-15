@@ -45,3 +45,30 @@ def easter_sunday(year: int) -> date:
     return date(year, month, day + 1)
 
 
+def nationwide_holidays(year: int) -> frozenset[date]:
+    easter = easter_sunday(year)
+    return frozenset(
+        {
+            date(year, 1, 1),  # Neujahr
+            easter - timedelta(days=2),  # Karfreitag
+            easter + timedelta(days=1),  # Ostermontag
+            date(year, 5, 1),  # Tag der Arbeit
+            easter + timedelta(days=39),  # Christi Himmelfahrt
+            easter + timedelta(days=50),  # Pfingstmontag
+            date(year, 10, 3),  # Tag der Deutschen Einheit
+            date(year, 12, 25),
+            date(year, 12, 26),
+        }
+    )
+
+
+def is_working_day(day: date) -> bool:
+    return day.weekday() < 5 and day not in nationwide_holidays(day.year)
+
+
+def next_working_day(day: date) -> date:
+    while not is_working_day(day):
+        day += timedelta(days=1)
+    return day
+
+
