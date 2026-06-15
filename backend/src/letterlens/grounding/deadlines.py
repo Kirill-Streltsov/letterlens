@@ -99,3 +99,27 @@ class RelativePeriod:
     anchor: Anchor
 
 
+_NUMBER_WORDS: dict[str, int] = {
+    "einem": 1, "einer": 1, "eines": 1, "ein": 1, "eine": 1,
+    "zwei": 2, "drei": 3, "vier": 4, "fünf": 5, "sechs": 6, "sieben": 7,
+    "acht": 8, "zehn": 10, "zwölf": 12, "vierzehn": 14, "einundzwanzig": 21,
+    "dreißig": 30, "dreissig": 30,
+}  # fmt: skip
+
+_UNIT_WORDS: dict[str, Unit] = {
+    "tag": Unit.DAYS, "tage": Unit.DAYS, "tagen": Unit.DAYS, "tages": Unit.DAYS,
+    "woche": Unit.WEEKS, "wochen": Unit.WEEKS,
+    "monat": Unit.MONTHS, "monats": Unit.MONTHS, "monate": Unit.MONTHS, "monaten": Unit.MONTHS,
+}  # fmt: skip
+
+_PERIOD = re.compile(
+    r"(?:innerhalb|binnen|in(?:nerhalb)?\s+einer\s+frist\s+von|frist\s+von)\s+"
+    r"(?:von\s+)?(?P<num>\d{1,3}|" + "|".join(_NUMBER_WORDS) + r")\s+"
+    r"(?P<unit>" + "|".join(_UNIT_WORDS) + r")\b",
+    re.IGNORECASE,
+)
+_ANCHOR_NOTIFICATION = re.compile(r"bekanntgabe|zugang|zustellung", re.IGNORECASE)
+_ANCHOR_RECEIPT = re.compile(r"erhalt|eingang", re.IGNORECASE)
+_ANCHOR_LETTER = re.compile(r"datum|ab\s+heute|dieses\s+schreibens", re.IGNORECASE)
+
+
