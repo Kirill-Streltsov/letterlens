@@ -91,3 +91,30 @@ def parse_amount(raw: str) -> Decimal | None:
         return None
 
 
+def find_amounts(text: str) -> list[Decimal]:
+    """Return every money amount with a currency marker in ``text``."""
+    amounts: list[Decimal] = []
+    for match in _AMOUNT.finditer(normalize(text)):
+        raw = match.group("a") or match.group("b")
+        value = parse_amount(raw) if raw else None
+        if value is not None:
+            amounts.append(value)
+    return amounts
+
+
+def parse_decimal_value(value: str) -> Decimal | None:
+    """Parse an LLM-provided amount. Accepts ``1234.56`` and German ``1.234,56``."""
+    value = value.strip().replace("€", "").replace("EUR", "").strip()
+    if re.fullmatch(r"-?\d+(\.\d{1,2})?", value):
+        return Decimal(value).quantize(Decimal("0.01"))
+    return parse_amount(value)
+
+
+def parse_iso_date(value: str | None) -> date | None:
+    if not value:
+        return None
+    try:
+        return date.fromisoformat(value.strip()[:10])
+    except ValueError:
+        dates = find_dates(value)
+        return dates[0] if dates else None
