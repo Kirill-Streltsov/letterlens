@@ -77,3 +77,17 @@ def _verify_deadline(
         "source_text": cited or None,
     }
 
+    explicit = parse_iso_date(item.date) if item.kind != "relative" else None
+    if explicit is not None:
+        if explicit in find_dates(cited):
+            status, note = FactStatus.VERIFIED, None
+        elif explicit in doc_dates:
+            status, note = FactStatus.NEEDS_CHECK, NOTE_OTHER_LINE
+        else:
+            status, note = FactStatus.NEEDS_CHECK, NOTE_NOT_IN_SOURCE
+        if letter_date is not None and explicit < letter_date:
+            status, note = FactStatus.NEEDS_CHECK, NOTE_BEFORE_LETTER
+        return VerifiedDeadline(
+            due_date=explicit, status=status, is_estimate=False, note=note, **common
+        )
+
