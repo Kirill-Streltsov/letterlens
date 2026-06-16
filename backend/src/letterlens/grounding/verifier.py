@@ -45,3 +45,35 @@ def _text(ids: list[str], lines: dict[str, OcrLine]) -> str:
     return "\n".join(lines[i].text for i in ids)
 
 
+def _verify_letter_date(
+    extraction: Extraction, doc: LetterDocument, lines: dict[str, OcrLine]
+) -> tuple[date | None, FactStatus]:
+    proposed = parse_iso_date(extraction.letter_date.value)
+    ids = _valid_ids(extraction.letter_date.line_ids, lines)
+    if proposed is not None and proposed in find_dates(_text(ids, lines)):
+        return proposed, FactStatus.VERIFIED
+    # Fallback: a header line with a date hint, for example "Datum: 03.11.2026".
+    for line in doc.lines[:_HEADER_LINES]:
+        lowered = line.text.lower()
+        dates = find_dates(line.text)
+        if dates and any(hint in lowered for hint in _LETTER_DATE_HINTS):
+            return dates[0], FactStatus.NEEDS_CHECK
+    return proposed, FactStatus.NEEDS_CHECK
+
+
+def _verify_deadline(
+    idx: int,
+    item: ExtractedDeadline,
+    letter_date: date | None,
+    doc_dates: set[date],
+    lines: dict[str, OcrLine],
+) -> VerifiedDeadline:
+    ids = _valid_ids(item.line_ids, lines)
+    cited = _text(ids, lines)
+    common = {
+        "id": f"d{idx}",
+        "description": item.description.strip()[:300],
+        "line_ids": ids,
+        "source_text": cited or None,
+    }
+
