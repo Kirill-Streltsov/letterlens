@@ -91,3 +91,34 @@ def _verify_deadline(
             due_date=explicit, status=status, is_estimate=False, note=note, **common
         )
 
+    # Relative deadline: the period text must be in the cited line.
+    period = parse_relative_period(cited) or (
+        parse_relative_period(item.relative_expression or "") if not cited else None
+    )
+    if period is None:
+        return VerifiedDeadline(
+            due_date=None,
+            status=FactStatus.NEEDS_CHECK,
+            is_estimate=True,
+            note=NOTE_NOT_IN_SOURCE,
+            **common,
+        )
+    if letter_date is None:
+        return VerifiedDeadline(
+            due_date=None,
+            status=FactStatus.NEEDS_CHECK,
+            is_estimate=True,
+            note=NOTE_NO_LETTER_DATE,
+            **common,
+        )
+    estimate = estimate_deadline(period, letter_date)
+    return VerifiedDeadline(
+        due_date=estimate.due_date,
+        status=FactStatus.NEEDS_CHECK,
+        is_estimate=True,
+        rule=estimate.rule,
+        note=NOTE_ESTIMATE,
+        **common,
+    )
+
+
