@@ -149,3 +149,31 @@ def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
             status, note = FactStatus.VERIFIED, None
         elif value in doc_amounts:
             status, note = FactStatus.NEEDS_CHECK, NOTE_OTHER_LINE
+        else:
+            status, note = FactStatus.NEEDS_CHECK, NOTE_NOT_IN_SOURCE
+        key = (value, item.direction)
+        if key in seen_amounts:
+            continue
+        seen_amounts.add(key)
+        amounts.append(
+            VerifiedAmount(
+                id=f"a{len(amounts) + 1}",
+                value=value,
+                currency=(item.currency or "EUR").upper()[:3],
+                direction=item.direction if item.direction in {"to_pay", "to_receive"} else "info",
+                status=status,
+                description=item.description.strip()[:300],
+                line_ids=ids,
+                note=note,
+            )
+        )
+
+    checkable = [d for d in deadlines if not d.is_estimate] + amounts
+    verified_count = sum(1 for f in checkable if f.status is FactStatus.VERIFIED)
+    if extraction.letter_date.value:
+        checkable_count = len(checkable) + 1
+        verified_count += letter_date_status is FactStatus.VERIFIED
+    else:
+        checkable_count = len(checkable)
+    rate = verified_count / checkable_count if checkable_count else 1.0
+
