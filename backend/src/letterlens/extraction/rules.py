@@ -46,3 +46,22 @@ _ACTION = re.compile(
 _SKIP_SUBJECT = re.compile(r"^(sehr geehrte|liebe|anbei|datum)", re.IGNORECASE)
 
 
+def extract_with_rules(doc: LetterDocument) -> Extraction:
+    lines = doc.lines
+    sender = ExtractedText(value=lines[0].text, line_ids=[lines[0].id])
+
+    letter_date = ExtractedDate(value=None, line_ids=[])
+    date_index = 0
+    for i, line in enumerate(lines[:20]):
+        dates = find_dates(line.text)
+        if dates and _LETTER_DATE.match(normalize(line.text)):
+            letter_date = ExtractedDate(value=dates[0].isoformat(), line_ids=[line.id])
+            date_index = i
+            break
+
+    subject = ExtractedText(value=None, line_ids=[])
+    for line in lines[date_index + 1 : date_index + 4]:
+        if line.text.strip() and not _SKIP_SUBJECT.match(line.text):
+            subject = ExtractedText(value=line.text.strip(), line_ids=[line.id])
+            break
+
