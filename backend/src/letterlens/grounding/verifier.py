@@ -177,3 +177,25 @@ def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
         checkable_count = len(checkable)
     rate = verified_count / checkable_count if checkable_count else 1.0
 
+    return VerifiedFacts(
+        sender=extraction.sender.model_copy(
+            update={"line_ids": _valid_ids(extraction.sender.line_ids, lines)}
+        ),
+        subject=extraction.subject.model_copy(
+            update={"line_ids": _valid_ids(extraction.subject.line_ids, lines)}
+        ),
+        letter_date=letter_date,
+        letter_date_status=letter_date_status,
+        reference_numbers=[
+            r.model_copy(update={"line_ids": _valid_ids(r.line_ids, lines)})
+            for r in extraction.reference_numbers
+            if r.value.strip() and r.value in _text(_valid_ids(r.line_ids, lines), lines)
+        ],
+        deadlines=deadlines,
+        amounts=amounts,
+        required_actions=[
+            a.model_copy(update={"line_ids": _valid_ids(a.line_ids, lines)})
+            for a in extraction.required_actions
+        ],
+        grounding_rate=round(rate, 4),
+    )
