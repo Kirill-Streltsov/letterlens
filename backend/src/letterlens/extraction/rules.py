@@ -65,3 +65,31 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
             subject = ExtractedText(value=line.text.strip(), line_ids=[line.id])
             break
 
+    references: list[ExtractedReference] = []
+    for line in lines[:25]:
+        if match := _REF_LABELS.search(line.text):
+            label = match["label"].rstrip(".:")
+            if label.lower().startswith("identifikation"):
+                continue  # a tax ID is personal data, not a case reference
+            references.append(
+                ExtractedReference(label=label, value=match["value"].strip(), line_ids=[line.id])
+            )
+
+    deadlines: list[ExtractedDeadline] = []
+    amounts: list[ExtractedAmount] = []
+    actions: list[ExtractedAction] = []
+    for i, line in enumerate(lines):
+        text = line.text
+        if i <= date_index and letter_date.value:
+            continue
+        dates = find_dates(text)
+        if dates and _APPOINTMENT.search(text) and not _VALID_FROM.search(text):
+            deadlines.append(
+                ExtractedDeadline(
+                    kind="explicit_date",
+                    date=dates[0].isoformat(),
+                    relative_expression=None,
+                    description="Appointment",
+                    line_ids=[line.id],
+                )
+            )
