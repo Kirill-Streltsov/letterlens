@@ -122,3 +122,30 @@ def _verify_deadline(
     )
 
 
+def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
+    lines = doc.line_map()
+    doc_dates = set(find_dates(doc.plain_text()))
+    doc_amounts = set(find_amounts(doc.plain_text()))
+    letter_date, letter_date_status = _verify_letter_date(extraction, doc, lines)
+
+    deadlines: list[VerifiedDeadline] = []
+    seen_deadlines: set[tuple[object, str]] = set()
+    for item in extraction.deadlines:
+        verified = _verify_deadline(len(deadlines) + 1, item, letter_date, doc_dates, lines)
+        key = (verified.due_date, ",".join(verified.line_ids))
+        if key in seen_deadlines:
+            continue
+        seen_deadlines.add(key)
+        deadlines.append(verified)
+
+    amounts: list[VerifiedAmount] = []
+    seen_amounts: set[tuple[Decimal, str]] = set()
+    for item in extraction.amounts:
+        value = parse_decimal_value(item.value)
+        if value is None:
+            continue
+        ids = _valid_ids(item.line_ids, lines)
+        if value in find_amounts(_text(ids, lines)):
+            status, note = FactStatus.VERIFIED, None
+        elif value in doc_amounts:
+            status, note = FactStatus.NEEDS_CHECK, NOTE_OTHER_LINE
