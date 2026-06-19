@@ -117,3 +117,27 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
             if _TO_RECEIVE.search(text):
                 direction = "to_receive"
             elif _TO_PAY.search(text):
+                direction = "to_pay"
+            else:
+                direction = "info"
+            amounts.append(
+                ExtractedAmount(
+                    value=str(value),
+                    currency="EUR",
+                    description=text.strip()[:120],
+                    direction=direction,
+                    line_ids=[line.id],
+                )
+            )
+        if _ACTION.match(text.strip()):
+            actions.append(ExtractedAction(description=text.strip(), line_ids=[line.id]))
+
+    return Extraction(
+        sender=sender,
+        subject=subject,
+        letter_date=letter_date,
+        reference_numbers=references,
+        deadlines=deadlines,
+        amounts=amounts,
+        required_actions=actions,
+    )
