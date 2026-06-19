@@ -93,3 +93,27 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
                     line_ids=[line.id],
                 )
             )
+        elif dates and _DUE.search(text) and not _VALID_FROM.search(text):
+            deadlines.append(
+                ExtractedDeadline(
+                    kind="explicit_date",
+                    date=dates[-1].isoformat(),
+                    relative_expression=None,
+                    description="Due date",
+                    line_ids=[line.id],
+                )
+            )
+        elif period := parse_relative_period(text):
+            deadlines.append(
+                ExtractedDeadline(
+                    kind="relative",
+                    date=None,
+                    relative_expression=f"{period.amount} {period.unit.value} ({period.anchor.value})",
+                    description="Period for a reply or a legal remedy",
+                    line_ids=[line.id],
+                )
+            )
+        for value in find_amounts(text):
+            if _TO_RECEIVE.search(text):
+                direction = "to_receive"
+            elif _TO_PAY.search(text):
