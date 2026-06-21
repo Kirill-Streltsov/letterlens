@@ -137,3 +137,24 @@ def _substitute(rule: Rule, text: str, make: Callable[[str, str], str]) -> str:
     return rule.pattern.sub(repl, text)
 
 
+def _address_block_flags(texts: list[str]) -> list[str | None]:
+    """Mark the recipient name and street that stand above a postcode line."""
+    flags: list[str | None] = [None] * len(texts)
+    for i, text in enumerate(texts[:25]):
+        if not _POSTCODE_CITY.match(text.strip()) or i < 2:
+            continue
+        street, name = texts[i - 1].strip(), texts[i - 2].strip()
+        if not _STREET.match(street) or _ORG_WORDS.search(street):
+            continue
+        flags[i - 1] = "ADDRESS"
+        if _PERSON.match(name) and not _ORG_WORDS.search(name):
+            flags[i - 2] = "NAME"
+    return flags
+
+
+def scrub_for_logs(text: str, limit: int = 200) -> str:
+    """Irreversible redaction for log lines. Use it on every free text that may reach a log."""
+    vault = PiiVault()
+    redacted = vault.redact_text(text)
+    redacted = re.sub(r"\d{3,}", "<num>", redacted)
+    return redacted[:limit]
