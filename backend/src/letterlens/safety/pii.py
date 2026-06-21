@@ -56,3 +56,29 @@ RULES: list[Rule] = [
     ),
 ]
 
+_POSTCODE_CITY = re.compile(r"^\d{5}\s+[A-ZÄÖÜ][\wäöüß. -]+$")
+_STREET = re.compile(r"^[A-ZÄÖÜ][\wäöüß. -]+\s\d{1,4}\s?[a-zA-Z]?$")
+_PERSON = re.compile(r"^(?:[A-ZÄÖÜÇŞİ][\w'-]+)(?:\s+[A-ZÄÖÜÇŞİ][\w'-]+){1,3}$")
+_ORG_WORDS = re.compile(
+    r"(?i)finanzamt|jobcenter|stadt|kreis|gmbh|\beg\b|kasse|behörde|amt\b|service|"
+    r"versicherung|aok|barmer|dak|ikk|stadtwerke|inkasso|hausverwaltung|postfach|abteilung"
+)
+
+
+@dataclass
+class PiiVault:
+    """Holds placeholder-to-value mappings for one request."""
+
+    _forward: dict[str, str] = field(default_factory=dict)
+    _reverse: dict[str, str] = field(default_factory=dict)
+    _counters: dict[str, int] = field(default_factory=dict)
+
+    def placeholder(self, kind: str, value: str) -> str:
+        if value in self._forward:
+            return self._forward[value]
+        self._counters[kind] = self._counters.get(kind, 0) + 1
+        token = f"[{kind}_{self._counters[kind]}]"
+        self._forward[value] = token
+        self._reverse[token] = value
+        return token
+
