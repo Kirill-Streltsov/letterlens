@@ -117,3 +117,25 @@ _INJECTION = _compile(_INJECTION_PATTERNS)
 _ADVISORY = _compile(_ADVISORY_OUTPUT)
 
 
+def check_question_rules(text: str) -> GuardResult:
+    normalized = " ".join(text.split())
+    for pattern in _INJECTION:
+        if match := pattern.search(normalized):
+            return GuardResult(Verdict.INJECTION, "rules", match[0])
+    for lang, patterns in _ADVICE.items():
+        for pattern in patterns:
+            if match := pattern.search(normalized):
+                return GuardResult(Verdict.LEGAL_ADVICE, f"rules:{lang}", match[0])
+    return GuardResult(Verdict.ALLOW, "rules")
+
+
+def is_advisory_output(text: str) -> str | None:
+    """Return the matched phrase if generated text reads like individual legal advice."""
+    for pattern in _ADVISORY:
+        if match := pattern.search(text):
+            return match[0]
+    return None
+
+
+def looks_like_injection(text: str) -> bool:
+    return any(p.search(text) for p in _INJECTION)
