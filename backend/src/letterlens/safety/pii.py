@@ -107,3 +107,33 @@ class PiiVault:
             new_lines.append(line.model_copy(update={"text": text}))
         return doc.model_copy(update={"lines": new_lines})
 
+    def restore(self, value: Any) -> Any:
+        """Replace placeholders in strings, lists, dicts and pydantic models."""
+        if not self._reverse:
+            return value
+        if isinstance(value, str):
+            return _PLACEHOLDER.sub(lambda m: self._reverse.get(m[0], m[0]), value)
+        if isinstance(value, list):
+            return [self.restore(v) for v in value]
+        if isinstance(value, dict):
+            return {k: self.restore(v) for k, v in value.items()}
+        return value
+
+
+_PLACEHOLDER = re.compile(r"\[[A-Z]+_\d+\]")
+
+
+def _substitute(rule: Rule, text: str, make: Callable[[str, str], str]) -> str:
+    def repl(match: re.Match[str]) -> str:
+        if rule.group == 0:
+            return make(rule.kind, match[0])
+        start, end = match.span(rule.group)
+        whole_start = match.start()
+        token = make(rule.kind, match[rule.group])
+        prefix = match[0][: start - whole_start]
+        suffix = match[0][end - whole_start :]
+        return f"{prefix}{token}{suffix}"
+
+    return rule.pattern.sub(repl, text)
+
+
