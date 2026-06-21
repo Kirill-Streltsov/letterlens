@@ -96,3 +96,24 @@ _INJECTION_PATTERNS = [
     r"</?(system|assistant|letter|document)>",
 ]
 
+# Generated text that reads like an individual recommendation.
+_ADVISORY_OUTPUT = [
+    r"\byou should (definitely |probably )?(object|appeal|not pay|refuse|sue|sign|contest)",
+    r"\bI (would )?(recommend|advise) (you )?(to )?(object|appeal|pay|refuse|sign|contest)",
+    r"\byour (objection|appeal|case) (will|would|is likely to) (succeed|win|fail)",
+    r"\b(this|the) (decision|letter|notice|demand) is (unlawful|illegal|invalid|wrong)\b",
+    r"\bsie sollten (unbedingt |auf jeden fall )?(widerspruch|einspruch|klage|nicht zahlen)",
+    r"\bder bescheid ist (rechtswidrig|falsch|unwirksam)",
+    r"\bich (empfehle|rate) ihnen\b",
+]
+
+
+def _compile(patterns: list[str]) -> list[re.Pattern[str]]:
+    return [re.compile(p, re.IGNORECASE | re.UNICODE) for p in patterns]
+
+
+_ADVICE = {lang: _compile(p) for lang, p in _ADVICE_PATTERNS.items()}
+_INJECTION = _compile(_INJECTION_PATTERNS)
+_ADVISORY = _compile(_ADVISORY_OUTPUT)
+
+
