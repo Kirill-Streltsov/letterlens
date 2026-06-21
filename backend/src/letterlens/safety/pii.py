@@ -82,3 +82,28 @@ class PiiVault:
         self._reverse[token] = value
         return token
 
+    @property
+    def size(self) -> int:
+        return len(self._reverse)
+
+    def counts(self) -> dict[str, int]:
+        return dict(self._counters)
+
+    def redact_text(self, text: str) -> str:
+        for rule in RULES:
+            text = _substitute(rule, text, self.placeholder)
+        return text
+
+    def redact_document(self, doc: LetterDocument) -> LetterDocument:
+        texts = [line.text for line in doc.lines]
+        flags = _address_block_flags(texts)
+        new_lines: list[OcrLine] = []
+        for line, flag in zip(doc.lines, flags, strict=True):
+            text = line.text
+            if flag:
+                text = self.placeholder(flag, text.strip())
+            else:
+                text = self.redact_text(text)
+            new_lines.append(line.model_copy(update={"text": text}))
+        return doc.model_copy(update={"lines": new_lines})
+
