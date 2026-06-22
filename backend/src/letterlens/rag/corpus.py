@@ -16,3 +16,20 @@ CORPUS_DIR = Path(__file__).resolve().parents[3] / "corpus"
 _BUNDLED_DIR = Path(__file__).resolve().parents[1] / "corpus"
 
 
+@dataclass(frozen=True, slots=True)
+class CorpusEntry:
+    id: str
+    title: str
+    letter_types: frozenset[LetterType]
+    source_name: str
+    source_url: str
+    checked_on: date
+    text: str
+    reviewed_by: str | None
+    keywords_de: tuple[str, ...] = ()
+
+    def searchable(self) -> str:
+        # German keywords bridge the German letter and the English passage text.
+        return f"{self.title}\n{' '.join(self.keywords_de)}\n{self.text}"
+
+
