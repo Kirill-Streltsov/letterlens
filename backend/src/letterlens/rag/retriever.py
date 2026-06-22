@@ -51,3 +51,24 @@ class Bm25:
         n = len(self.docs)
         self.idf = {t: math.log(1 + (n - f + 0.5) / (f + 0.5)) for t, f in df.items()}
 
+    def scores(self, query: str) -> list[float]:
+        terms = tokenize(query)
+        out = []
+        for doc, length in zip(self.docs, self.lengths, strict=True):
+            score = 0.0
+            for term in terms:
+                tf = doc.get(term, 0)
+                if tf:
+                    norm = tf + self.k1 * (1 - self.b + self.b * length / self.avg)
+                    score += self.idf[term] * tf * (self.k1 + 1) / norm
+            out.append(score)
+        return out
+
+
+def cosine(a: Sequence[float], b: Sequence[float]) -> float:
+    dot = sum(x * y for x, y in zip(a, b, strict=True))
+    na = math.sqrt(sum(x * x for x in a)) or 1.0
+    nb = math.sqrt(sum(y * y for y in b)) or 1.0
+    return dot / (na * nb)
+
+
