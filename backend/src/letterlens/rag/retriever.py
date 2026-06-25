@@ -97,3 +97,31 @@ class HybridRetriever:
         self.index = index
         self.embedder = embedder
 
+    def _dense_ranks(self, query: str, candidates: list[int]) -> dict[int, int]:
+        if self.index is None or self.embedder is None:
+            return {}
+        try:
+            [qvec] = self.embedder([query])
+        except Exception:  # noqa: BLE001 - dense retrieval is optional; BM25 still works
+            return {}
+        scored = [
+            (i, cosine(qvec, self.index.vectors[self.entries[i].id]))
+            for i in candidates
+            if self.entries[i].id in self.index.vectors
+        ]
+        scored.sort(key=lambda item: item[1], reverse=True)
+        return {i: rank for rank, (i, _) in enumerate(scored)}
+
+    def search(self, query: str, letter_type: LetterType, k: int = 4) -> list[Passage]:
+        candidates = [
+            i
+            for i, e in enumerate(self.entries)
+            if letter_type in e.letter_types or letter_type is LetterType.OTHER
+        ]
+        if not candidates:
+            return []
+        bm25 = self.bm25.scores(query)
+        sparse = sorted(candidates, key=lambda i: bm25[i], reverse=True)
+        sparse_ranks = {i: rank for rank, i in enumerate(sparse)}
+        dense_ranks = self._dense_ranks(query, candidates)
+
