@@ -72,3 +72,28 @@ def cosine(a: Sequence[float], b: Sequence[float]) -> float:
     return dot / (na * nb)
 
 
+@dataclass(frozen=True)
+class EmbeddingIndex:
+    model: str
+    vectors: dict[str, list[float]]
+
+    @classmethod
+    def load(cls, path: Path = INDEX_FILE) -> EmbeddingIndex | None:
+        if not path.exists():
+            return None
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        return cls(model=raw["model"], vectors=raw["vectors"])
+
+
+class HybridRetriever:
+    def __init__(
+        self,
+        entries: Sequence[CorpusEntry] | None = None,
+        index: EmbeddingIndex | None = None,
+        embedder: Embedder | None = None,
+    ) -> None:
+        self.entries = list(entries if entries is not None else load_corpus())
+        self.bm25 = Bm25([e.searchable() for e in self.entries])
+        self.index = index
+        self.embedder = embedder
+
