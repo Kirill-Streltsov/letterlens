@@ -125,3 +125,28 @@ class HybridRetriever:
         sparse_ranks = {i: rank for rank, i in enumerate(sparse)}
         dense_ranks = self._dense_ranks(query, candidates)
 
+        def fused(i: int) -> float:
+            score = 1 / (RRF_K + sparse_ranks[i])
+            if i in dense_ranks:
+                score += 1 / (RRF_K + dense_ranks[i])
+            # Passages written for exactly this type rank above general ones on ties.
+            if len(self.entries[i].letter_types) <= 2:
+                score += 1e-4
+            return score
+
+        # A passage with no lexical overlap and no dense score is noise, not context.
+        relevant = [i for i in candidates if bm25[i] > 0 or i in dense_ranks]
+        ranked = sorted(relevant, key=fused, reverse=True)[:k]
+        return [
+            Passage(
+                id=f"c{n}",
+                doc_id=self.entries[i].id,
+                title=self.entries[i].title,
+                text=self.entries[i].text,
+                source_url=self.entries[i].source_url,
+                source_name=self.entries[i].source_name,
+                checked_on=self.entries[i].checked_on,
+                score=round(fused(i), 6),
+            )
+            for n, i in enumerate(ranked, start=1)
+        ]
