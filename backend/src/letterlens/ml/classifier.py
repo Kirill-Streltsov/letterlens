@@ -42,3 +42,30 @@ def analyze(text: str) -> list[str]:
     return features
 
 
+@dataclass(frozen=True)
+class LinearModel:
+    version: str
+    classes: list[str]
+    idf: dict[str, float]
+    weights: dict[str, list[float]]
+    intercept: list[float]
+    temperature: float
+
+    def logits(self, text: str) -> list[float]:
+        counts = Counter(f for f in analyze(text) if f in self.idf)
+        vector = {f: (1.0 + math.log(c)) * self.idf[f] for f, c in counts.items()}
+        norm = math.sqrt(sum(v * v for v in vector.values())) or 1.0
+        out = list(self.intercept)
+        for feature, value in vector.items():
+            for k, w in enumerate(self.weights[feature]):
+                out[k] += w * value / norm
+        return out
+
+    def predict_proba(self, text: str, temperature: float | None = None) -> list[float]:
+        t = self.temperature if temperature is None else temperature
+        scaled = [z / t for z in self.logits(text)]
+        top = max(scaled)
+        exps = [math.exp(z - top) for z in scaled]
+        total = sum(exps)
+        return [e / total for e in exps]
+
