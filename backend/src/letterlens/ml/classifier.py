@@ -69,3 +69,36 @@ class LinearModel:
         total = sum(exps)
         return [e / total for e in exps]
 
+    def classify(self, text: str) -> Classification:
+        probs = self.predict_proba(text)
+        best = max(range(len(probs)), key=probs.__getitem__)
+        confidence = probs[best]
+        abstained = confidence < ABSTAIN_BELOW
+        label = LetterType.OTHER if abstained else LetterType(self.classes[best])
+        return Classification(
+            letter_type=label,
+            confidence=round(confidence, 4),
+            probabilities={
+                LetterType(c): round(p, 4) for c, p in zip(self.classes, probs, strict=True)
+            },
+            model_version=self.version,
+            abstained=abstained,
+        )
+
+
+def load_model(path: Path = ARTIFACT) -> LinearModel:
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    terms: dict[str, list[float]] = raw["terms"]
+    return LinearModel(
+        version=raw["version"],
+        classes=raw["classes"],
+        idf={t: v[0] for t, v in terms.items()},
+        weights={t: v[1:] for t, v in terms.items()},
+        intercept=raw["intercept"],
+        temperature=raw["temperature"],
+    )
+
+
+@lru_cache(maxsize=1)
+def default_model() -> LinearModel:
+    return load_model()
