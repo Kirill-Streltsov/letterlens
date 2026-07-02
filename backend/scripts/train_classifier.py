@@ -135,3 +135,25 @@ def main() -> None:
         (cal_probs.argmax(axis=1)[answered] == y_cal[answered]).mean() if answered.any() else 0
     )
 
+    # Final model: all data, temperature from the out-of-template predictions.
+    vec = make_vectorizer()
+    x_all = vec.fit_transform(texts)
+    clf = make_model().fit(x_all, y)
+
+    vocab = vec.vocabulary_
+    terms: dict[str, list[float]] = {}
+    for term, idx in vocab.items():
+        terms[term] = [round(float(vec.idf_[idx]), 6)] + [
+            round(float(w), 6) for w in clf.coef_[:, idx]
+        ]
+    version = f"lt-{datetime.now(UTC):%Y%m%d}-{len(vocab)}"
+    artifact = {
+        "version": version,
+        "classes": [CLASSES[i] for i in clf.classes_],
+        "intercept": [round(float(b), 6) for b in clf.intercept_],
+        "temperature": round(temperature, 4),
+        "terms": terms,
+    }
+    ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
+    ARTIFACT.write_text(json.dumps(artifact, separators=(",", ":")), encoding="utf-8")
+
