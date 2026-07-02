@@ -157,3 +157,29 @@ def main() -> None:
     ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
     ARTIFACT.write_text(json.dumps(artifact, separators=(",", ":")), encoding="utf-8")
 
+    report = {
+        "version": version,
+        "trained_at": datetime.now(UTC).isoformat(timespec="seconds"),
+        "samples": len(texts),
+        "features": len(vocab),
+        "leave_one_template_out": lotO,
+        "calibration": {
+            "temperature": temperature,
+            "nll_before": float(log_loss(y_cal, raw_probs, labels=list(range(len(CLASSES))))),
+            "nll_after": float(log_loss(y_cal, cal_probs, labels=list(range(len(CLASSES))))),
+            "ece_before": expected_calibration_error(raw_probs, y_cal),
+            "ece_after": expected_calibration_error(cal_probs, y_cal),
+        },
+    }
+    REPORT.parent.mkdir(parents=True, exist_ok=True)
+    REPORT.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print(json.dumps({k: v for k, v in report.items() if k != "leave_one_template_out"}, indent=2))
+    print("leave-one-template-out accuracy:", round(lotO["accuracy"], 4))
+    print("abstain rate:", round(lotO["abstain_rate"], 3),
+          "accuracy when answered:", round(lotO["accuracy_when_answered"], 3))
+    for template, acc in lotO["per_template_accuracy"].items():
+        print(f"  {template:32s} {acc:.3f}")
+
+
+if __name__ == "__main__":
+    main()
