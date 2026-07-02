@@ -104,3 +104,34 @@ def leave_one_template_out(
         x_test = vec.transform([t for t, m in zip(texts, test, strict=True) if m])
         logits = clf.decision_function(x_test)
         oot_logits[test] = logits
+        pred = clf.classes_[logits.argmax(axis=1)]
+        preds[test] = pred
+        per_template[template] = float((pred == y[test]).mean())
+    metrics = {
+        "accuracy": float(accuracy_score(y[held], preds[held])),
+        "macro_f1": float(f1_score(y[held], preds[held], average="macro")),
+        "per_template_accuracy": per_template,
+    }
+    return metrics, oot_logits[held], y[held]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--per-template", type=int, default=60)
+    parser.add_argument("--seed", type=int, default=11)
+    args = parser.parse_args()
+
+    texts, labels, groups = build_dataset(args.per_template, args.seed)
+    y = np.array([CLASSES.index(lbl) for lbl in labels])
+
+    lotO, cal_logits, y_cal = leave_one_template_out(texts, labels, groups)
+    temperature = fit_temperature(cal_logits, y_cal)
+    raw_probs = softmax(cal_logits)
+    cal_probs = softmax(cal_logits / temperature)
+    abstain = cal_probs.max(axis=1) < 0.5
+    answered = ~abstain
+    lotO["abstain_rate"] = float(abstain.mean())
+    lotO["accuracy_when_answered"] = float(
+        (cal_probs.argmax(axis=1)[answered] == y_cal[answered]).mean() if answered.any() else 0
+    )
+
