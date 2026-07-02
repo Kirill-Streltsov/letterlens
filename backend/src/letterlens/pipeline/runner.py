@@ -22,3 +22,31 @@ log = logging.getLogger(__name__)
 EXPLAIN_ONLY = ("explain", "finalize")
 
 
+def run_step(
+    step: str, letter_id: str, store: StateStore, deps: PipelineDeps, language: str | None = None
+) -> PipelineState:
+    state = store.load_state(letter_id)
+    started = time.perf_counter()
+    if step == "explain":
+        state = explain(state, deps, language)
+    else:
+        state = STEP_FUNCTIONS[step](state, deps)
+    store.save_state(state)
+    log.info(
+        "pipeline step done",
+        extra={
+            "letter_id": letter_id,
+            "step": step,
+            "ms": int((time.perf_counter() - started) * 1000),
+            "degraded": state.degraded,
+        },
+    )
+    return state
+
+
+class Runner(Protocol):
+    def start(
+        self, letter_id: str, steps: Sequence[str] = STEPS, language: str | None = None
+    ) -> None: ...
+
+
