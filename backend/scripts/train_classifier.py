@@ -78,3 +78,29 @@ def expected_calibration_error(probs: np.ndarray, y: np.ndarray, bins: int = 10)
     return float(ece)
 
 
+def softmax(z: np.ndarray) -> np.ndarray:
+    z = z - z.max(axis=1, keepdims=True)
+    return np.exp(z) / np.exp(z).sum(axis=1, keepdims=True)
+
+
+def leave_one_template_out(
+    texts: list[str], labels: list[str], groups: list[str]
+) -> tuple[dict, np.ndarray, np.ndarray]:
+    """Hold out one whole template family at a time: measures generalization to new layouts.
+
+    Returns the metrics and the out-of-template logits and labels. The temperature is
+    fitted on these logits, so confidence reflects letters with an unseen layout.
+    """
+    y = np.array([CLASSES.index(lbl) for lbl in labels])
+    per_template = {}
+    preds = np.zeros_like(y)
+    held = np.array([g != LEXICON_GROUP for g in groups])
+    oot_logits = np.zeros((len(y), len(CLASSES)))
+    for template in sorted(set(groups) - {LEXICON_GROUP}):
+        test = np.array([g == template for g in groups])
+        vec = make_vectorizer()
+        x_train = vec.fit_transform([t for t, m in zip(texts, test, strict=True) if not m])
+        clf = make_model().fit(x_train, y[~test])
+        x_test = vec.transform([t for t, m in zip(texts, test, strict=True) if m])
+        logits = clf.decision_function(x_test)
+        oot_logits[test] = logits
