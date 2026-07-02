@@ -51,3 +51,30 @@ def make_vectorizer() -> TfidfVectorizer:
     )
 
 
+def make_model() -> LogisticRegression:
+    return LogisticRegression(C=2.0, max_iter=3000)
+
+
+def fit_temperature(logits: np.ndarray, y: np.ndarray) -> float:
+    best_t, best_nll = 1.0, float("inf")
+    for t in np.geomspace(0.02, 5.0, 160):
+        z = logits / t
+        z = z - z.max(axis=1, keepdims=True)
+        p = np.exp(z) / np.exp(z).sum(axis=1, keepdims=True)
+        nll = -np.mean(np.log(p[np.arange(len(y)), y] + 1e-12))
+        if nll < best_nll:
+            best_t, best_nll = float(t), nll
+    return best_t
+
+
+def expected_calibration_error(probs: np.ndarray, y: np.ndarray, bins: int = 10) -> float:
+    conf = probs.max(axis=1)
+    correct = probs.argmax(axis=1) == y
+    ece = 0.0
+    for lo in np.linspace(0, 1, bins, endpoint=False):
+        mask = (conf > lo) & (conf <= lo + 1 / bins)
+        if mask.any():
+            ece += mask.mean() * abs(correct[mask].mean() - conf[mask].mean())
+    return float(ece)
+
+
