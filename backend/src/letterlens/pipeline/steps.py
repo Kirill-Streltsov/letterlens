@@ -51,3 +51,34 @@ class PipelineDeps:
     classifier: LinearModel
 
 
+# --------------------------------------------------------------------------
+
+
+def classify(state: PipelineState, deps: PipelineDeps) -> PipelineState:
+    state.classification = deps.classifier.classify(state.document.plain_text())
+    return state
+
+
+def extract(state: PipelineState, deps: PipelineDeps) -> PipelineState:
+    letter_type = state.classification.letter_type if state.classification else LetterType.OTHER
+    vault = PiiVault()
+    redacted = vault.redact_document(state.document)
+    try:
+        draft = deps.gateway.generate(
+            Task.EXTRACT,
+            Extraction,
+            P.extract_system(letter_type),
+            P.extract_user(redacted.as_numbered_text()),
+            P.EXTRACT_VERSION,
+            context={"document": redacted.model_dump(mode="json")},
+            user_id=state.owner_id,
+            letter_id=state.letter_id,
+        )
+        state.extraction = Extraction.model_validate(vault.restore(draft.model_dump(mode="json")))
+    except LLMError as exc:
+        log.warning("extract degraded", extra={"letter_id": state.letter_id, "error": type(exc).__name__})
+        state.extraction = extract_with_rules(state.document)
+        state.mark_degraded(f"extract:{type(exc).__name__}")
+    return state
+
+
