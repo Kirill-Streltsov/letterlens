@@ -177,3 +177,28 @@ def sanitize_explanation(
             continue
         summary.append(SummarySentence(text=text, line_ids=[i for i in s.line_ids if i in line_ids]))
 
+    steps: list[NextStep] = []
+    for step in draft.next_steps:
+        cites = [c for c in step.citation_ids if c in passage_ids]
+        text = clean(step.text)
+        if not cites:
+            stats["dropped_uncited"] += 1
+            continue
+        if is_advisory_output(text):
+            stats["dropped_advisory"] += 1
+            continue
+        if unsupported_numbers(text, allowed):
+            stats["dropped_numbers"] += 1
+            continue
+        steps.append(NextStep(text=text, citation_ids=cites))
+
+    deadline_ids = {d.id for d in state.facts.deadlines}
+    amount_ids = {a.id for a in state.facts.amounts}
+    used = {c for s in steps for c in s.citation_ids}
+    citations = [
+        Citation(
+            id=p.id,
+            title=p.title,
+            source_url=p.source_url,
+            source_name=p.source_name,
+            checked_on=p.checked_on,
