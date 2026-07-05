@@ -202,3 +202,23 @@ def sanitize_explanation(
             source_url=p.source_url,
             source_name=p.source_name,
             checked_on=p.checked_on,
+        )
+        for p in passages
+        if p.id in used
+    ]
+    explanation = Explanation(
+        language=language,
+        headline=clean(draft.headline),
+        letter_kind=clean(draft.letter_kind),
+        summary=summary,
+        next_steps=steps,
+        deadline_labels={x.id: clean(x.label) for x in draft.deadline_labels if x.id in deadline_ids},
+        amount_labels={x.id: clean(x.label) for x in draft.amount_labels if x.id in amount_ids},
+        citations=citations,
+        counselling_hint=localized(COUNSELLING_HINT, language),
+        disclaimer=localized(DISCLAIMER, language),
+        model=model,
+    )
+    return explanation, stats
+
+
