@@ -146,3 +146,34 @@ def unsupported_numbers(text: str, allowed: set[str]) -> list[str]:
     return bad
 
 
+def sanitize_explanation(
+    draft: ExplanationDraft,
+    state: PipelineState,
+    passages: list[Passage],
+    language: str,
+    model: str,
+    vault: PiiVault,
+) -> tuple[Explanation, dict[str, int]]:
+    """Enforce the output contract. Returns the explanation and counters for metrics."""
+    assert state.facts is not None
+    line_ids = state.document.line_map().keys()
+    passage_ids = {p.id for p in passages}
+    allowed = allowed_numbers(state)
+    stats = {"dropped_advisory": 0, "dropped_numbers": 0, "dropped_uncited": 0}
+
+    def clean(text: str) -> str:
+        restored = vault.restore(text)
+        assert isinstance(restored, str)
+        return _URL.sub("", restored).strip()
+
+    summary: list[SummarySentence] = []
+    for s in draft.summary:
+        text = clean(s.text)
+        if is_advisory_output(text):
+            stats["dropped_advisory"] += 1
+            continue
+        if unsupported_numbers(text, allowed):
+            stats["dropped_numbers"] += 1
+            continue
+        summary.append(SummarySentence(text=text, line_ids=[i for i in s.line_ids if i in line_ids]))
+
