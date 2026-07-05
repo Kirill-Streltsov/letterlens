@@ -222,3 +222,34 @@ def sanitize_explanation(
     return explanation, stats
 
 
+def explain(state: PipelineState, deps: PipelineDeps, language: str | None = None) -> PipelineState:
+    assert state.facts is not None
+    language = language or state.language
+    lang = languages().get(language) or languages()["en"]
+    passages = state.passages or []
+    letter_type = state.classification.letter_type if state.classification else LetterType.OTHER
+    vault = PiiVault()
+    redacted = vault.redact_document(state.document)
+    facts_json = _facts_for_prompt(state.facts, vault)
+    passages_ctx = [p.model_dump(mode="json") for p in passages]
+    model_name = deps.gateway.models_for(Task.EXPLAIN)[0]
+    try:
+        draft = deps.gateway.generate(
+            Task.EXPLAIN,
+            ExplanationDraft,
+            P.explain_system(lang.name),
+            P.explain_user(redacted.as_numbered_text(), facts_json, passages),
+            P.EXPLAIN_VERSION,
+            context={
+                "facts": facts_json,
+                "passages": passages_ctx,
+                "language": lang.code,
+                "letter_type": letter_type.value,
+            },
+            user_id=state.owner_id,
+            letter_id=state.letter_id,
+            max_tokens=6000,
+        )
+    except LLMError as exc:
+        log.warning("explain degraded", extra={"letter_id": state.letter_id, "error": type(exc).__name__})
+        draft = ExplanationDraft.model_validate(
