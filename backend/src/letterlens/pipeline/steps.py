@@ -126,3 +126,23 @@ def allowed_numbers(state: PipelineState) -> set[str]:
         allowed.add(d.isoformat())
     for a in find_amounts(text):
         allowed |= {str(a), str(a).replace(".", ","), str(int(a))}
+    if state.facts:
+        for dl in state.facts.deadlines:
+            if dl.due_date:
+                dd = dl.due_date
+                allowed |= {dd.isoformat(), str(dd.day), str(dd.month), str(dd.year),
+                            f"{dd.day:02d}", f"{dd.month:02d}", f"{dd.day:02d}.{dd.month:02d}.{dd.year}"}
+    allowed |= {str(n) for n in range(0, 13)}  # small counts ("2 weeks", "1 month")
+    return allowed
+
+
+def unsupported_numbers(text: str, allowed: set[str]) -> list[str]:
+    tokens = _NUMBER.findall(text.translate(_EASTERN_DIGITS))
+    bad = []
+    for tok in tokens:
+        pieces = [tok, tok.rstrip(".,")] + re.split(r"[.,]", tok)
+        if not any(p in allowed for p in pieces if p):
+            bad.append(tok)
+    return bad
+
+
