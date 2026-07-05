@@ -253,3 +253,29 @@ def explain(state: PipelineState, deps: PipelineDeps, language: str | None = Non
     except LLMError as exc:
         log.warning("explain degraded", extra={"letter_id": state.letter_id, "error": type(exc).__name__})
         draft = ExplanationDraft.model_validate(
+            FakeProvider._explain(  # noqa: SLF001 - the template explainer is the fallback
+                {"facts": facts_json, "passages": passages_ctx, "letter_type": letter_type.value}
+            )
+        )
+        state.mark_degraded(f"explain:{type(exc).__name__}")
+        model_name = "template"
+        lang = languages()["en"]
+    explanation, stats = sanitize_explanation(draft, state, passages, lang.code, model_name, vault)
+    if any(stats.values()):
+        log.info("explanation sanitized", extra={"letter_id": state.letter_id, **stats})
+    state.explanations[lang.code] = explanation
+    return state
+
+
+def finalize(state: PipelineState, deps: PipelineDeps) -> PipelineState:
+    return state
+
+
+STEP_FUNCTIONS = {
+    "classify": classify,
+    "extract": extract,
+    "verify": verify_step,
+    "retrieve": retrieve,
+    "explain": explain,
+    "finalize": finalize,
+}
