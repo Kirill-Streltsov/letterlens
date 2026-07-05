@@ -100,3 +100,29 @@ def retrieval_query(state: PipelineState) -> str:
     return "\n".join(p for p in parts if p)
 
 
+def retrieve(state: PipelineState, deps: PipelineDeps) -> PipelineState:
+    letter_type = state.classification.letter_type if state.classification else LetterType.OTHER
+    state.passages = deps.retriever.search(retrieval_query(state), letter_type, k=4)
+    return state
+
+
+# --------------------------------------------------------------------------
+# Explanation and its validation
+# --------------------------------------------------------------------------
+
+
+def _facts_for_prompt(facts: VerifiedFacts, vault: PiiVault) -> dict[str, Any]:
+    raw = json.dumps(facts.model_dump(mode="json"), ensure_ascii=False)
+    redacted: dict[str, Any] = json.loads(vault.redact_text(raw))
+    return redacted
+
+
+def allowed_numbers(state: PipelineState) -> set[str]:
+    """Every number that the explanation may mention: from the letter and the verified facts."""
+    text = state.document.plain_text()
+    allowed = {n for n in _NUMBER.findall(text)}
+    for d in find_dates(text):
+        allowed |= {str(d.day), str(d.month), str(d.year), f"{d.day:02d}", f"{d.month:02d}"}
+        allowed.add(d.isoformat())
+    for a in find_amounts(text):
+        allowed |= {str(a), str(a).replace(".", ","), str(int(a))}
