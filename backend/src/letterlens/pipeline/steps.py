@@ -82,3 +82,21 @@ def extract(state: PipelineState, deps: PipelineDeps) -> PipelineState:
     return state
 
 
+def verify_step(state: PipelineState, deps: PipelineDeps) -> PipelineState:
+    assert state.extraction is not None
+    state.facts = verify(state.extraction, state.document)
+    return state
+
+
+def retrieval_query(state: PipelineState) -> str:
+    facts = state.facts
+    parts: list[str] = []
+    if facts is not None:
+        parts += [facts.subject.value or "", facts.sender.value or ""]
+        parts += [d.description for d in facts.deadlines]
+        parts += [a.description for a in facts.required_actions]
+    # German key terms (Widerspruch, Einspruch, Mahnbescheid ...) carry most of the signal.
+    parts.append(state.document.plain_text()[:2500])
+    return "\n".join(p for p in parts if p)
+
+
