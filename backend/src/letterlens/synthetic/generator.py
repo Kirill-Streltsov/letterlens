@@ -52,3 +52,26 @@ class SyntheticLetter:
         return asdict(self)
 
 
+# --------------------------------------------------------------------------
+# Random building blocks
+# --------------------------------------------------------------------------
+
+RECIPIENTS = [
+    "Ayşe Yılmaz", "Olena Kovalenko", "Ahmad Al-Hassan", "Maria Popescu", "Jan Nowak",
+    "Fatima Rahimi", "Dmytro Shevchenko", "Mehmet Demir", "Lina Haddad", "Svetlana Ivanova",
+    "Kwame Mensah", "Elif Kaya", "Oksana Bondarenko", "Yusuf Öztürk", "Nour Khalil",
+]  # fmt: skip
+STREETS = [
+    "Hauptstraße", "Bergstraße", "Kirchweg", "Am Stadtpark", "Lindenallee", "Bahnhofstraße",
+    "Gartenstraße", "Schillerstraße", "Rosenweg", "Herner Straße", "Dorstener Straße",
+]  # fmt: skip
+CITIES = [
+    ("44787", "Bochum"), ("44135", "Dortmund"), ("45127", "Essen"), ("45879", "Gelsenkirchen"),
+    ("47051", "Duisburg"), ("44623", "Herne"), ("45468", "Mülheim an der Ruhr"),
+]  # fmt: skip
+MONTH_NAMES = [
+    "Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August",
+    "September", "Oktober", "November", "Dezember",
+]  # fmt: skip
+
+
