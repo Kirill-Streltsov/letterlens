@@ -101,3 +101,24 @@ class Rand:
         )
 
 
+def fmt_date(d: date, style: int = 0) -> str:
+    if style == 1:
+        return f"{d.day}. {MONTH_NAMES[d.month - 1]} {d.year}"
+    return f"{d.day:02d}.{d.month:02d}.{d.year}"
+
+
+def fmt_eur(value: Decimal, style: int = 0) -> str:
+    whole, cents = f"{value:.2f}".split(".")
+    grouped = f"{int(whole):,}".replace(",", ".")
+    if style == 1:
+        return f"{grouped},{cents} EUR"
+    return f"{grouped},{cents} €"
+
+
+def working_after(d: date, days: int) -> date:
+    out = d + timedelta(days=days)
+    while out.weekday() >= 5:
+        out += timedelta(days=1)
+    return out
+
+
