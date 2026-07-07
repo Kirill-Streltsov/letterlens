@@ -75,3 +75,29 @@ MONTH_NAMES = [
 ]  # fmt: skip
 
 
+class Rand:
+    def __init__(self, seed: int) -> None:
+        self.r = random.Random(seed)
+
+    def pick[T](self, items: list[T]) -> T:
+        return self.r.choice(items)
+
+    def digits(self, n: int) -> str:
+        return "".join(str(self.r.randint(0, 9)) for _ in range(n))
+
+    def amount(self, low: int, high: int) -> Decimal:
+        cents = self.r.choice([0, 0, 50, self.r.randint(1, 99)])
+        return Decimal(f"{self.r.randint(low, high)}.{cents:02d}")
+
+    def letter_date(self) -> date:
+        return date(2026, 1, 5) + timedelta(days=self.r.randint(0, 330))
+
+    def address(self) -> tuple[str, str, str]:
+        plz, city = self.pick(CITIES)
+        return (
+            self.pick(RECIPIENTS),
+            f"{self.pick(STREETS)} {self.r.randint(1, 120)}{self.pick(['', '', 'a', 'b'])}",
+            f"{plz} {city}",
+        )
+
+
