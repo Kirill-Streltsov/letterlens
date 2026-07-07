@@ -153,3 +153,15 @@ def _header(ctx: Ctx, sender_lines: list[str], ref_lines: list[str]) -> list[str
     return [*sender_lines, "", name, street, city, "", *ref_lines, date_line, ""]
 
 
+RELATIVE_OBJECTION = [
+    "innerhalb eines Monats nach Bekanntgabe",
+    "binnen eines Monats nach Bekanntgabe",
+    "innerhalb eines Monats nach Zugang",
+]
+
+
+# --------------------------------------------------------------------------
+# Templates: TAX
+# --------------------------------------------------------------------------
+
+
