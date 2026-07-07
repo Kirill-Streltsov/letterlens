@@ -165,3 +165,36 @@ RELATIVE_OBJECTION = [
 # --------------------------------------------------------------------------
 
 
+def tax_assessment(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    office = r.pick(["Bochum-Mitte", "Dortmund-Ost", "Essen-Süd", "Gelsenkirchen", "Herne"])
+    sender = f"Finanzamt {office}"
+    stnr = f"{r.digits(3)}/{r.digits(3)}/{r.digits(5)}"
+    idnr = f"{r.digits(2)} {r.digits(3)} {r.digits(3)} {r.digits(3)}"
+    year = ctx.letter_date.year - 1
+    refund = r.r.random() < 0.4
+    amount = r.amount(80, 3400)
+    due = working_after(ctx.letter_date, 33)
+    rel = r.pick(RELATIVE_OBJECTION)
+    lines = _header(
+        ctx,
+        [sender, f"Postfach {r.digits(4)}", "44701 Bochum"],
+        [f"Steuernummer: {stnr}", f"Identifikationsnummer: {idnr}"],
+    )
+    lines += [f"Bescheid für {year} über Einkommensteuer", ""]
+    lines += [f"Die Steuer wird für das Kalenderjahr {year} festgesetzt.", ""]
+    deadlines: list[DeadlineLabel] = []
+    amounts: list[AmountLabel] = []
+    if refund:
+        lines += [
+            f"Erstattung: {ctx.m(amount)}",
+            "Der Betrag wird auf Ihr angegebenes Konto überwiesen.",
+        ]
+        amounts.append(AmountLabel(str(amount), "to_receive"))
+    else:
+        lines += [
+            f"Nachzahlung: {ctx.m(amount)}",
+            f"Bitte zahlen Sie den Betrag bis zum {ctx.d(due)}.",
+            "Bei verspäteter Zahlung entstehen Säumniszuschläge.",
+        ]
+        amounts.append(AmountLabel(str(amount), "to_pay"))
