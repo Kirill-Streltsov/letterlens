@@ -23,3 +23,32 @@ from letterlens.domain import LetterType
 # --------------------------------------------------------------------------
 
 
+@dataclass
+class DeadlineLabel:
+    kind: str  # explicit_date | relative | appointment
+    date: str | None = None
+    relative_expression: str | None = None
+
+
+@dataclass
+class AmountLabel:
+    value: str
+    direction: str  # to_pay | to_receive | info
+
+
+@dataclass
+class SyntheticLetter:
+    id: str
+    letter_type: str
+    template_id: str
+    lines: list[str]
+    sender: str
+    letter_date: str
+    references: dict[str, str]
+    deadlines: list[DeadlineLabel] = field(default_factory=list)
+    amounts: list[AmountLabel] = field(default_factory=list)
+
+    def to_dict(self) -> dict[str, object]:
+        return asdict(self)
+
+
