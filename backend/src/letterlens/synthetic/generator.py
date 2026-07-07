@@ -198,3 +198,28 @@ def tax_assessment(ctx: Ctx) -> Built:
             "Bei verspäteter Zahlung entstehen Säumniszuschläge.",
         ]
         amounts.append(AmountLabel(str(amount), "to_pay"))
+        deadlines.append(DeadlineLabel("explicit_date", date=due.isoformat()))
+    lines += [
+        "",
+        "Rechtsbehelfsbelehrung",
+        "Der Bescheid kann mit dem Einspruch angefochten werden.",
+        f"Der Einspruch ist {rel} dieses Bescheids",
+        f"bei dem Finanzamt {office} schriftlich oder elektronisch einzulegen.",
+        "",
+        "Mit freundlichen Grüßen",
+        "Ihr Finanzamt",
+    ]
+    deadlines.append(DeadlineLabel("relative", relative_expression=rel))
+    return lines, sender, {"Steuernummer": stnr}, deadlines, amounts
+
+
+def tax_reminder(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    office = r.pick(["Duisburg-West", "Bochum-Süd", "Dortmund-Unna", "Mülheim an der Ruhr"])
+    sender = f"Finanzamt {office}"
+    stnr = f"{r.digits(3)}/{r.digits(4)}/{r.digits(4)}"
+    year = ctx.letter_date.year - 1
+    due = working_after(ctx.letter_date, r.pick([14, 21, 28]))
+    lines = _header(ctx, [sender, f"{r.pick(STREETS)} {r.r.randint(1, 60)}"], [f"StNr. {stnr}"])
+    lines += [
+        r.pick(
