@@ -122,3 +122,34 @@ def working_after(d: date, days: int) -> date:
     return out
 
 
+@dataclass
+class Ctx:
+    rnd: Rand
+    letter_date: date
+    recipient: tuple[str, str, str]
+    date_style: int
+    money_style: int
+
+    def d(self, value: date) -> str:
+        return fmt_date(value, self.date_style)
+
+    def m(self, value: Decimal) -> str:
+        return fmt_eur(value, self.money_style)
+
+
+Built = tuple[list[str], str, dict[str, str], list[DeadlineLabel], list[AmountLabel]]
+
+
+def _header(ctx: Ctx, sender_lines: list[str], ref_lines: list[str]) -> list[str]:
+    name, street, city = ctx.recipient
+    place = sender_lines[-1].split(" ", 1)[-1] if sender_lines else ""
+    date_line = ctx.rnd.pick(
+        [
+            f"Datum: {ctx.d(ctx.letter_date)}",
+            f"{place}, den {ctx.d(ctx.letter_date)}",
+            f"Datum {ctx.d(ctx.letter_date)}",
+        ]
+    )
+    return [*sender_lines, "", name, street, city, "", *ref_lines, date_line, ""]
+
+
