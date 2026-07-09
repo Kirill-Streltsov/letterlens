@@ -223,3 +223,23 @@ def tax_reminder(ctx: Ctx) -> Built:
     lines = _header(ctx, [sender, f"{r.pick(STREETS)} {r.r.randint(1, 60)}"], [f"StNr. {stnr}"])
     lines += [
         r.pick(
+            [
+                f"Erinnerung: Abgabe der Einkommensteuererklärung {year}",
+                f"Aufforderung zur Abgabe der Steuererklärung für {year}",
+            ]
+        ),
+        "",
+        "Sehr geehrte Damen und Herren,",
+        f"Ihre Einkommensteuererklärung für {year} liegt uns noch nicht vor.",
+        f"Bitte reichen Sie die Erklärung bis zum {ctx.d(due)} ein.",
+        "Wenn Sie die Frist nicht einhalten, kann ein Verspätungszuschlag festgesetzt werden.",
+        "Die Erklärung können Sie kostenlos über ELSTER übermitteln.",
+        "",
+        "Mit freundlichen Grüßen",
+        "Im Auftrag",
+    ]
+    return lines, sender, {"Steuernummer": stnr}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], []
+
+
