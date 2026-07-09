@@ -353,3 +353,27 @@ def jobcenter_documents(ctx: Ctx) -> Built:
     ], []
 
 
+def jobcenter_invitation(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    city = r.pick(["Essen", "Herne", "Gelsenkirchen"])
+    sender = f"Jobcenter {city}"
+    appt = working_after(ctx.letter_date, r.pick([8, 10, 12]))
+    time = r.pick(["08:30", "09:15", "10:00", "11:30", "13:45"])
+    lines = _header(
+        ctx,
+        [sender, "Arbeitsvermittlung"],
+        [f"Kundennummer: {r.digits(3)}D{r.digits(6)}"],
+    )
+    lines += [
+        "Einladung",
+        "",
+        "Sehr geehrte Damen und Herren,",
+        "bitte kommen Sie zu einem Gespräch über Ihre berufliche Situation",
+        f"am {ctx.d(appt)} um {time} Uhr, Zimmer {r.r.randint(100, 420)}.",
+        "Bringen Sie bitte Ihren Lebenslauf und Ihren Ausweis mit.",
+        f"Wenn Sie ohne wichtigen Grund nicht kommen, kann Ihr {benefit_name(ctx)} gemindert werden.",
+        "Können Sie den Termin nicht wahrnehmen, informieren Sie uns bitte vorher.",
+    ]
+    return lines, sender, {}, [DeadlineLabel("appointment", date=appt.isoformat())], []
+
+
