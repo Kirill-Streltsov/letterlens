@@ -402,3 +402,23 @@ def familienkasse_refund(ctx: Ctx) -> Built:
     ], [AmountLabel(str(amount), "to_pay")]
 
 
+# --------------------------------------------------------------------------
+# Templates: HEALTH INSURANCE
+# --------------------------------------------------------------------------
+
+INSURERS = ["AOK NordWest", "Techniker Krankenkasse", "BARMER", "DAK-Gesundheit", "IKK classic"]
+
+
+def insurance_arrears(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(INSURERS)
+    kvnr = f"{r.pick(['A', 'K', 'M', 'T'])}{r.digits(9)}"
+    principal = r.amount(90, 1200)
+    fee = r.amount(1, 40)
+    total = principal + fee
+    due = working_after(ctx.letter_date, r.pick([10, 14]))
+    lines = _header(ctx, [sender, "Beitragseinzug"], [f"Versichertennummer: {kvnr}"])
+    lines += [
+        "Zahlungserinnerung - Beitragsrückstand",
+        "",
+        f"Für Ihre freiwillige Versicherung besteht ein Rückstand von {ctx.m(principal)}.",
