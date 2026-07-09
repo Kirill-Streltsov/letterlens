@@ -243,3 +243,35 @@ def tax_reminder(ctx: Ctx) -> Built:
     ], []
 
 
+def tax_arrears(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    office = r.pick(["Herne", "Gelsenkirchen-Nord", "Essen-NordOst"])
+    sender = f"Finanzamt {office} - Erhebungsstelle"
+    stnr = f"{r.digits(3)}/{r.digits(3)}/{r.digits(5)}"
+    principal = r.amount(150, 2500)
+    surcharge = (principal * Decimal("0.01") * r.r.randint(1, 4)).quantize(Decimal("1"))
+    total = principal + surcharge
+    due = working_after(ctx.letter_date, r.pick([7, 10, 14]))
+    lines = _header(ctx, [sender, f"Postfach {r.digits(4)}"], [f"Steuernummer {stnr}"])
+    lines += [
+        "Mahnung",
+        "",
+        "Folgende Beträge sind trotz Fälligkeit noch nicht bezahlt:",
+        f"Einkommensteuer: {ctx.m(principal)}",
+        f"Säumniszuschläge: {ctx.m(surcharge)}",
+        f"Gesamtbetrag: {ctx.m(total)}",
+        "",
+        f"Bitte überweisen Sie den Gesamtbetrag bis zum {ctx.d(due)}.",
+        "Andernfalls müssen wir Vollstreckungsmaßnahmen einleiten.",
+        "",
+        "Mit freundlichen Grüßen",
+    ]
+    return lines, sender, {"Steuernummer": stnr}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], [
+        AmountLabel(str(principal), "to_pay"),
+        AmountLabel(str(surcharge), "to_pay"),
+        AmountLabel(str(total), "to_pay"),
+    ]
+
+
