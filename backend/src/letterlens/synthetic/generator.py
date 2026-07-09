@@ -455,3 +455,24 @@ def insurance_questionnaire(ctx: Ctx) -> Built:
     ], []
 
 
+def insurance_rejection(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(INSURERS)
+    kvnr = f"{r.pick(['C', 'H', 'R'])}{r.digits(9)}"
+    rel = r.pick(RELATIVE_OBJECTION)
+    item = r.pick(["eine Haushaltshilfe", "eine Reha-Maßnahme", "einen Rollstuhl", "Fahrkosten"])
+    lines = _header(ctx, [sender, "Leistungsabteilung"], [f"Versichertennummer: {kvnr}"])
+    lines += [
+        "Bescheid über Ihren Antrag",
+        "",
+        f"Ihren Antrag auf Kostenübernahme für {item} müssen wir leider ablehnen.",
+        "Nach Prüfung durch den Medizinischen Dienst liegen die Voraussetzungen nicht vor.",
+        "",
+        "Rechtsbehelfsbelehrung",
+        f"Gegen diesen Bescheid können Sie {rel} Widerspruch einlegen.",
+    ]
+    return lines, sender, {"Versichertennummer": kvnr}, [
+        DeadlineLabel("relative", relative_expression=rel)
+    ], []
+
+
