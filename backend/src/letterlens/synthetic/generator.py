@@ -377,3 +377,28 @@ def jobcenter_invitation(ctx: Ctx) -> Built:
     return lines, sender, {}, [DeadlineLabel("appointment", date=appt.isoformat())], []
 
 
+def familienkasse_refund(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = "Familienkasse Nordrhein-Westfalen West"
+    kg = f"{r.digits(3)}FK{r.digits(6)}"
+    amount = r.amount(255, 1530)
+    due = working_after(ctx.letter_date, 30)
+    rel = r.pick(RELATIVE_OBJECTION)
+    lines = _header(ctx, [sender, "Postfach 10 08 51", "45008 Essen"], [f"Kindergeld-Nr.: {kg}"])
+    lines += [
+        "Aufhebung der Festsetzung des Kindergeldes und Rückforderung",
+        "",
+        "Die Festsetzung des Kindergeldes wird aufgehoben, weil die Voraussetzungen",
+        "nicht mehr vorliegen.",
+        f"Das zu Unrecht gezahlte Kindergeld in Höhe von {ctx.m(amount)} ist zu erstatten.",
+        f"Bitte überweisen Sie den Betrag bis zum {ctx.d(due)}.",
+        "",
+        "Rechtsbehelfsbelehrung",
+        f"Gegen diesen Bescheid kann {rel} Einspruch eingelegt werden.",
+    ]
+    return lines, sender, {"Kindergeld-Nr.": kg}, [
+        DeadlineLabel("explicit_date", date=due.isoformat()),
+        DeadlineLabel("relative", relative_expression=rel),
+    ], [AmountLabel(str(amount), "to_pay")]
+
+
