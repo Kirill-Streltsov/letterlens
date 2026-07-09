@@ -319,3 +319,37 @@ def jobcenter_approval(ctx: Ctx) -> Built:
     ], [AmountLabel(str(monthly), "to_receive")]
 
 
+def jobcenter_documents(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    city = r.pick(["Duisburg", "Mülheim an der Ruhr", "Bochum", "Dortmund"])
+    sender = f"Jobcenter {city}"
+    bg = f"{r.digits(5)}BG{r.digits(7)}"
+    due = working_after(ctx.letter_date, r.pick([14, 14, 21]))
+    docs = r.r.sample(
+        [
+            "Kontoauszüge der letzten drei Monate",
+            "aktuelle Lohnabrechnung",
+            "Mietvertrag und aktuelle Mietbescheinigung",
+            "Nachweis über den Bezug von Kindergeld",
+            "Bescheinigung der Krankenkasse",
+        ],
+        3,
+    )
+    lines = _header(ctx, [sender, "Team 451"], [f"BG-Nummer {bg}"])
+    lines += [
+        r.pick(["Aufforderung zur Mitwirkung", "Anforderung von Unterlagen"]),
+        "",
+        "Sehr geehrte Damen und Herren,",
+        "für die Prüfung Ihres Anspruchs benötigen wir folgende Unterlagen:",
+        *[f"- {d}" for d in docs],
+        f"Bitte reichen Sie die Unterlagen bis zum {ctx.d(due)} ein.",
+        "Wenn Sie nicht mitwirken, können die Leistungen ganz oder teilweise versagt werden",
+        "(§§ 60, 66 Erstes Buch Sozialgesetzbuch).",
+        "",
+        "Mit freundlichen Grüßen",
+    ]
+    return lines, sender, {"BG-Nummer": bg}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], []
+
+
