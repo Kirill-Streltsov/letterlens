@@ -275,3 +275,26 @@ def tax_arrears(ctx: Ctx) -> Built:
     ]
 
 
+# --------------------------------------------------------------------------
+# Templates: BENEFITS
+# --------------------------------------------------------------------------
+
+
+REFORM_DATE = date(2026, 7, 1)
+
+
+def benefit_name(ctx: Ctx) -> str:
+    """Bürgergeld became Grundsicherungsgeld on 1 July 2026 (SGB II reform)."""
+    return "Grundsicherungsgeld" if ctx.letter_date >= REFORM_DATE else "Bürgergeld"
+
+
+def jobcenter_approval(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    city = r.pick(["Bochum", "Dortmund", "Essen", "Gelsenkirchen", "Herne"])
+    sender = f"Jobcenter {city}"
+    bg = f"{r.digits(5)}BG{r.digits(7)}"
+    monthly = r.amount(560, 1900)
+    start = (ctx.letter_date.replace(day=1) + timedelta(days=32)).replace(day=1)
+    end = (start + timedelta(days=180)).replace(day=1) - timedelta(days=1)
+    rel = r.pick(RELATIVE_OBJECTION)
+    lines = _header(
