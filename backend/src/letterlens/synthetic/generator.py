@@ -422,3 +422,36 @@ def insurance_arrears(ctx: Ctx) -> Built:
         "Zahlungserinnerung - Beitragsrückstand",
         "",
         f"Für Ihre freiwillige Versicherung besteht ein Rückstand von {ctx.m(principal)}.",
+        f"Zusätzlich wurden Säumniszuschläge von {ctx.m(fee)} berechnet.",
+        f"Bitte zahlen Sie insgesamt {ctx.m(total)} bis zum {ctx.d(due)}.",
+        "Bei weiterem Zahlungsverzug ruht Ihr Leistungsanspruch teilweise.",
+        "Haben Sie Fragen? Rufen Sie uns an.",
+    ]
+    return lines, sender, {"Versichertennummer": kvnr}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], [
+        AmountLabel(str(principal), "to_pay"),
+        AmountLabel(str(fee), "to_pay"),
+        AmountLabel(str(total), "to_pay"),
+    ]
+
+
+def insurance_questionnaire(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(INSURERS)
+    kvnr = f"{r.pick(['B', 'E', 'S'])}{r.digits(9)}"
+    due = working_after(ctx.letter_date, r.pick([21, 28]))
+    lines = _header(ctx, [sender, "Mitgliederservice"], [f"Versichertennummer {kvnr}"])
+    lines += [
+        "Fragebogen zur Familienversicherung",
+        "",
+        "wir prüfen regelmäßig, ob die Voraussetzungen der Familienversicherung",
+        "noch vorliegen. Bitte füllen Sie den beigefügten Fragebogen aus und",
+        f"senden Sie ihn bis zum {ctx.d(due)} zurück.",
+        "Ohne Ihre Angaben können wir die Familienversicherung nicht fortführen.",
+    ]
+    return lines, sender, {"Versichertennummer": kvnr}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], []
+
+
