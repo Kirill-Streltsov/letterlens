@@ -298,3 +298,24 @@ def jobcenter_approval(ctx: Ctx) -> Built:
     end = (start + timedelta(days=180)).replace(day=1) - timedelta(days=1)
     rel = r.pick(RELATIVE_OBJECTION)
     lines = _header(
+        ctx,
+        [sender, f"{r.pick(STREETS)} {r.r.randint(1, 90)}"],
+        [f"BG-Nummer: {bg}", f"Kundennummer: {r.digits(3)}D{r.digits(6)}"],
+    )
+    lines += [
+        "Bescheid über die Bewilligung von Leistungen zur Sicherung des Lebensunterhalts",
+        f"({benefit_name(ctx)})",
+        "",
+        f"für die Zeit vom {ctx.d(start)} bis {ctx.d(end)} werden Ihnen Leistungen bewilligt.",
+        f"Monatlicher Gesamtbetrag: {ctx.m(monthly)}",
+        "Änderungen in Ihren Verhältnissen müssen Sie unverzüglich mitteilen.",
+        "",
+        "Rechtsbehelfsbelehrung",
+        f"Gegen diesen Bescheid kann {rel} Widerspruch erhoben werden.",
+        f"Der Widerspruch ist schriftlich oder zur Niederschrift beim Jobcenter {city} einzulegen.",
+    ]
+    return lines, sender, {"BG-Nummer": bg}, [
+        DeadlineLabel("relative", relative_expression=rel)
+    ], [AmountLabel(str(monthly), "to_receive")]
+
+
