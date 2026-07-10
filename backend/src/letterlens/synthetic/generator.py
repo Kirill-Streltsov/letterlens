@@ -526,3 +526,24 @@ def immigration_hearing(ctx: Ctx) -> Built:
     ], []
 
 
+def immigration_fiction(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    city = r.pick(["Gelsenkirchen", "Mülheim an der Ruhr", "Bochum"])
+    sender = f"Ausländerbehörde {city}"
+    az = f"{r.digits(3)}-{r.digits(6)}"
+    due = working_after(ctx.letter_date, r.pick([14, 28]))
+    lines = _header(ctx, [sender, "Abteilung Aufenthalt"], [f"Aktenzeichen {az}"])
+    lines += [
+        "Ihr Antrag auf Verlängerung des Aufenthaltstitels",
+        "",
+        "Ihr Antrag ist bei uns eingegangen. Bis zur Entscheidung gilt Ihr bisheriger",
+        "Aufenthaltstitel als fortbestehend (Fiktionsbescheinigung nach § 81 Abs. 4 AufenthG).",
+        f"Für die Bearbeitung fehlen noch Unterlagen. Bitte reichen Sie diese bis {ctx.d(due)} ein:",
+        "- Arbeitsvertrag und letzte drei Gehaltsabrechnungen",
+        "- Nachweis über ausreichenden Wohnraum",
+    ]
+    return lines, sender, {"Aktenzeichen": az}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], []
+
+
