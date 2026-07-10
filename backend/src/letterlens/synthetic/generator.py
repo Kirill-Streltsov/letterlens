@@ -497,3 +497,32 @@ def immigration_appointment(ctx: Ctx) -> Built:
         f"Ihre Aufenthaltserlaubnis ist gültig bis {ctx.d(expiry)}.",
         f"Ihr Termin: {ctx.d(appt)}, {time} Uhr.",
         "Bitte bringen Sie mit: Reisepass, biometrisches Foto, Nachweis über Einkommen,",
+        "Mietvertrag und Nachweis der Krankenversicherung.",
+        f"Die Gebühr beträgt voraussichtlich {ctx.m(fee)}.",
+        "Bitte sagen Sie den Termin ab, wenn Sie ihn nicht wahrnehmen können.",
+    ]
+    return lines, sender, {"Aktenzeichen": az}, [
+        DeadlineLabel("appointment", date=appt.isoformat())
+    ], [AmountLabel(str(fee), "to_pay")]
+
+
+def immigration_hearing(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(["Kreis Recklinghausen - Ausländeramt", "Stadt Herne - Ausländerbehörde"])
+    az = f"AB-{r.digits(4)}/{ctx.letter_date.year}"
+    due = working_after(ctx.letter_date, r.pick([14, 21]))
+    lines = _header(ctx, [sender, "Fachbereich Ordnung"], [f"Az.: {az}"])
+    lines += [
+        "Anhörung nach § 28 Verwaltungsverfahrensgesetz",
+        "",
+        "wir beabsichtigen, Ihren Antrag auf Erteilung einer Niederlassungserlaubnis",
+        "abzulehnen, weil der Nachweis ausreichender Deutschkenntnisse fehlt.",
+        f"Sie haben Gelegenheit, sich bis zum {ctx.d(due)} schriftlich zu äußern.",
+        "Sie können auch fehlende Nachweise einreichen.",
+        "Nach Ablauf der Frist entscheiden wir nach Aktenlage.",
+    ]
+    return lines, sender, {"Aktenzeichen": az}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], []
+
+
