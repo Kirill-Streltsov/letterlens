@@ -572,3 +572,22 @@ def landlord_utility_statement(ctx: Ctx) -> Built:
         "",
         "anbei erhalten Sie die Abrechnung der Betriebskosten.",
     ]
+    deadlines: list[DeadlineLabel] = []
+    if refund:
+        lines.append(f"Es ergibt sich ein Guthaben von {ctx.m(balance)}.")
+        lines.append("Das Guthaben wird mit der nächsten Miete verrechnet.")
+        amounts = [AmountLabel(str(balance), "to_receive")]
+    else:
+        rel = r.pick(["innerhalb von 30 Tagen nach Erhalt", "binnen 30 Tagen nach Erhalt"])
+        lines.append(f"Es ergibt sich eine Nachzahlung von {ctx.m(balance)}.")
+        lines.append(f"Bitte überweisen Sie den Betrag {rel} dieser Abrechnung.")
+        amounts = [AmountLabel(str(balance), "to_pay")]
+        deadlines.append(DeadlineLabel("relative", relative_expression=rel))
+    lines += [
+        f"Ab dem {ctx.d(start)} beträgt Ihre monatliche Vorauszahlung {ctx.m(advance)}.",
+        "Belege können Sie nach Terminvereinbarung bei uns einsehen.",
+    ]
+    amounts.append(AmountLabel(str(advance), "info"))
+    return lines, sender, {"Mietobjekt-Nr.": unit}, deadlines, amounts
+
+
