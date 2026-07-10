@@ -547,3 +547,28 @@ def immigration_fiction(ctx: Ctx) -> Built:
     ], []
 
 
+# --------------------------------------------------------------------------
+# Templates: LANDLORD
+# --------------------------------------------------------------------------
+
+LANDLORDS = [
+    "Wohnbau Ruhr GmbH", "Revier Wohnen eG", "Hausverwaltung Schmitz & Partner",
+    "Emscher Immobilien GmbH", "Stadtteil Wohnungsgenossenschaft eG",
+]  # fmt: skip
+
+
+def landlord_utility_statement(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(LANDLORDS)
+    unit = f"{r.digits(4)}-{r.digits(3)}"
+    year = ctx.letter_date.year - 1
+    balance = r.amount(40, 980)
+    refund = r.r.random() < 0.3
+    advance = r.amount(120, 340)
+    start = (ctx.letter_date.replace(day=1) + timedelta(days=32)).replace(day=1)
+    lines = _header(ctx, [sender, "Abteilung Betriebskosten"], [f"Mietobjekt-Nr.: {unit}"])
+    lines += [
+        f"Betriebskostenabrechnung für den Zeitraum 01.01.{year} bis 31.12.{year}",
+        "",
+        "anbei erhalten Sie die Abrechnung der Betriebskosten.",
+    ]
