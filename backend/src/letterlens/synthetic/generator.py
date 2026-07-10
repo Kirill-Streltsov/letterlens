@@ -476,3 +476,24 @@ def insurance_rejection(ctx: Ctx) -> Built:
     ], []
 
 
+# --------------------------------------------------------------------------
+# Templates: IMMIGRATION
+# --------------------------------------------------------------------------
+
+
+def immigration_appointment(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    city = r.pick(["Bochum", "Dortmund", "Essen", "Duisburg"])
+    sender = f"Stadt {city} - Ausländerbehörde"
+    az = f"{r.digits(2)}.{r.digits(2)}-{r.digits(5)}"
+    appt = working_after(ctx.letter_date, r.pick([9, 15, 20]))
+    time = r.pick(["08:00", "09:40", "10:20", "14:00"])
+    expiry = ctx.letter_date + timedelta(days=r.r.randint(20, 60))
+    fee = r.pick([Decimal("93.00"), Decimal("98.00"), Decimal("100.00")])
+    lines = _header(ctx, [sender, "Bürgerservice Migration"], [f"Aktenzeichen: {az}"])
+    lines += [
+        "Terminbestätigung zur Verlängerung Ihrer Aufenthaltserlaubnis",
+        "",
+        f"Ihre Aufenthaltserlaubnis ist gültig bis {ctx.d(expiry)}.",
+        f"Ihr Termin: {ctx.d(appt)}, {time} Uhr.",
+        "Bitte bringen Sie mit: Reisepass, biometrisches Foto, Nachweis über Einkommen,",
