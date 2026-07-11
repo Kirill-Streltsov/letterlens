@@ -747,3 +747,28 @@ TEMPLATES: dict[LetterType, dict[str, Template]] = {
 _OCR_SWAPS = [("ü", "u"), ("ö", "o"), ("ä", "a"), ("ß", "ss"), ("l", "I"), ("rn", "m")]
 
 
+def add_ocr_noise(lines: list[str], rnd: Rand, rate: float) -> list[str]:
+    """Simulate typical OCR errors. Digits are never changed, so labels stay valid."""
+    noisy = []
+    for line in lines:
+        if line and rnd.r.random() < rate:
+            src, dst = rnd.pick(_OCR_SWAPS)
+            line = line.replace(src, dst, 1)
+        noisy.append(line)
+    return noisy
+
+
+def generate(
+    letter_type: LetterType, template_id: str, seed: int, noise: float = 0.0
+) -> SyntheticLetter:
+    rnd = Rand(seed)
+    ctx = Ctx(
+        rnd=rnd,
+        letter_date=rnd.letter_date(),
+        recipient=rnd.address(),
+        date_style=rnd.pick([0, 0, 0, 1]),
+        money_style=rnd.pick([0, 0, 1]),
+    )
+    lines, sender, refs, deadlines, amounts = TEMPLATES[letter_type][template_id](ctx)
+    if noise:
+        lines = add_ocr_noise(lines, rnd, noise)
