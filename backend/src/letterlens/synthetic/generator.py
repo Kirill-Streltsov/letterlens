@@ -772,3 +772,28 @@ def generate(
     lines, sender, refs, deadlines, amounts = TEMPLATES[letter_type][template_id](ctx)
     if noise:
         lines = add_ocr_noise(lines, rnd, noise)
+    return SyntheticLetter(
+        id=f"{template_id}-{seed}",
+        letter_type=letter_type.value,
+        template_id=template_id,
+        lines=[line for line in lines],
+        sender=sender,
+        letter_date=ctx.letter_date.isoformat(),
+        references=refs,
+        deadlines=deadlines,
+        amounts=amounts,
+    )
+
+
+def generate_corpus(n_per_template: int, seed: int = 7, noise: float = 0.0) -> list[SyntheticLetter]:
+    letters = []
+    for letter_type, templates in TEMPLATES.items():
+        for i, template_id in enumerate(templates):
+            for k in range(n_per_template):
+                letter_seed = seed * 1_000_003 + i * 10_007 + k * 101 + hash_type(letter_type)
+                letters.append(generate(letter_type, template_id, letter_seed, noise))
+    return letters
+
+
+def hash_type(letter_type: LetterType) -> int:
+    return sum(ord(c) for c in letter_type.value) * 7919
