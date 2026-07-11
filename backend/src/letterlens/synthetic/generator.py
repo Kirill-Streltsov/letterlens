@@ -722,3 +722,28 @@ TEMPLATES: dict[LetterType, dict[str, Template]] = {
         "jobcenter_invitation": jobcenter_invitation,
         "familienkasse_refund": familienkasse_refund,
     },
+    LetterType.HEALTH_INSURANCE: {
+        "insurance_arrears": insurance_arrears,
+        "insurance_questionnaire": insurance_questionnaire,
+        "insurance_rejection": insurance_rejection,
+    },
+    LetterType.IMMIGRATION: {
+        "immigration_appointment": immigration_appointment,
+        "immigration_hearing": immigration_hearing,
+        "immigration_fiction": immigration_fiction,
+    },
+    LetterType.LANDLORD: {
+        "landlord_utility_statement": landlord_utility_statement,
+        "landlord_rent_increase": landlord_rent_increase,
+        "landlord_reminder": landlord_reminder,
+    },
+    LetterType.OTHER: {
+        "broadcast_fee": broadcast_fee,
+        "collection_agency": collection_agency,
+        "utility_installment": utility_installment,
+    },
+}
+
+_OCR_SWAPS = [("ü", "u"), ("ö", "o"), ("ä", "a"), ("ß", "ss"), ("l", "I"), ("rn", "m")]
+
+
