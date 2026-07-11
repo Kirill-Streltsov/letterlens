@@ -704,3 +704,21 @@ def utility_installment(ctx: Ctx) -> Built:
     return lines, sender, {"Kundennummer": customer}, [], [AmountLabel(str(new), "info")]
 
 
+# --------------------------------------------------------------------------
+# Registry and noise
+# --------------------------------------------------------------------------
+
+Template = Callable[[Ctx], Built]
+
+TEMPLATES: dict[LetterType, dict[str, Template]] = {
+    LetterType.TAX: {
+        "tax_assessment": tax_assessment,
+        "tax_reminder": tax_reminder,
+        "tax_arrears": tax_arrears,
+    },
+    LetterType.BENEFITS: {
+        "jobcenter_approval": jobcenter_approval,
+        "jobcenter_documents": jobcenter_documents,
+        "jobcenter_invitation": jobcenter_invitation,
+        "familienkasse_refund": familienkasse_refund,
+    },
