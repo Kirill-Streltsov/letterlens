@@ -672,3 +672,35 @@ def collection_agency(ctx: Ctx) -> Built:
     lines += [
         "Zahlungsaufforderung im Auftrag unserer Mandantin",
         "",
+        f"Hauptforderung: {ctx.m(claim)}",
+        f"Inkassokosten: {ctx.m(costs)}",
+        f"Gesamtforderung: {ctx.m(total)}",
+        f"Zahlen Sie den Gesamtbetrag bis zum {ctx.d(due)}.",
+        "Prüfen Sie die Forderung. Bei Fragen wenden Sie sich an uns.",
+    ]
+    return lines, sender, {"Unser Zeichen": case}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], [
+        AmountLabel(str(claim), "to_pay"),
+        AmountLabel(str(costs), "to_pay"),
+        AmountLabel(str(total), "to_pay"),
+    ]
+
+
+def utility_installment(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(["Stadtwerke Bochum", "DEW21 Dortmund", "Stadtwerke Essen"])
+    customer = r.digits(9)
+    new = r.amount(45, 160)
+    start = (ctx.letter_date.replace(day=1) + timedelta(days=32)).replace(day=1)
+    lines = _header(ctx, [sender, "Kundenservice"], [f"Kundennummer: {customer}"])
+    lines += [
+        "Anpassung Ihres monatlichen Abschlags",
+        "",
+        f"ab dem {ctx.d(start)} beträgt Ihr Abschlag für Strom {ctx.m(new)}.",
+        "Der Betrag wird wie gewohnt per Lastschrift eingezogen.",
+        "Sie müssen nichts weiter tun.",
+    ]
+    return lines, sender, {"Kundennummer": customer}, [], [AmountLabel(str(new), "info")]
+
+
