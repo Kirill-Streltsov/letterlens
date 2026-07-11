@@ -641,3 +641,34 @@ def landlord_reminder(ctx: Ctx) -> Built:
 # --------------------------------------------------------------------------
 
 
+def broadcast_fee(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = "ARD ZDF Deutschlandradio Beitragsservice"
+    nr = f"{r.digits(3)} {r.digits(3)} {r.digits(3)}"
+    amount = r.pick([Decimal("55.08"), Decimal("110.16"), Decimal("165.24")])
+    due = working_after(ctx.letter_date, 14)
+    lines = _header(ctx, [sender, "50656 Köln"], [f"Beitragsnummer: {nr}"])
+    lines += [
+        "Zahlungsaufforderung",
+        "",
+        f"für Ihre Wohnung sind Rundfunkbeiträge in Höhe von {ctx.m(amount)} offen.",
+        f"Bitte überweisen Sie den Betrag bis zum {ctx.d(due)}.",
+        "Unter bestimmten Voraussetzungen ist eine Befreiung möglich.",
+    ]
+    return lines, sender, {"Beitragsnummer": nr}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], [AmountLabel(str(amount), "to_pay")]
+
+
+def collection_agency(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(["Inkasso Westfalen GmbH", "Rhein-Ruhr Forderungsmanagement GmbH"])
+    case = f"IK-{r.digits(7)}"
+    claim = r.amount(40, 600)
+    costs = r.amount(15, 90)
+    total = claim + costs
+    due = working_after(ctx.letter_date, r.pick([7, 10, 14]))
+    lines = _header(ctx, [sender, "Forderungsabteilung"], [f"Unser Zeichen: {case}"])
+    lines += [
+        "Zahlungsaufforderung im Auftrag unserer Mandantin",
+        "",
