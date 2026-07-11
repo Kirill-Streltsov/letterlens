@@ -591,3 +591,28 @@ def landlord_utility_statement(ctx: Ctx) -> Built:
     return lines, sender, {"Mietobjekt-Nr.": unit}, deadlines, amounts
 
 
+def landlord_rent_increase(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(LANDLORDS)
+    unit = f"{r.digits(4)}-{r.digits(3)}"
+    old = r.amount(380, 820)
+    new = old + Decimal(r.r.randint(20, 90))
+    # Consent period: until the end of the second calendar month after receipt.
+    third_month = ctx.letter_date.replace(day=1) + timedelta(days=95)
+    consent = third_month.replace(day=1) - timedelta(days=1)
+    effective = consent + timedelta(days=1)
+    lines = _header(ctx, [sender, "Vermietung"], [f"Mieternummer: {unit}"])
+    lines += [
+        "Mieterhöhungsverlangen nach § 558 BGB",
+        "",
+        f"Ihre derzeitige Nettokaltmiete beträgt {ctx.m(old)}.",
+        "Unter Bezug auf den Mietspiegel bitten wir um Zustimmung zur Erhöhung",
+        f"auf {ctx.m(new)} ab dem {ctx.d(effective)}.",
+        f"Bitte erteilen Sie Ihre Zustimmung bis zum {ctx.d(consent)}.",
+        "Den Mietspiegel und die Berechnung finden Sie in der Anlage.",
+    ]
+    return lines, sender, {"Mieternummer": unit}, [
+        DeadlineLabel("explicit_date", date=consent.isoformat())
+    ], [AmountLabel(str(old), "info"), AmountLabel(str(new), "to_pay")]
+
+
