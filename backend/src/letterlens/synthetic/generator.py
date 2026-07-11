@@ -616,3 +616,28 @@ def landlord_rent_increase(ctx: Ctx) -> Built:
     ], [AmountLabel(str(old), "info"), AmountLabel(str(new), "to_pay")]
 
 
+def landlord_reminder(ctx: Ctx) -> Built:
+    r = ctx.rnd
+    sender = r.pick(LANDLORDS)
+    unit = f"{r.digits(4)}-{r.digits(3)}"
+    arrears = r.amount(300, 1800)
+    due = working_after(ctx.letter_date, r.pick([7, 10]))
+    lines = _header(ctx, [sender, "Mietenbuchhaltung"], [f"Vertragsnummer {unit}"])
+    lines += [
+        r.pick(["Mahnung - Mietrückstand", "Zahlungserinnerung Miete"]),
+        "",
+        f"auf Ihrem Mietkonto besteht ein Rückstand von {ctx.m(arrears)}.",
+        f"Bitte gleichen Sie den Rückstand bis spätestens {ctx.d(due)} aus.",
+        "Bei weiterem Zahlungsverzug behalten wir uns rechtliche Schritte vor.",
+        "Wenn Sie Schwierigkeiten haben, sprechen Sie uns bitte an.",
+    ]
+    return lines, sender, {"Vertragsnummer": unit}, [
+        DeadlineLabel("explicit_date", date=due.isoformat())
+    ], [AmountLabel(str(arrears), "to_pay")]
+
+
+# --------------------------------------------------------------------------
+# Templates: OTHER
+# --------------------------------------------------------------------------
+
+
