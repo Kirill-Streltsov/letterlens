@@ -1,0 +1,19 @@
+# Local development services. Production uses Neon (PostgreSQL) and AWS.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: letterlens
+      POSTGRES_USER: letterlens_owner
+      POSTGRES_PASSWORD: letterlens_owner
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U letterlens_owner -d letterlens"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+volumes:
+  pgdata:
