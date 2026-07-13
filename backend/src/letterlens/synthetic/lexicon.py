@@ -64,3 +64,22 @@ LEXICON: dict[LetterType, list[str]] = {
     ],
 }  # fmt: skip
 
+NEUTRAL = [
+    "Sehr geehrte Damen und Herren,", "Mit freundlichen Grüßen", "Bitte beachten Sie",
+    "Datum", "Seite 1 von 2", "Anlage", "Bei Rückfragen erreichen Sie uns", "Ihr Zeichen",
+    "Bitte bewahren Sie dieses Schreiben auf", "Im Auftrag", "Öffnungszeiten",
+    "Bitte geben Sie bei Zahlungen immer an", "Bankverbindung", "Telefon", "E-Mail",
+    "wir möchten Sie informieren", "vielen Dank für Ihr Schreiben", "bis zum",
+]  # fmt: skip
+
+
+def lexicon_documents(per_type: int, seed: int) -> list[tuple[str, str]]:
+    rnd = random.Random(seed)
+    docs: list[tuple[str, str]] = []
+    for letter_type, phrases in LEXICON.items():
+        for _ in range(per_type):
+            k = rnd.randint(4, 10)
+            parts = rnd.sample(phrases, k) + rnd.sample(NEUTRAL, rnd.randint(3, 8))
+            rnd.shuffle(parts)
+            docs.append(("\n".join(parts), letter_type.value))
+    return docs
