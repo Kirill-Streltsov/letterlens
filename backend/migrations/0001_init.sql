@@ -225,3 +225,35 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO letterlens_app;
 -- Row-level security
 -- ---------------------------------------------------------------------------
 
+ALTER TABLE users            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_keys        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenants          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE memberships      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenant_invites   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE letters          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shares           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE llm_calls        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE usage_counters   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rate_limits      ENABLE ROW LEVEL SECURITY;
+ALTER TABLE idempotency_keys ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE billing_events   ENABLE ROW LEVEL SECURITY;
+
+-- A share is "active" when it is not revoked and not expired.
+CREATE OR REPLACE FUNCTION share_is_active(s shares) RETURNS boolean
+LANGUAGE sql STABLE AS $$
+    SELECT s.revoked_at IS NULL AND s.expires_at > now()
+$$;
+
+CREATE POLICY users_self ON users
+    USING (id = app_user_id() OR app_is_system())
+    WITH CHECK (id = app_user_id() OR app_is_system());
+
+-- Counsellors see the display name of clients who shared a letter with them.
+CREATE POLICY users_counsellor_read ON users FOR SELECT
+    USING (EXISTS (
+        SELECT 1 FROM shares s
+        WHERE s.owner_id = users.id AND s.tenant_id = ANY (app_tenant_ids()) AND share_is_active(s)
+    ));
+
