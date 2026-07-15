@@ -180,3 +180,30 @@ CREATE TABLE rate_limits (
     PRIMARY KEY (key, window_start)
 );
 
+CREATE TABLE idempotency_keys (
+    user_id    uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    key        text NOT NULL,
+    response   jsonb NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id, key)
+);
+
+CREATE TABLE audit_log (
+    id          bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    at          timestamptz NOT NULL DEFAULT now(),
+    actor_id    uuid,
+    tenant_id   uuid,
+    action      text NOT NULL,
+    target_type text NOT NULL,
+    target_id   text NOT NULL,
+    details     jsonb NOT NULL DEFAULT '{}'::jsonb
+);
+CREATE INDEX audit_log_tenant ON audit_log (tenant_id, at DESC);
+
+CREATE TABLE billing_events (
+    provider    text NOT NULL,
+    event_id    text NOT NULL,
+    received_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (provider, event_id)
+);
+
