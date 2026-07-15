@@ -207,3 +207,21 @@ CREATE TABLE billing_events (
     PRIMARY KEY (provider, event_id)
 );
 
+-- ---------------------------------------------------------------------------
+-- Grants
+-- ---------------------------------------------------------------------------
+
+GRANT USAGE ON SCHEMA public TO letterlens_app;
+GRANT SELECT, INSERT, UPDATE, DELETE ON
+    users, user_keys, tenants, memberships, tenant_invites, letters, shares, messages,
+    usage_counters, rate_limits, idempotency_keys, billing_events
+TO letterlens_app;
+GRANT SELECT, INSERT ON llm_calls TO letterlens_app;
+-- The audit log is append-only for the application.
+GRANT SELECT, INSERT ON audit_log TO letterlens_app;
+GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO letterlens_app;
+
+-- ---------------------------------------------------------------------------
+-- Row-level security
+-- ---------------------------------------------------------------------------
+
