@@ -25,3 +25,32 @@ LANGUAGE sql STABLE AS $$
     SELECT nullif(current_setting('app.user_id', true), '')::uuid
 $$;
 
+CREATE OR REPLACE FUNCTION app_tenant_ids() RETURNS uuid[]
+LANGUAGE sql STABLE AS $$
+    SELECT coalesce(
+        string_to_array(nullif(current_setting('app.tenant_ids', true), ''), ',')::uuid[],
+        '{}'::uuid[]
+    )
+$$;
+
+CREATE OR REPLACE FUNCTION app_is_system() RETURNS boolean
+LANGUAGE sql STABLE AS $$
+    SELECT coalesce(current_setting('app.system', true), '') = 'on'
+$$;
+
+-- ---------------------------------------------------------------------------
+-- Identity and tenants
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE users (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    cognito_sub        text NOT NULL UNIQUE,
+    display_name       text,
+    preferred_language text NOT NULL DEFAULT 'en',
+    plan               text NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'plus')),
+    plan_source        text CHECK (plan_source IN ('appstore', 'stripe', 'employer', 'pilot')),
+    plan_expires_at    timestamptz,
+    stripe_customer_id text,
+    created_at         timestamptz NOT NULL DEFAULT now()
+);
+
