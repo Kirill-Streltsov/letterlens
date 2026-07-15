@@ -131,3 +131,26 @@ CREATE TABLE shares (
 );
 CREATE INDEX shares_tenant_status ON shares (tenant_id, case_status, created_at DESC);
 
+CREATE TABLE messages (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    share_id    uuid NOT NULL REFERENCES shares (id) ON DELETE CASCADE,
+    author_id   uuid REFERENCES users (id) ON DELETE SET NULL,
+    author_role text NOT NULL CHECK (author_role IN ('client', 'counsellor')),
+    body        bytea NOT NULL,            -- encrypted {text, translations}
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX messages_share ON messages (share_id, created_at);
+
+-- ---------------------------------------------------------------------------
+-- Operations: cost ledger, quotas, rate limits, idempotency, audit, billing
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE llm_calls (
+    id             bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    created_at     timestamptz NOT NULL DEFAULT now(),
+    task           text NOT NULL,
+    provider       text NOT NULL,
+    model          text NOT NULL,
+    prompt_version text NOT NULL,
+    input_tokens   int NOT NULL,
+    output_tokens  int NOT NULL,
