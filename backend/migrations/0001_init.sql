@@ -97,3 +97,37 @@ CREATE TABLE tenant_invites (
 -- Letters, shares and messages
 -- ---------------------------------------------------------------------------
 
+CREATE TABLE letters (
+    id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    owner_id    uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    status      text NOT NULL CHECK (status IN ('received', 'processing', 'ready', 'failed')),
+    letter_type text,
+    language    text NOT NULL,
+    state       bytea NOT NULL,            -- encrypted PipelineState
+    image_keys  text[] NOT NULL DEFAULT '{}',
+    degraded    boolean NOT NULL DEFAULT false,
+    error       text,
+    created_at  timestamptz NOT NULL DEFAULT now(),
+    updated_at  timestamptz NOT NULL DEFAULT now(),
+    expires_at  timestamptz NOT NULL
+);
+CREATE INDEX letters_owner_created ON letters (owner_id, created_at DESC);
+CREATE INDEX letters_expires ON letters (expires_at);
+
+CREATE TABLE shares (
+    id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    letter_id             uuid NOT NULL REFERENCES letters (id) ON DELETE CASCADE,
+    owner_id              uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    tenant_id             uuid NOT NULL REFERENCES tenants (id) ON DELETE CASCADE,
+    consent_text_version  text NOT NULL,
+    consented_at          timestamptz NOT NULL DEFAULT now(),
+    expires_at            timestamptz NOT NULL,
+    revoked_at            timestamptz,
+    case_status           text NOT NULL DEFAULT 'new' CHECK (case_status IN ('new', 'in_progress', 'closed')),
+    assigned_to           uuid REFERENCES users (id) ON DELETE SET NULL,
+    client_language       text NOT NULL,
+    created_at            timestamptz NOT NULL DEFAULT now(),
+    UNIQUE (letter_id, tenant_id)
+);
+CREATE INDEX shares_tenant_status ON shares (tenant_id, case_status, created_at DESC);
+
