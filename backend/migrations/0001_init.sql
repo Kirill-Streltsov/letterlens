@@ -75,3 +75,25 @@ CREATE TABLE tenants (
     created_at         timestamptz NOT NULL DEFAULT now()
 );
 
+CREATE TABLE memberships (
+    tenant_id  uuid NOT NULL REFERENCES tenants (id) ON DELETE CASCADE,
+    user_id    uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    role       text NOT NULL CHECK (role IN ('counsellor', 'admin', 'employee')),
+    created_at timestamptz NOT NULL DEFAULT now(),
+    PRIMARY KEY (tenant_id, user_id)
+);
+
+CREATE TABLE tenant_invites (
+    code_hash  text PRIMARY KEY,
+    tenant_id  uuid NOT NULL REFERENCES tenants (id) ON DELETE CASCADE,
+    role       text NOT NULL CHECK (role IN ('counsellor', 'admin', 'employee')),
+    created_by uuid REFERENCES users (id) ON DELETE SET NULL,
+    expires_at timestamptz NOT NULL,
+    used_by    uuid REFERENCES users (id) ON DELETE SET NULL,
+    used_at    timestamptz
+);
+
+-- ---------------------------------------------------------------------------
+-- Letters, shares and messages
+-- ---------------------------------------------------------------------------
+
