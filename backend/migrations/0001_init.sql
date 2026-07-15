@@ -54,3 +54,24 @@ CREATE TABLE users (
     created_at         timestamptz NOT NULL DEFAULT now()
 );
 
+-- Wrapped per-user data encryption key. Deleting the row crypto-shreds all
+-- ciphertext of that user, including backups.
+CREATE TABLE user_keys (
+    user_id     uuid PRIMARY KEY REFERENCES users (id) ON DELETE CASCADE,
+    wrapped_dek bytea NOT NULL,
+    kek_version int NOT NULL,
+    created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE tenants (
+    id                 uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    name               text NOT NULL,
+    kind               text NOT NULL CHECK (kind IN ('counselling', 'employer')),
+    city               text,
+    languages          text[] NOT NULL DEFAULT '{}',
+    public_listing     boolean NOT NULL DEFAULT false,
+    seats              int NOT NULL DEFAULT 0 CHECK (seats >= 0),
+    stripe_customer_id text,
+    created_at         timestamptz NOT NULL DEFAULT now()
+);
+
