@@ -154,3 +154,29 @@ CREATE TABLE llm_calls (
     prompt_version text NOT NULL,
     input_tokens   int NOT NULL,
     output_tokens  int NOT NULL,
+    list_price_usd numeric(12, 6) NOT NULL,
+    latency_ms     int NOT NULL,
+    attempts       int NOT NULL,
+    fallback_used  boolean NOT NULL,
+    ok             boolean NOT NULL,
+    error          text,
+    user_id        uuid,                   -- no FK: the ledger outlives deleted users
+    letter_id      uuid
+);
+CREATE INDEX llm_calls_created ON llm_calls (created_at);
+CREATE INDEX llm_calls_user_day ON llm_calls (user_id, created_at);
+
+CREATE TABLE usage_counters (
+    user_id uuid NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    period  text NOT NULL,                 -- YYYY-MM
+    letters int NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, period)
+);
+
+CREATE TABLE rate_limits (
+    key          text NOT NULL,
+    window_start timestamptz NOT NULL,
+    count        int NOT NULL,
+    PRIMARY KEY (key, window_start)
+);
+
