@@ -307,3 +307,32 @@ CREATE POLICY shares_owner ON shares
 CREATE POLICY shares_tenant_read ON shares FOR SELECT
     USING (tenant_id = ANY (app_tenant_ids()) AND share_is_active(shares));
 
+CREATE POLICY shares_tenant_update ON shares FOR UPDATE
+    USING (tenant_id = ANY (app_tenant_ids()) AND share_is_active(shares))
+    WITH CHECK (tenant_id = ANY (app_tenant_ids()));
+
+CREATE POLICY messages_participants ON messages
+    USING (app_is_system() OR EXISTS (
+        SELECT 1 FROM shares s
+        WHERE s.id = messages.share_id
+          AND (s.owner_id = app_user_id()
+               OR (s.tenant_id = ANY (app_tenant_ids()) AND share_is_active(s)))))
+    WITH CHECK (app_is_system() OR EXISTS (
+        SELECT 1 FROM shares s
+        WHERE s.id = messages.share_id
+          AND (s.owner_id = app_user_id()
+               OR (s.tenant_id = ANY (app_tenant_ids()) AND share_is_active(s)))));
+
+CREATE POLICY llm_calls_insert ON llm_calls FOR INSERT WITH CHECK (true);
+CREATE POLICY llm_calls_read ON llm_calls FOR SELECT
+    USING (app_is_system() OR user_id = app_user_id());
+
+CREATE POLICY usage_owner ON usage_counters
+    USING (user_id = app_user_id() OR app_is_system())
+    WITH CHECK (user_id = app_user_id() OR app_is_system());
+
+-- Rate-limit keys start with the user id; anonymous keys need the system context.
+CREATE POLICY rate_limits_owner ON rate_limits
+    USING (app_is_system() OR key LIKE app_user_id()::text || ':%')
+    WITH CHECK (app_is_system() OR key LIKE app_user_id()::text || ':%');
+
