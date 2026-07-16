@@ -257,3 +257,31 @@ CREATE POLICY users_counsellor_read ON users FOR SELECT
         WHERE s.owner_id = users.id AND s.tenant_id = ANY (app_tenant_ids()) AND share_is_active(s)
     ));
 
+CREATE POLICY user_keys_owner ON user_keys
+    USING (user_id = app_user_id() OR app_is_system())
+    WITH CHECK (user_id = app_user_id() OR app_is_system());
+
+-- Counsellors need the owner's key to decrypt a shared letter. Reading the
+-- wrapped key is useless without the KEK, which only the service holds.
+CREATE POLICY user_keys_shared_read ON user_keys FOR SELECT
+    USING (EXISTS (
+        SELECT 1 FROM shares s
+        WHERE s.owner_id = user_keys.user_id AND s.tenant_id = ANY (app_tenant_ids())
+          AND share_is_active(s)
+    ));
+
+CREATE POLICY tenants_read ON tenants FOR SELECT
+    USING (public_listing OR id = ANY (app_tenant_ids()) OR app_is_system());
+CREATE POLICY tenants_admin_write ON tenants FOR UPDATE
+    USING (app_is_system() OR EXISTS (
+        SELECT 1 FROM memberships m
+        WHERE m.tenant_id = tenants.id AND m.user_id = app_user_id() AND m.role = 'admin'))
+    WITH CHECK (true);
+CREATE POLICY tenants_system_insert ON tenants FOR INSERT WITH CHECK (app_is_system());
+CREATE POLICY tenants_system_delete ON tenants FOR DELETE USING (app_is_system());
+
+CREATE POLICY memberships_read ON memberships FOR SELECT
+    USING (user_id = app_user_id() OR tenant_id = ANY (app_tenant_ids()) OR app_is_system());
+CREATE POLICY memberships_system_write ON memberships FOR ALL
+    USING (app_is_system()) WITH CHECK (app_is_system());
+
