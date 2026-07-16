@@ -285,3 +285,25 @@ CREATE POLICY memberships_read ON memberships FOR SELECT
 CREATE POLICY memberships_system_write ON memberships FOR ALL
     USING (app_is_system()) WITH CHECK (app_is_system());
 
+CREATE POLICY invites_tenant ON tenant_invites
+    USING (tenant_id = ANY (app_tenant_ids()) OR app_is_system())
+    WITH CHECK (tenant_id = ANY (app_tenant_ids()) OR app_is_system());
+
+CREATE POLICY letters_owner ON letters
+    USING (owner_id = app_user_id() OR app_is_system())
+    WITH CHECK (owner_id = app_user_id() OR app_is_system());
+
+CREATE POLICY letters_shared_read ON letters FOR SELECT
+    USING (EXISTS (
+        SELECT 1 FROM shares s
+        WHERE s.letter_id = letters.id AND s.tenant_id = ANY (app_tenant_ids())
+          AND share_is_active(s)
+    ));
+
+CREATE POLICY shares_owner ON shares
+    USING (owner_id = app_user_id() OR app_is_system())
+    WITH CHECK (owner_id = app_user_id() OR app_is_system());
+
+CREATE POLICY shares_tenant_read ON shares FOR SELECT
+    USING (tenant_id = ANY (app_tenant_ids()) AND share_is_active(shares));
+
