@@ -336,3 +336,28 @@ CREATE POLICY rate_limits_owner ON rate_limits
     USING (app_is_system() OR key LIKE app_user_id()::text || ':%')
     WITH CHECK (app_is_system() OR key LIKE app_user_id()::text || ':%');
 
+CREATE POLICY idempotency_owner ON idempotency_keys
+    USING (user_id = app_user_id() OR app_is_system())
+    WITH CHECK (user_id = app_user_id() OR app_is_system());
+
+CREATE POLICY audit_insert ON audit_log FOR INSERT WITH CHECK (true);
+CREATE POLICY audit_read ON audit_log FOR SELECT
+    USING (app_is_system() OR actor_id = app_user_id() OR tenant_id = ANY (app_tenant_ids()));
+
+CREATE POLICY billing_events_system ON billing_events
+    USING (app_is_system()) WITH CHECK (app_is_system());
+
+-- Letters may only be shared with counselling services, never with employers.
+CREATE OR REPLACE FUNCTION shares_tenant_must_be_counselling() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM tenants t WHERE t.id = NEW.tenant_id AND t.kind = 'counselling') THEN
+        RAISE EXCEPTION 'letters can only be shared with counselling services'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END $$;
+
+CREATE TRIGGER shares_tenant_kind
+    BEFORE INSERT OR UPDATE OF tenant_id ON shares
+    FOR EACH ROW EXECUTE FUNCTION shares_tenant_must_be_counselling();
