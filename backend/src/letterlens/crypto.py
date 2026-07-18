@@ -78,3 +78,29 @@ def _load_kek(settings: Settings) -> Kek:
     return Kek(raw)
 
 
+@lru_cache(maxsize=1)
+def get_kek() -> Kek:
+    return _load_kek(get_settings())
+
+
+class DekCache:
+    """Short-lived in-process cache of unwrapped DEKs, to avoid unwrapping on every query."""
+
+    def __init__(self, ttl: float = _DEK_CACHE_SECONDS) -> None:
+        self.ttl = ttl
+        self._items: dict[str, tuple[float, bytes]] = {}
+
+    def get(self, user_id: str) -> bytes | None:
+        item = self._items.get(user_id)
+        if item is None or item[0] < time.monotonic():
+            self._items.pop(user_id, None)
+            return None
+        return item[1]
+
+    def put(self, user_id: str, dek: bytes) -> None:
+        if len(self._items) > 1000:
+            self._items.clear()
+        self._items[user_id] = (time.monotonic() + self.ttl, dek)
+
+    def drop(self, user_id: str) -> None:
+        self._items.pop(user_id, None)
