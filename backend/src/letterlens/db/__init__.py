@@ -41,3 +41,24 @@ class Database:
         )
         self._opened = False
 
+    def open(self) -> None:
+        if not self._opened:
+            self.pool.open(wait=True, timeout=15)
+            self._opened = True
+
+    def close(self) -> None:
+        if self._opened:
+            self.pool.close()
+            self._opened = False
+
+    @contextmanager
+    def session(self, ctx: DbContext) -> Iterator[Conn]:
+        self.open()
+        with self.pool.connection() as conn, conn.transaction():
+            conn.execute(
+                "SELECT set_config('app.user_id', %s, true),"
+                " set_config('app.tenant_ids', %s, true),"
+                " set_config('app.system', %s, true)",
+                (ctx.user_id or "", ",".join(ctx.tenant_ids), "on" if ctx.system else ""),
+            )
+            yield conn
