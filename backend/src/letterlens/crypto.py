@@ -48,3 +48,33 @@ def encrypt(key: bytes, plaintext: bytes, aad: str) -> bytes:
     return nonce + AESGCM(key).encrypt(nonce, plaintext, aad.encode())
 
 
+def decrypt(key: bytes, blob: bytes, aad: str) -> bytes:
+    try:
+        return AESGCM(key).decrypt(blob[:NONCE_BYTES], blob[NONCE_BYTES:], aad.encode())
+    except Exception as exc:  # InvalidTag and malformed input
+        raise CryptoError("decryption failed") from exc
+
+
+def new_dek() -> bytes:
+    return AESGCM.generate_key(bit_length=256)
+
+
+def _load_kek(settings: Settings) -> Kek:
+    if settings.kek_base64 is not None:
+        raw = base64.b64decode(settings.kek_base64.get_secret_value())
+    elif settings.kek_ssm_parameter:
+        import boto3
+
+        ssm = boto3.client("ssm", region_name=settings.aws_region)
+        value = ssm.get_parameter(Name=settings.kek_ssm_parameter, WithDecryption=True)
+        raw = base64.b64decode(value["Parameter"]["Value"])
+    elif settings.env.value in {"dev", "test"}:
+        # Fixed development key. Never valid in prod (see Settings validator).
+        raw = b"letterlens-development-kek-32by!"
+    else:
+        raise CryptoError("no KEK configured")
+    if len(raw) != 32:
+        raise CryptoError("KEK must be 32 bytes")
+    return Kek(raw)
+
+
