@@ -22,3 +22,29 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 
 from letterlens.config import Settings, get_settings
 
+NONCE_BYTES = 12
+KEK_VERSION = 1
+_DEK_CACHE_SECONDS = 300
+
+
+class CryptoError(Exception):
+    pass
+
+
+@dataclass(frozen=True)
+class Kek:
+    key: bytes
+    version: int = KEK_VERSION
+
+    def wrap(self, dek: bytes, user_id: str) -> bytes:
+        return encrypt(self.key, dek, f"dek:{user_id}")
+
+    def unwrap(self, wrapped: bytes, user_id: str) -> bytes:
+        return decrypt(self.key, wrapped, f"dek:{user_id}")
+
+
+def encrypt(key: bytes, plaintext: bytes, aad: str) -> bytes:
+    nonce = os.urandom(NONCE_BYTES)
+    return nonce + AESGCM(key).encrypt(nonce, plaintext, aad.encode())
+
+
