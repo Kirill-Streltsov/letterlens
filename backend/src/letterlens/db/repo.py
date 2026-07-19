@@ -96,3 +96,37 @@ class KeyRing:
         self.kek = kek
         self.cache = cache or DekCache()
 
+    def dek_for(self, conn: Conn, user_id: str, create: bool = False) -> bytes:
+        cached = self.cache.get(user_id)
+        if cached is not None:
+            return cached
+        row = conn.execute(
+            "SELECT wrapped_dek FROM user_keys WHERE user_id = %s", (user_id,)
+        ).fetchone()
+        if row is None:
+            if not create:
+                raise LookupError("no data key for this user")
+            dek = new_dek()
+            conn.execute(
+                "INSERT INTO user_keys (user_id, wrapped_dek, kek_version) VALUES (%s, %s, %s)"
+                " ON CONFLICT (user_id) DO NOTHING",
+                (user_id, self.kek.wrap(dek, user_id), self.kek.version),
+            )
+            # Another request may have created the key first; read the stored one.
+            stored = conn.execute(
+                "SELECT wrapped_dek FROM user_keys WHERE user_id = %s", (user_id,)
+            ).fetchone()
+            assert stored is not None
+            dek = self.kek.unwrap(bytes(stored["wrapped_dek"]), user_id)
+        else:
+            dek = self.kek.unwrap(bytes(row["wrapped_dek"]), user_id)
+        self.cache.put(user_id, dek)
+        return dek
+
+    def seal(self, conn: Conn, owner_id: str, record_id: str, plaintext: bytes) -> bytes:
+        return encrypt(self.dek_for(conn, owner_id, create=True), plaintext, record_id)
+
+    def open(self, conn: Conn, owner_id: str, record_id: str, blob: bytes) -> bytes:
+        return decrypt(self.dek_for(conn, owner_id), bytes(blob), record_id)
+
+
