@@ -148,3 +148,33 @@ def insert_letter(
     return expires
 
 
+def letter_row(conn: Conn, letter_id: str) -> dict[str, Any] | None:
+    return conn.execute(
+        "SELECT id::text, owner_id::text, status, letter_type, language, state, image_keys,"
+        " degraded, error, created_at, updated_at, expires_at FROM letters WHERE id = %s",
+        (letter_id,),
+    ).fetchone()
+
+
+def load_state(conn: Conn, keys: KeyRing, row: dict[str, Any]) -> PipelineState:
+    raw = keys.open(conn, row["owner_id"], row["id"], row["state"])
+    return PipelineState.model_validate_json(raw)
+
+
+def save_state(conn: Conn, keys: KeyRing, state: PipelineState) -> None:
+    blob = keys.seal(conn, state.owner_id, state.letter_id, state.model_dump_json().encode())
+    letter_type = state.classification.letter_type.value if state.classification else None
+    conn.execute(
+        "UPDATE letters SET state = %s, letter_type = coalesce(%s, letter_type), degraded = %s,"
+        " updated_at = now() WHERE id = %s",
+        (blob, letter_type, state.degraded, state.letter_id),
+    )
+
+
+def set_letter_status(conn: Conn, letter_id: str, status: LetterStatus, error: str | None) -> None:
+    conn.execute(
+        "UPDATE letters SET status = %s, error = %s, updated_at = now() WHERE id = %s",
+        (status.value, error, letter_id),
+    )
+
+
