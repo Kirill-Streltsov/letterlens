@@ -223,3 +223,30 @@ def purge_expired(conn: Conn, limit: int = 500) -> tuple[int, list[str]]:
     return len(rows), [k for r in rows for k in r["image_keys"]]
 
 
+# ---------------------------------------------------------------------------
+# Shares and messages
+# ---------------------------------------------------------------------------
+
+
+def counselling_services(conn: Conn, city: str | None = None) -> list[dict[str, Any]]:
+    query = (
+        "SELECT id::text, name, city, languages FROM tenants"
+        " WHERE kind = 'counselling' AND public_listing"
+    )
+    params: tuple[Any, ...] = ()
+    if city:
+        query += " AND lower(city) = lower(%s)"
+        params = (city,)
+    return conn.execute(query + " ORDER BY name", params).fetchall()
+
+
+def create_share(
+    conn: Conn,
+    letter_id: str,
+    owner_id: str,
+    tenant_id: str,
+    consent_version: str,
+    days: int,
+    client_language: str,
+) -> dict[str, Any]:
+    row = conn.execute(
