@@ -76,3 +76,23 @@ def update_user(conn: Conn, user_id: str, **fields: Any) -> None:
     conn.execute(f"UPDATE users SET {assignments} WHERE id = %(id)s", {**sets, "id": user_id})  # noqa: S608 - keys are allow-listed
 
 
+def delete_user(conn: Conn, user_id: str) -> list[str]:
+    """Delete the user and everything they own. Returns S3 keys to delete."""
+    rows = conn.execute("SELECT image_keys FROM letters WHERE owner_id = %s", (user_id,)).fetchall()
+    keys = [k for r in rows for k in r["image_keys"]]
+    conn.execute("DELETE FROM users WHERE id = %s", (user_id,))
+    return keys
+
+
+# ---------------------------------------------------------------------------
+# Keys
+# ---------------------------------------------------------------------------
+
+
+class KeyRing:
+    """Unwraps per-user DEKs with the KEK and caches them briefly."""
+
+    def __init__(self, kek: Kek, cache: DekCache | None = None) -> None:
+        self.kek = kek
+        self.cache = cache or DekCache()
+
