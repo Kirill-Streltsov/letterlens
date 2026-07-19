@@ -203,3 +203,23 @@ def add_image_keys(conn: Conn, letter_id: str, keys: list[str]) -> None:
     )
 
 
+def delete_letter(conn: Conn, letter_id: str) -> list[str] | None:
+    row = conn.execute(
+        "DELETE FROM letters WHERE id = %s RETURNING image_keys", (letter_id,)
+    ).fetchone()
+    return list(row["image_keys"]) if row else None
+
+
+def purge_expired(conn: Conn, limit: int = 500) -> tuple[int, list[str]]:
+    rows = conn.execute(
+        "DELETE FROM letters WHERE id IN ("
+        " SELECT id FROM letters WHERE expires_at < now() ORDER BY expires_at LIMIT %s)"
+        " RETURNING image_keys",
+        (limit,),
+    ).fetchall()
+    conn.execute("DELETE FROM shares WHERE expires_at < now() - interval '30 days'")
+    conn.execute("DELETE FROM rate_limits WHERE window_start < now() - interval '1 day'")
+    conn.execute("DELETE FROM idempotency_keys WHERE created_at < now() - interval '2 days'")
+    return len(rows), [k for r in rows for k in r["image_keys"]]
+
+
