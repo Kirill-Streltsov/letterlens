@@ -178,3 +178,28 @@ def set_letter_status(conn: Conn, letter_id: str, status: LetterStatus, error: s
     )
 
 
+def list_letters(conn: Conn, owner_id: str, limit: int = 100) -> list[dict[str, Any]]:
+    return conn.execute(
+        "SELECT id::text, owner_id::text, status, letter_type, language, state, image_keys,"
+        " degraded, error, created_at, updated_at, expires_at FROM letters"
+        " WHERE owner_id = %s ORDER BY created_at DESC LIMIT %s",
+        (owner_id, limit),
+    ).fetchall()
+
+
+def set_retention(conn: Conn, letter_id: str, days: int) -> datetime | None:
+    row = conn.execute(
+        "UPDATE letters SET expires_at = created_at + make_interval(days => %s)"
+        " WHERE id = %s RETURNING expires_at",
+        (days, letter_id),
+    ).fetchone()
+    return row["expires_at"] if row else None
+
+
+def add_image_keys(conn: Conn, letter_id: str, keys: list[str]) -> None:
+    conn.execute(
+        "UPDATE letters SET image_keys = image_keys || %s::text[] WHERE id = %s",
+        (keys, letter_id),
+    )
+
+
