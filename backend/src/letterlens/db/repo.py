@@ -130,3 +130,21 @@ class KeyRing:
         return decrypt(self.dek_for(conn, owner_id), bytes(blob), record_id)
 
 
+# ---------------------------------------------------------------------------
+# Letters
+# ---------------------------------------------------------------------------
+
+
+def insert_letter(
+    conn: Conn, keys: KeyRing, state: PipelineState, retention_days: int
+) -> datetime:
+    expires = utcnow() + timedelta(days=retention_days)
+    blob = keys.seal(conn, state.owner_id, state.letter_id, state.model_dump_json().encode())
+    conn.execute(
+        "INSERT INTO letters (id, owner_id, status, language, state, expires_at)"
+        " VALUES (%s, %s, 'received', %s, %s, %s)",
+        (state.letter_id, state.owner_id, state.language, blob, expires),
+    )
+    return expires
+
+
