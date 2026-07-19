@@ -53,3 +53,26 @@ def resolve_user(conn: Conn, cognito_sub: str) -> dict[str, Any]:
     return row
 
 
+def memberships(conn: Conn, user_id: str) -> list[Membership]:
+    rows = conn.execute(
+        "SELECT m.tenant_id::text, m.role, t.kind, t.name FROM memberships m"
+        " JOIN tenants t ON t.id = m.tenant_id WHERE m.user_id = %s",
+        (user_id,),
+    ).fetchall()
+    return [Membership(r["tenant_id"], r["role"], r["kind"], r["name"]) for r in rows]
+
+
+def get_user(conn: Conn, user_id: str) -> dict[str, Any] | None:
+    return conn.execute("SELECT * FROM users WHERE id = %s", (user_id,)).fetchone()
+
+
+def update_user(conn: Conn, user_id: str, **fields: Any) -> None:
+    allowed = {"display_name", "preferred_language", "plan", "plan_source", "plan_expires_at",
+               "stripe_customer_id"}
+    sets = {k: v for k, v in fields.items() if k in allowed}
+    if not sets:
+        return
+    assignments = ", ".join(f"{k} = %({k})s" for k in sets)
+    conn.execute(f"UPDATE users SET {assignments} WHERE id = %(id)s", {**sets, "id": user_id})  # noqa: S608 - keys are allow-listed
+
+
