@@ -279,3 +279,28 @@ def revoke_share(conn: Conn, share_id: str) -> bool:
     return row is not None
 
 
+def get_share(conn: Conn, share_id: str) -> dict[str, Any] | None:
+    return conn.execute(
+        "SELECT s.id::text, s.letter_id::text, s.owner_id::text, s.tenant_id::text,"
+        " s.case_status, s.assigned_to::text, s.client_language, s.expires_at, s.revoked_at,"
+        " s.created_at, t.name AS tenant_name FROM shares s JOIN tenants t ON t.id = s.tenant_id"
+        " WHERE s.id = %s",
+        (share_id,),
+    ).fetchone()
+
+
+def tenant_cases(conn: Conn, tenant_ids: list[str], status: str | None) -> list[dict[str, Any]]:
+    query = (
+        "SELECT s.id::text, s.letter_id::text, s.owner_id::text, s.tenant_id::text,"
+        " s.case_status, s.assigned_to::text, s.client_language, s.expires_at, s.created_at,"
+        " u.display_name AS client_name, l.letter_type, l.status AS letter_status"
+        " FROM shares s JOIN letters l ON l.id = s.letter_id JOIN users u ON u.id = s.owner_id"
+        " WHERE s.tenant_id = ANY(%s::uuid[]) AND s.revoked_at IS NULL AND s.expires_at > now()"
+    )
+    params: list[Any] = [tenant_ids]
+    if status:
+        query += " AND s.case_status = %s"
+        params.append(status)
+    return conn.execute(query + " ORDER BY s.created_at DESC LIMIT 200", params).fetchall()
+
+
