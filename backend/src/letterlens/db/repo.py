@@ -369,3 +369,39 @@ def create_invite(conn: Conn, tenant_id: str, role: str, created_by: str, code: 
     )
 
 
+def redeem_invite(conn: Conn, code: str, user_id: str) -> dict[str, Any] | None:
+    """System context: the user is not yet a member of the tenant."""
+    row = conn.execute(
+        "UPDATE tenant_invites SET used_by = %s, used_at = now() WHERE code_hash = %s"
+        " AND used_at IS NULL AND expires_at > now() RETURNING tenant_id::text, role",
+        (user_id, hash_code(code)),
+    ).fetchone()
+    if row is None:
+        return None
+    conn.execute(
+        "INSERT INTO memberships (tenant_id, user_id, role) VALUES (%s, %s, %s)"
+        " ON CONFLICT (tenant_id, user_id) DO UPDATE SET role = EXCLUDED.role",
+        (row["tenant_id"], user_id, row["role"]),
+    )
+    return row
+
+
+def create_tenant(conn: Conn, name: str, kind: str, city: str | None, languages: list[str],
+                  public_listing: bool, seats: int = 0) -> str:
+    row = conn.execute(
+        "INSERT INTO tenants (name, kind, city, languages, public_listing, seats)"
+        " VALUES (%s, %s, %s, %s, %s, %s) RETURNING id::text",
+        (name, kind, city, languages, public_listing, seats),
+    ).fetchone()
+    assert row is not None
+    return str(row["id"])
+
+
+def add_member(conn: Conn, tenant_id: str, user_id: str, role: str) -> None:
+    conn.execute(
+        "INSERT INTO memberships (tenant_id, user_id, role) VALUES (%s, %s, %s)"
+        " ON CONFLICT (tenant_id, user_id) DO UPDATE SET role = EXCLUDED.role",
+        (tenant_id, user_id, role),
+    )
+
+
