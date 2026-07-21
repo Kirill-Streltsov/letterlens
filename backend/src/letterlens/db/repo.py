@@ -430,3 +430,27 @@ def letters_this_month(conn: Conn, user_id: str) -> int:
     return int(row["letters"]) if row else 0
 
 
+def consume_letter_quota(conn: Conn, user_id: str, limit: int | None) -> bool:
+    """Atomically count one letter. Returns False when the monthly limit is reached."""
+    row = conn.execute(
+        "INSERT INTO usage_counters (user_id, period, letters) VALUES (%s, %s, 1)"
+        " ON CONFLICT (user_id, period) DO UPDATE SET letters = usage_counters.letters + 1"
+        " WHERE %s::int IS NULL OR usage_counters.letters < %s::int RETURNING letters",
+        (user_id, period(), limit, limit),
+    ).fetchone()
+    return row is not None
+
+
+def hit_rate_limit(conn: Conn, key: str, limit: int, window_seconds: int = 60) -> bool:
+    """Fixed-window counter. Returns True when the request must be rejected."""
+    row = conn.execute(
+        "INSERT INTO rate_limits (key, window_start, count) VALUES"
+        " (%s, to_timestamp(floor(extract(epoch FROM now()) / %s) * %s), 1)"
+        " ON CONFLICT (key, window_start) DO UPDATE SET count = rate_limits.count + 1"
+        " RETURNING count",
+        (key, window_seconds, window_seconds),
+    ).fetchone()
+    assert row is not None
+    return int(row["count"]) > limit
+
+
