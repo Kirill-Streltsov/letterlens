@@ -352,3 +352,20 @@ def tenant_stats(conn: Conn, tenant_id: str, since: datetime) -> list[dict[str, 
     ).fetchall()
 
 
+# ---------------------------------------------------------------------------
+# Tenants and invites
+# ---------------------------------------------------------------------------
+
+
+def hash_code(code: str) -> str:
+    return hashlib.sha256(code.strip().upper().encode()).hexdigest()
+
+
+def create_invite(conn: Conn, tenant_id: str, role: str, created_by: str, code: str) -> None:
+    conn.execute(
+        "INSERT INTO tenant_invites (code_hash, tenant_id, role, created_by, expires_at)"
+        " VALUES (%s, %s, %s, %s, now() + interval '14 days')",
+        (hash_code(code), tenant_id, role, created_by),
+    )
+
+
