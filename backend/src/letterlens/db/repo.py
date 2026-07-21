@@ -250,3 +250,32 @@ def create_share(
     client_language: str,
 ) -> dict[str, Any]:
     row = conn.execute(
+        "INSERT INTO shares (letter_id, owner_id, tenant_id, consent_text_version, expires_at,"
+        " client_language) VALUES (%s, %s, %s, %s, now() + make_interval(days => %s), %s)"
+        " ON CONFLICT (letter_id, tenant_id) DO UPDATE SET revoked_at = NULL,"
+        " consented_at = now(), expires_at = EXCLUDED.expires_at,"
+        " consent_text_version = EXCLUDED.consent_text_version"
+        " RETURNING id::text, letter_id::text, tenant_id::text, case_status, expires_at, created_at",
+        (letter_id, owner_id, tenant_id, consent_version, days, client_language),
+    ).fetchone()
+    assert row is not None
+    return row
+
+
+def shares_for_letter(conn: Conn, letter_id: str) -> list[dict[str, Any]]:
+    return conn.execute(
+        "SELECT s.id::text, s.tenant_id::text, t.name AS tenant_name, s.case_status,"
+        " s.expires_at, s.revoked_at, s.created_at FROM shares s"
+        " JOIN tenants t ON t.id = s.tenant_id WHERE s.letter_id = %s ORDER BY s.created_at",
+        (letter_id,),
+    ).fetchall()
+
+
+def revoke_share(conn: Conn, share_id: str) -> bool:
+    row = conn.execute(
+        "UPDATE shares SET revoked_at = now() WHERE id = %s AND revoked_at IS NULL RETURNING id",
+        (share_id,),
+    ).fetchone()
+    return row is not None
+
+
