@@ -454,3 +454,23 @@ def hit_rate_limit(conn: Conn, key: str, limit: int, window_seconds: int = 60) -
     return int(row["count"]) > limit
 
 
+def idempotent_response(conn: Conn, user_id: str, key: str) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT response FROM idempotency_keys WHERE user_id = %s AND key = %s", (user_id, key)
+    ).fetchone()
+    return row["response"] if row else None
+
+
+def store_idempotent_response(conn: Conn, user_id: str, key: str, response: dict[str, Any]) -> None:
+    conn.execute(
+        "INSERT INTO idempotency_keys (user_id, key, response) VALUES (%s, %s, %s)"
+        " ON CONFLICT DO NOTHING",
+        (user_id, key, Jsonb(response)),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Audit and billing events
+# ---------------------------------------------------------------------------
+
+
