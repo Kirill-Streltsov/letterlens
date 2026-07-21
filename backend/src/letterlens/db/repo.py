@@ -327,3 +327,28 @@ def insert_message(
     return row
 
 
+def list_messages(conn: Conn, keys: KeyRing, share: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT id::text, author_role, body, created_at FROM messages WHERE share_id = %s"
+        " ORDER BY created_at",
+        (share["id"],),
+    ).fetchall()
+    out = []
+    for r in rows:
+        r["body"] = keys.open(conn, share["owner_id"], r["id"], r["body"])
+        out.append(r)
+    return out
+
+
+def tenant_stats(conn: Conn, tenant_id: str, since: datetime) -> list[dict[str, Any]]:
+    """Aggregate counts for funding reports. Contains no personal data."""
+    return conn.execute(
+        "SELECT date_trunc('month', s.created_at)::date AS month, coalesce(l.letter_type, 'unknown')"
+        " AS letter_type, s.client_language AS language, count(*)::int AS cases,"
+        " count(*) FILTER (WHERE s.case_status = 'closed')::int AS closed"
+        " FROM shares s JOIN letters l ON l.id = s.letter_id"
+        " WHERE s.tenant_id = %s AND s.created_at >= %s GROUP BY 1, 2, 3 ORDER BY 1, 2, 3",
+        (tenant_id, since),
+    ).fetchall()
+
+
