@@ -304,3 +304,26 @@ def tenant_cases(conn: Conn, tenant_ids: list[str], status: str | None) -> list[
     return conn.execute(query + " ORDER BY s.created_at DESC LIMIT 200", params).fetchall()
 
 
+def update_case(conn: Conn, share_id: str, case_status: str | None, assigned_to: str | None) -> bool:
+    row = conn.execute(
+        "UPDATE shares SET case_status = coalesce(%s, case_status),"
+        " assigned_to = coalesce(%s::uuid, assigned_to) WHERE id = %s RETURNING id",
+        (case_status, assigned_to, share_id),
+    ).fetchone()
+    return row is not None
+
+
+def insert_message(
+    conn: Conn, keys: KeyRing, share: dict[str, Any], author_id: str, role: str, body_json: bytes
+) -> dict[str, Any]:
+    message_id = new_id()
+    blob = keys.seal(conn, share["owner_id"], message_id, body_json)
+    row = conn.execute(
+        "INSERT INTO messages (id, share_id, author_id, author_role, body) VALUES"
+        " (%s, %s, %s, %s, %s) RETURNING id::text, author_role, created_at",
+        (message_id, share["id"], author_id, role, blob),
+    ).fetchone()
+    assert row is not None
+    return row
+
+
