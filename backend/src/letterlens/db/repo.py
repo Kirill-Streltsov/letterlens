@@ -405,3 +405,28 @@ def add_member(conn: Conn, tenant_id: str, user_id: str, role: str) -> None:
     )
 
 
+def set_tenant_seats(conn: Conn, tenant_id: str, seats: int, stripe_customer: str | None) -> None:
+    conn.execute(
+        "UPDATE tenants SET seats = %s, stripe_customer_id = coalesce(%s, stripe_customer_id)"
+        " WHERE id = %s",
+        (seats, stripe_customer, tenant_id),
+    )
+
+
+# ---------------------------------------------------------------------------
+# Quotas, rate limits, idempotency
+# ---------------------------------------------------------------------------
+
+
+def period(now: datetime | None = None) -> str:
+    return (now or utcnow()).strftime("%Y-%m")
+
+
+def letters_this_month(conn: Conn, user_id: str) -> int:
+    row = conn.execute(
+        "SELECT letters FROM usage_counters WHERE user_id = %s AND period = %s",
+        (user_id, period()),
+    ).fetchone()
+    return int(row["letters"]) if row else 0
+
+
