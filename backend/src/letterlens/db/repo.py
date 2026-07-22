@@ -527,3 +527,28 @@ class PgLedger:
             ).fetchone()
         return int(row["t"]) if row else 0
 
+    def record(self, call: LLMCall) -> None:
+        with self.db.session(DbContext.as_system()) as conn:
+            conn.execute(
+                "INSERT INTO llm_calls (task, provider, model, prompt_version, input_tokens,"
+                " output_tokens, list_price_usd, latency_ms, attempts, fallback_used, ok, error,"
+                " user_id, letter_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
+                " %s, %s)",
+                (
+                    call.task.value, call.provider, call.model, call.prompt_version,
+                    call.input_tokens, call.output_tokens, call.list_price_usd, call.latency_ms,
+                    call.attempts, call.fallback_used, call.ok, call.error,
+                    _uuid_or_none(call.user_id), _uuid_or_none(call.letter_id),
+                ),
+            )
+
+
+def _uuid_or_none(value: str | None) -> str | None:
+    if not value:
+        return None
+    try:
+        return str(uuid.UUID(value))
+    except ValueError:
+        return None
+
+
