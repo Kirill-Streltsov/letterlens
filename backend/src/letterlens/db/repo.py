@@ -578,3 +578,29 @@ def letter_cost(conn: Conn, letter_id: str) -> dict[str, Any]:
     return row
 
 
+# ---------------------------------------------------------------------------
+# Pipeline state store
+# ---------------------------------------------------------------------------
+
+
+class PgStateStore:
+    """StateStore for the pipeline. Runs in the system context (trusted worker)."""
+
+    def __init__(self, db: Database, keys: KeyRing) -> None:
+        self.db = db
+        self.keys = keys
+
+    def load_state(self, letter_id: str) -> PipelineState:
+        with self.db.session(DbContext.as_system()) as conn:
+            row = letter_row(conn, letter_id)
+            if row is None:
+                raise LookupError(f"letter {letter_id} not found")
+            return load_state(conn, self.keys, row)
+
+    def save_state(self, state: PipelineState) -> None:
+        with self.db.session(DbContext.as_system()) as conn:
+            save_state(conn, self.keys, state)
+
+    def set_status(self, letter_id: str, status: LetterStatus, error: str | None = None) -> None:
+        with self.db.session(DbContext.as_system()) as conn:
+            set_letter_status(conn, letter_id, status, error)
