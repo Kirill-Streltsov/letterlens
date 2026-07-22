@@ -474,3 +474,33 @@ def store_idempotent_response(conn: Conn, user_id: str, key: str, response: dict
 # ---------------------------------------------------------------------------
 
 
+def audit(
+    conn: Conn,
+    actor_id: str | None,
+    action: str,
+    target_type: str,
+    target_id: str,
+    tenant_id: str | None = None,
+    details: dict[str, Any] | None = None,
+) -> None:
+    conn.execute(
+        "INSERT INTO audit_log (actor_id, tenant_id, action, target_type, target_id, details)"
+        " VALUES (%s, %s, %s, %s, %s, %s)",
+        (actor_id, tenant_id, action, target_type, target_id, Jsonb(details or {})),
+    )
+
+
+def first_time_event(conn: Conn, provider: str, event_id: str) -> bool:
+    row = conn.execute(
+        "INSERT INTO billing_events (provider, event_id) VALUES (%s, %s)"
+        " ON CONFLICT DO NOTHING RETURNING event_id",
+        (provider, event_id),
+    ).fetchone()
+    return row is not None
+
+
+# ---------------------------------------------------------------------------
+# Cost ledger
+# ---------------------------------------------------------------------------
+
+
