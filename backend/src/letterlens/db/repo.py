@@ -552,3 +552,29 @@ def _uuid_or_none(value: str | None) -> str | None:
         return None
 
 
+def cost_report(conn: Conn, days: int) -> list[dict[str, Any]]:
+    return conn.execute(
+        "SELECT date_trunc('day', created_at)::date AS day, task, model, prompt_version,"
+        " count(*)::int AS calls, count(*) FILTER (WHERE NOT ok)::int AS failures,"
+        " sum(input_tokens)::int AS input_tokens, sum(output_tokens)::int AS output_tokens,"
+        " round(sum(list_price_usd), 6)::float AS list_price_usd,"
+        " percentile_cont(0.5) WITHIN GROUP (ORDER BY latency_ms)::int AS p50_ms,"
+        " percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms)::int AS p95_ms"
+        " FROM llm_calls WHERE created_at >= now() - make_interval(days => %s)"
+        " GROUP BY 1, 2, 3, 4 ORDER BY 1 DESC, 2",
+        (days,),
+    ).fetchall()
+
+
+def letter_cost(conn: Conn, letter_id: str) -> dict[str, Any]:
+    row = conn.execute(
+        "SELECT count(*)::int AS calls, coalesce(sum(input_tokens), 0)::int AS input_tokens,"
+        " coalesce(sum(output_tokens), 0)::int AS output_tokens,"
+        " coalesce(round(sum(list_price_usd), 6), 0)::float AS list_price_usd"
+        " FROM llm_calls WHERE letter_id = %s",
+        (letter_id,),
+    ).fetchone()
+    assert row is not None
+    return row
+
+
