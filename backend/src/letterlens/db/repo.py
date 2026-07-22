@@ -504,3 +504,26 @@ def first_time_event(conn: Conn, provider: str, event_id: str) -> bool:
 # ---------------------------------------------------------------------------
 
 
+class PgLedger:
+    """UsageLedger backed by table llm_calls. Uses its own short system transactions."""
+
+    def __init__(self, db: Database) -> None:
+        self.db = db
+
+    def month_spend_usd(self) -> float:
+        with self.db.session(DbContext.as_system()) as conn:
+            row = conn.execute(
+                "SELECT coalesce(sum(list_price_usd), 0)::float AS usd FROM llm_calls"
+                " WHERE created_at >= date_trunc('month', now())"
+            ).fetchone()
+        return float(row["usd"]) if row else 0.0
+
+    def user_tokens_today(self, user_id: str) -> int:
+        with self.db.session(DbContext.as_system()) as conn:
+            row = conn.execute(
+                "SELECT coalesce(sum(input_tokens + output_tokens), 0)::int AS t FROM llm_calls"
+                " WHERE user_id = %s AND created_at >= date_trunc('day', now())",
+                (user_id,),
+            ).fetchone()
+        return int(row["t"]) if row else 0
+
