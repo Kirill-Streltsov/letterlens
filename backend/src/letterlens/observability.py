@@ -56,3 +56,26 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(payload, default=str, ensure_ascii=False)
 
 
+def configure_logging(level: str = "INFO") -> None:
+    root = logging.getLogger()
+    for handler in list(root.handlers):
+        root.removeHandler(handler)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(JsonFormatter())
+    root.addHandler(handler)
+    root.setLevel(level)
+    for noisy in ("httpx", "httpcore", "botocore", "urllib3", "psycopg.pool"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
+
+
+def emit_metric(name: str, value: float, **properties: Any) -> None:
+    """Write one EMF record. Properties are searchable fields, not metric dimensions."""
+    if name not in METRICS:
+        raise ValueError(f"unknown metric {name}; add it to METRICS (free tier has 10)")
+    record = {
+        "_aws": {
+            "Timestamp": int(time.time() * 1000),
+            "CloudWatchMetrics": [
+                {
+                    "Namespace": NAMESPACE,
+                    "Dimensions": [["Service"]],
