@@ -23,3 +23,34 @@ class ImageStorage(Protocol):
     def delete(self, keys: list[str]) -> None: ...
 
 
+class DisabledStorage:
+    enabled = False
+
+    def upload_targets(self, owner_id: str, letter_id: str, count: int) -> list[dict[str, Any]]:
+        return []
+
+    def download_url(self, key: str) -> str:
+        raise RuntimeError("image storage is disabled")
+
+    def delete(self, keys: list[str]) -> None:
+        return None
+
+
+class S3Storage:
+    enabled = True
+
+    def __init__(self, bucket: str, region: str, client: Any = None) -> None:
+        if client is None:
+            import boto3
+            from botocore.config import Config
+
+            client = boto3.client(
+                "s3", region_name=region, config=Config(signature_version="s3v4")
+            )
+        self.client = client
+        self.bucket = bucket
+
+    @staticmethod
+    def key_for(owner_id: str, letter_id: str, n: int) -> str:
+        return f"letters/{owner_id}/{letter_id}/{n}.jpg"
+
