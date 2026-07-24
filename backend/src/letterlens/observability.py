@@ -79,3 +79,30 @@ def emit_metric(name: str, value: float, **properties: Any) -> None:
                 {
                     "Namespace": NAMESPACE,
                     "Dimensions": [["Service"]],
+                    "Metrics": [{"Name": name, "Unit": METRICS[name]}],
+                }
+            ],
+        },
+        "Service": "letterlens",
+        name: value,
+        **properties,
+    }
+    sys.stdout.write(json.dumps(record, default=str) + "\n")
+
+
+@contextmanager
+def span(name: str, **attributes: Any) -> Iterator[dict[str, Any]]:
+    """Time a block and log it as a span. Callers can add attributes to the yielded dict."""
+    started = time.perf_counter()
+    attrs: dict[str, Any] = dict(attributes)
+    error: str | None = None
+    try:
+        yield attrs
+    except Exception as exc:
+        error = type(exc).__name__
+        raise
+    finally:
+        attrs["duration_ms"] = int((time.perf_counter() - started) * 1000)
+        if error:
+            attrs["error"] = error
+        logging.getLogger("letterlens.span").info(name, extra={"span": name, **attrs})
