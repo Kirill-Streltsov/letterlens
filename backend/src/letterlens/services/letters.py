@@ -23,3 +23,27 @@ from letterlens.db import repo as R
 from letterlens.domain import FactStatus, LetterStatus
 from letterlens.i18n import REFUSAL, is_available, languages, localized
 from letterlens.llm import Task
+from letterlens.llm import prompts as P
+from letterlens.llm.outputs import AnswerDraft, GuardDecision
+from letterlens.llm.types import LLMError
+from letterlens.observability import emit_metric
+from letterlens.pipeline.state import PipelineState
+from letterlens.pipeline.steps import _facts_for_prompt, allowed_numbers, unsupported_numbers
+from letterlens.safety.guardrail import check_question_rules, is_advisory_output
+from letterlens.safety.pii import PiiVault
+from letterlens.services.principal import Principal
+
+log = logging.getLogger(__name__)
+
+FREE_MAX_RETENTION_DAYS = 30
+OFF_TOPIC = {
+    "en": "I can only answer questions about this letter.",
+    "de": "Ich kann nur Fragen zu diesem Brief beantworten.",
+}
+
+
+def _require_language(code: str) -> None:
+    if not is_available(code):
+        raise bad_request("language_unavailable", f"language '{code}' is not available")
+
+
