@@ -20,3 +20,39 @@ from collections.abc import Iterator
 from contextlib import contextmanager
 from typing import Any
 
+NAMESPACE = "LetterLens"
+METRICS = {
+    "LettersCreated": "Count",
+    "PipelineSucceeded": "Count",
+    "PipelineFailed": "Count",
+    "PipelineDegraded": "Count",
+    "GroundingRate": "None",
+    "LLMListPriceUSD": "None",
+    "GuardrailBlocked": "Count",
+    "QuestionsAnswered": "Count",
+    "LatencyMs": "Milliseconds",
+}
+
+request_id_var: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
+
+_RESERVED = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message", "asctime"}
+
+
+class JsonFormatter(logging.Formatter):
+    def format(self, record: logging.LogRecord) -> str:
+        payload: dict[str, Any] = {
+            "ts": round(record.created, 3),
+            "level": record.levelname,
+            "logger": record.name,
+            "msg": record.getMessage(),
+        }
+        if rid := request_id_var.get():
+            payload["request_id"] = rid
+        for key, value in record.__dict__.items():
+            if key not in _RESERVED and not key.startswith("_"):
+                payload[key] = value
+        if record.exc_info:
+            payload["exc_type"] = record.exc_info[0].__name__ if record.exc_info[0] else None
+        return json.dumps(payload, default=str, ensure_ascii=False)
+
+
