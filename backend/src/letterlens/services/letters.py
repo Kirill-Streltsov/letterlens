@@ -47,3 +47,23 @@ def _require_language(code: str) -> None:
         raise bad_request("language_unavailable", f"language '{code}' is not available")
 
 
+def next_deadline(state: PipelineState, language: str) -> DeadlineSummary | None:
+    if state.facts is None:
+        return None
+    dated = [d for d in state.facts.deadlines if d.due_date is not None]
+    if not dated:
+        return None
+    first = min(dated, key=lambda d: d.due_date)  # type: ignore[arg-type, return-value]
+    labels = state.explanations.get(language) or next(iter(state.explanations.values()), None)
+    label = (labels.deadline_labels.get(first.id) if labels else None) or first.description
+    return DeadlineSummary(due_date=first.due_date, status=first.status.value, label=label)
+
+
+def _explanation_language(state: PipelineState, requested: str) -> str | None:
+    if requested in state.explanations:
+        return requested
+    if state.language in state.explanations:
+        return state.language
+    return next(iter(state.explanations), None)
+
+
