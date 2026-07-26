@@ -153,3 +153,29 @@ class LetterService:
             shares=shares,
         )
 
+    def get(self, principal: Principal, letter_id: str, language: str) -> LetterView:
+        with self.c.db.session(principal.ctx) as conn:
+            return self.view(conn, letter_id, language)
+
+    def list(self, principal: Principal) -> list[LetterListItem]:
+        items = []
+        with self.c.db.session(principal.ctx) as conn:
+            for row in R.list_letters(conn, principal.user_id):
+                state = R.load_state(conn, self.c.keys, row)
+                lang = _explanation_language(state, row["language"])
+                exp = state.explanations.get(lang) if lang else None
+                items.append(
+                    LetterListItem(
+                        id=row["id"],
+                        status=LetterStatus(row["status"]),
+                        letter_type=row["letter_type"],
+                        headline=exp.headline if exp else None,
+                        sender=state.facts.sender.value if state.facts else None,
+                        next_deadline=next_deadline(state, row["language"]),
+                        created_at=row["created_at"],
+                        expires_at=row["expires_at"],
+                        shared=bool(R.shares_for_letter(conn, row["id"])),
+                    )
+                )
+        return items
+
