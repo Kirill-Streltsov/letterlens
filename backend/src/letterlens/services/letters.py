@@ -99,3 +99,22 @@ class LetterService:
                 language=body.language,
                 document=body.document,
             )
+            expires = R.insert_letter(conn, self.c.keys, state, retention)
+            R.audit(conn, principal.user_id, "letter.create", "letter", state.letter_id,
+                    details={"lines": len(body.document.lines), "engine": body.document.ocr_engine})
+            response = CreateLetterResponse(
+                id=state.letter_id, status=LetterStatus.RECEIVED, expires_at=expires
+            )
+            if idempotency_key:
+                R.store_idempotent_response(conn, principal.user_id, idempotency_key, dump(response))
+        emit_metric("LettersCreated", 1)
+        return response, True
+
+    # -- read -----------------------------------------------------------------
+
+    def _row_and_state(self, conn: Conn, letter_id: str) -> tuple[dict[str, Any], PipelineState]:
+        row = R.letter_row(conn, letter_id)
+        if row is None:
+            raise not_found("letter")
+        return row, R.load_state(conn, self.c.keys, row)
+
