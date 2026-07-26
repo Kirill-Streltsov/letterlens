@@ -179,3 +179,19 @@ class LetterService:
                 )
         return items
 
+    # -- change ---------------------------------------------------------------
+
+    def request_explanation(self, principal: Principal, letter_id: str, language: str) -> bool:
+        """Returns True when a new explanation run must start."""
+        _require_language(language)
+        with self.c.db.session(principal.ctx) as conn:
+            row, state = self._row_and_state(conn, letter_id)
+            if row["owner_id"] != principal.user_id:
+                raise not_found("letter")
+            if row["status"] != LetterStatus.READY.value:
+                raise ApiError(409, "not_ready", "the letter is still being processed")
+            if language in state.explanations:
+                return False
+            R.set_letter_status(conn, letter_id, LetterStatus.PROCESSING, None)
+        return True
+
