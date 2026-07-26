@@ -195,3 +195,34 @@ class LetterService:
             R.set_letter_status(conn, letter_id, LetterStatus.PROCESSING, None)
         return True
 
+    def set_retention(self, principal: Principal, letter_id: str, days: int) -> None:
+        if principal.plan != "plus" and days > FREE_MAX_RETENTION_DAYS:
+            raise ApiError(402, "plus_required", "longer storage needs LetterLens Plus")
+        with self.c.db.session(principal.ctx) as conn:
+            row = R.letter_row(conn, letter_id)
+            if row is None or row["owner_id"] != principal.user_id:
+                raise not_found("letter")
+            R.set_retention(conn, letter_id, days)
+            R.audit(conn, principal.user_id, "letter.retention", "letter", letter_id, details={"days": days})
+
+    def delete(self, principal: Principal, letter_id: str) -> None:
+        with self.c.db.session(principal.ctx) as conn:
+            row = R.letter_row(conn, letter_id)
+            if row is None or row["owner_id"] != principal.user_id:
+                raise not_found("letter")
+            keys = R.delete_letter(conn, letter_id) or []
+            R.audit(conn, principal.user_id, "letter.delete", "letter", letter_id)
+        self.c.storage.delete(keys)
+
+    def image_targets(self, principal: Principal, letter_id: str, count: int) -> list[dict[str, Any]]:
+        if not self.c.storage.enabled:
+            raise ApiError(501, "images_disabled", "image upload is not configured")
+        with self.c.db.session(principal.ctx) as conn:
+            row = R.letter_row(conn, letter_id)
+            if row is None or row["owner_id"] != principal.user_id:
+                raise not_found("letter")
+            targets = self.c.storage.upload_targets(principal.user_id, letter_id, count)
+            R.add_image_keys(conn, letter_id, [t["key"] for t in targets])
+            R.audit(conn, principal.user_id, "letter.images", "letter", letter_id, details={"count": count})
+        return targets
+
