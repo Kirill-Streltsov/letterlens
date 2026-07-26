@@ -118,3 +118,38 @@ class LetterService:
             raise not_found("letter")
         return row, R.load_state(conn, self.c.keys, row)
 
+    def view(self, conn: Conn, letter_id: str, language: str, include_images: bool = True) -> LetterView:
+        row, state = self._row_and_state(conn, letter_id)
+        lang = _explanation_language(state, language)
+        shares = [
+            ShareInfo(
+                id=s["id"],
+                tenant_id=s["tenant_id"],
+                tenant_name=s["tenant_name"],
+                case_status=s["case_status"],
+                expires_at=s["expires_at"],
+                revoked=s["revoked_at"] is not None,
+            )
+            for s in R.shares_for_letter(conn, letter_id)
+        ]
+        images: list[str] = []
+        if include_images and self.c.storage.enabled:
+            images = [self.c.storage.download_url(k) for k in row["image_keys"]]
+        return LetterView(
+            id=row["id"],
+            status=LetterStatus(row["status"]),
+            error=row["error"],
+            language=row["language"],
+            created_at=row["created_at"],
+            expires_at=row["expires_at"],
+            lines=state.document.lines,
+            classification=state.classification,
+            facts=state.facts,
+            explanation=state.explanations.get(lang) if lang else None,
+            explanation_languages=sorted(state.explanations),
+            degraded=state.degraded,
+            degraded_reasons=state.degraded_reasons,
+            image_urls=images,
+            shares=shares,
+        )
+
