@@ -67,3 +67,35 @@ def _explanation_language(state: PipelineState, requested: str) -> str | None:
     return next(iter(state.explanations), None)
 
 
+class LetterService:
+    def __init__(self, container: Container) -> None:
+        self.c = container
+
+    # -- create ---------------------------------------------------------------
+
+    def create(
+        self, principal: Principal, body: CreateLetterRequest, idempotency_key: str | None
+    ) -> tuple[CreateLetterResponse, bool]:
+        """Returns the response and whether the pipeline must be started."""
+        _require_language(body.language)
+        settings = self.c.settings
+        plus = principal.plan == "plus"
+        retention = body.retention_days if plus else min(body.retention_days, FREE_MAX_RETENTION_DAYS)
+        with self.c.db.session(principal.ctx) as conn:
+            if R.hit_rate_limit(conn, f"{principal.user_id}:letters", settings.rate_limit_per_minute):
+                raise ApiError(429, "rate_limited", "too many requests, try again in a minute")
+            if idempotency_key:
+                previous = R.idempotent_response(conn, principal.user_id, idempotency_key)
+                if previous is not None:
+                    return CreateLetterResponse.model_validate(previous), False
+            limit = None if plus else settings.free_letters_per_month
+            if not R.consume_letter_quota(conn, principal.user_id, limit):
+                raise ApiError(
+                    402, "quota_exceeded", f"the free plan includes {limit} letters per month"
+                )
+            state = PipelineState(
+                letter_id=R.new_id(),
+                owner_id=principal.user_id,
+                language=body.language,
+                document=body.document,
+            )
