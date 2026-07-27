@@ -275,3 +275,23 @@ class LetterService:
         if decision.category == "off_topic":
             return refusal("off_topic")
 
+        lang = languages().get(language) or languages()["en"]
+        vault = PiiVault()
+        redacted = vault.redact_document(state.document)
+        passages = state.passages or []
+        try:
+            draft = gw.generate(
+                Task.ANSWER,
+                AnswerDraft,
+                P.answer_system(lang.name),
+                P.answer_user(redacted.as_numbered_text(), _facts_for_prompt(state.facts, vault),
+                              passages, question),
+                P.ANSWER_VERSION,
+                context={"question": question, "passages": [p.model_dump(mode="json") for p in passages]},
+                user_id=principal.user_id,
+                letter_id=letter_id,
+                max_tokens=1500,
+            )
+        except LLMError as exc:
+            raise ApiError(503, "llm_unavailable", "the assistant is not available right now") from exc
+
