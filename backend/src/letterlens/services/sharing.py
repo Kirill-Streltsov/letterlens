@@ -30,3 +30,18 @@ from letterlens.llm.types import LLMError
 from letterlens.services.letters import LetterService, next_deadline
 from letterlens.services.principal import Principal
 
+COUNSELLOR_LANGUAGE = "de"
+_INVITE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+
+class SharingService:
+    def __init__(self, container: Container, letters: LetterService) -> None:
+        self.c = container
+        self.letters = letters
+
+    # -- client side ----------------------------------------------------------
+
+    def services(self, principal: Principal, city: str | None) -> list[CounsellingService]:
+        with self.c.db.session(principal.ctx) as conn:
+            return [CounsellingService(**row) for row in R.counselling_services(conn, city)]
+
