@@ -226,3 +226,29 @@ class LetterService:
             R.audit(conn, principal.user_id, "letter.images", "letter", letter_id, details={"count": count})
         return targets
 
+    # -- questions ------------------------------------------------------------
+
+    def ask(self, principal: Principal, letter_id: str, question: str, language: str) -> QuestionResponse:
+        _require_language(language)
+        with self.c.db.session(principal.ctx) as conn:
+            if R.hit_rate_limit(conn, f"{principal.user_id}:questions", self.c.settings.rate_limit_per_minute):
+                raise ApiError(429, "rate_limited", "too many questions, try again in a minute")
+            _, state = self._row_and_state(conn, letter_id)
+        if state.facts is None:
+            raise ApiError(409, "not_ready", "the letter is still being processed")
+
+        def refusal(reason: str) -> QuestionResponse:
+            emit_metric("GuardrailBlocked", 1, reason=reason)
+            if reason == "off_topic":
+                text = localized(OFF_TOPIC, language)
+            else:
+                text = localized(REFUSAL, language)
+            return QuestionResponse(
+                answer=text,
+                refused=True,
+                reason=reason,  # type: ignore[arg-type]
+                handover_suggested=reason == "legal_advice",
+                line_ids=[],
+                citations=[],
+            )
+
