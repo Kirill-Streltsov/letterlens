@@ -252,3 +252,26 @@ class LetterService:
                 citations=[],
             )
 
+        # Layer 1: rules (free, instant).
+        rule = check_question_rules(question)
+        if rule.blocked:
+            return refusal(rule.verdict.value)
+
+        gw = self.c.gateway
+        # Layer 2: LLM classifier.
+        try:
+            decision = gw.generate(
+                Task.GUARD, GuardDecision, P.GUARD_SYSTEM, P.guard_user(question), P.GUARD_VERSION,
+                context={"question": question}, user_id=principal.user_id, letter_id=letter_id,
+                max_tokens=300,
+            )
+        except LLMError:
+            # Fail closed: without the second layer we do not answer free questions.
+            return refusal("legal_advice")
+        if decision.category == "individual_legal_advice":
+            return refusal("legal_advice")
+        if decision.category == "prompt_injection":
+            return refusal("prompt_injection")
+        if decision.category == "off_topic":
+            return refusal("off_topic")
+
