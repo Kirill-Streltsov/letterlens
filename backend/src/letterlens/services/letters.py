@@ -295,3 +295,33 @@ class LetterService:
         except LLMError as exc:
             raise ApiError(503, "llm_unavailable", "the assistant is not available right now") from exc
 
+        answer = vault.restore(draft.answer)
+        if draft.refused:
+            return refusal("legal_advice")
+        if is_advisory_output(answer):
+            return refusal("legal_advice")
+        if unsupported_numbers(answer, allowed_numbers(state)):
+            emit_metric("GuardrailBlocked", 1, reason="unverified")
+            return QuestionResponse(
+                answer=None, refused=True, reason="unverified", handover_suggested=True,
+                line_ids=[], citations=[],
+            )
+        passage_by_id = {p.id: p for p in passages}
+        line_ids = [i for i in draft.line_ids if i in state.document.line_map()]
+        citations = [
+            CitationOut(
+                id=p.id, title=p.title, source_url=p.source_url,
+                source_name=p.source_name, checked_on=p.checked_on,
+            )
+            for c in draft.citation_ids
+            if (p := passage_by_id.get(c)) is not None
+        ]
+        emit_metric("QuestionsAnswered", 1)
+        return QuestionResponse(
+            answer=answer, refused=False, reason=None, handover_suggested=False,
+            line_ids=line_ids, citations=citations,
+        )
+
+
+def has_verified_facts(state: PipelineState) -> bool:
+    return bool(state.facts and any(d.status is FactStatus.VERIFIED for d in state.facts.deadlines))
