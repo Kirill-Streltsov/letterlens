@@ -55,3 +55,23 @@ class Principal:
         return DbContext(user_id=self.user_id, tenant_ids=self.counselling_tenant_ids)
 
 
+class PrincipalResolver:
+    """Maps a token subject to a user row and memberships, with a short cache."""
+
+    def __init__(self, db: Database) -> None:
+        self.db = db
+        self._cache: dict[str, tuple[float, Principal]] = {}
+
+    def resolve(self, identity: Identity) -> Principal:
+        hit = self._cache.get(identity.sub)
+        if hit and hit[0] > time.monotonic() and hit[1].identity == identity:
+            return hit[1]
+        with self.db.session(DbContext.as_system()) as conn:
+            user = resolve_user(conn, identity.sub)
+            members = tuple(memberships(conn, str(user["id"])))
+        principal = Principal(identity, user, members)
+        self._cache[identity.sub] = (time.monotonic() + _CACHE_SECONDS, principal)
+        return principal
+
+    def invalidate(self, sub: str) -> None:
+        self._cache.pop(sub, None)
