@@ -25,3 +25,33 @@ class Principal:
     def user_id(self) -> str:
         return str(self.user["id"])
 
+    @property
+    def counselling_tenant_ids(self) -> tuple[str, ...]:
+        """Tenants whose shared letters this user may read. Employees get none."""
+        return tuple(
+            m.tenant_id
+            for m in self.memberships
+            if m.kind == "counselling" and m.role in {"counsellor", "admin"}
+        )
+
+    def is_tenant_admin(self, tenant_id: str) -> bool:
+        return any(m.tenant_id == tenant_id and m.role == "admin" for m in self.memberships)
+
+    @property
+    def is_platform_admin(self) -> bool:
+        return PLATFORM_ADMIN_GROUP in self.identity.groups
+
+    @property
+    def plan(self) -> str:
+        expires = self.user.get("plan_expires_at")
+        if self.user["plan"] == "plus" and (expires is None or expires > datetime.now(UTC)):
+            return "plus"
+        if any(m.kind == "employer" for m in self.memberships):
+            return "plus"  # employer benefit
+        return "free"
+
+    @property
+    def ctx(self) -> DbContext:
+        return DbContext(user_id=self.user_id, tenant_ids=self.counselling_tenant_ids)
+
+
