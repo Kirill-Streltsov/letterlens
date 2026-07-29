@@ -45,3 +45,30 @@ class SharingService:
         with self.c.db.session(principal.ctx) as conn:
             return [CounsellingService(**row) for row in R.counselling_services(conn, city)]
 
+    def share(self, principal: Principal, letter_id: str, body: ShareRequest) -> tuple[ShareInfo, bool]:
+        """Returns the share and whether a German explanation must be generated."""
+        if body.consent_text_version != CONSENT_VERSION:
+            raise bad_request("consent_outdated", "please accept the current consent text")
+        with self.c.db.session(principal.ctx) as conn:
+            row = R.letter_row(conn, letter_id)
+            if row is None or row["owner_id"] != principal.user_id:
+                raise not_found("letter")
+            if not any(s["id"] == body.tenant_id for s in R.counselling_services(conn, None)):
+                raise not_found("counselling service")
+            share = R.create_share(
+                conn, letter_id, principal.user_id, body.tenant_id, body.consent_text_version,
+                body.days, row["language"],
+            )
+            R.audit(conn, principal.user_id, "share.create", "share", share["id"],
+                    tenant_id=body.tenant_id, details={"letter_id": letter_id, "days": body.days,
+                                                       "consent": body.consent_text_version})
+            state = R.load_state(conn, self.c.keys, row)
+            needs_german = COUNSELLOR_LANGUAGE not in state.explanations and row["status"] == "ready"
+            tenant_name = next(s["tenant_name"] for s in R.shares_for_letter(conn, letter_id)
+                               if s["id"] == share["id"])
+        info = ShareInfo(
+            id=share["id"], tenant_id=share["tenant_id"], tenant_name=tenant_name,
+            case_status=share["case_status"], expires_at=share["expires_at"], revoked=False,
+        )
+        return info, needs_german
+
