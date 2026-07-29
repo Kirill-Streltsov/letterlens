@@ -194,3 +194,27 @@ class SharingService:
             explanation_de=state.explanations.get(COUNSELLOR_LANGUAGE),
         )
 
+    def update_case(self, principal: Principal, share_id: str, case_status: str | None,
+                    assigned_to: str | None) -> None:
+        self._require_counsellor(principal)
+        with self.c.db.session(principal.ctx) as conn:
+            share = R.get_share(conn, share_id)
+            if share is None or share["tenant_id"] not in principal.counselling_tenant_ids:
+                raise not_found("case")
+            R.update_case(conn, share_id, case_status, assigned_to)
+            R.audit(conn, principal.user_id, "case.update", "share", share_id,
+                    tenant_id=share["tenant_id"], details={"case_status": case_status})
+
+    def translate(self, principal: Principal, text: str, language: str) -> str:
+        self._require_counsellor(principal)
+        if not is_available(language):
+            raise bad_request("language_unavailable", f"language '{language}' is not available")
+        return self._translate(principal, text, language)
+
+    def stats(self, principal: Principal, tenant_id: str, months: int) -> list[StatsRow]:
+        if tenant_id not in principal.counselling_tenant_ids:
+            raise not_found("tenant")
+        since = datetime.now(UTC) - timedelta(days=31 * months)
+        with self.c.db.session(principal.ctx) as conn:
+            return [StatsRow(**r) for r in R.tenant_stats(conn, tenant_id, since)]
+
