@@ -72,3 +72,31 @@ class SharingService:
         )
         return info, needs_german
 
+    def revoke(self, principal: Principal, share_id: str) -> None:
+        with self.c.db.session(principal.ctx) as conn:
+            share = R.get_share(conn, share_id)
+            if share is None or share["owner_id"] != principal.user_id:
+                raise not_found("share")
+            R.revoke_share(conn, share_id)
+            R.audit(conn, principal.user_id, "share.revoke", "share", share_id,
+                    tenant_id=share["tenant_id"])
+
+    # -- messages -------------------------------------------------------------
+
+    def _translate(self, principal: Principal, text: str, language: str) -> str:
+        lang = languages().get(language) or languages()["en"]
+        try:
+            result = self.c.gateway.generate(
+                Task.TRANSLATE_REPLY,
+                ReplyTranslation,
+                P.TRANSLATE_REPLY_SYSTEM_TEMPLATE.format(language_name=lang.name),
+                f"<message>\n{text}\n</message>",
+                P.TRANSLATE_REPLY_VERSION,
+                context={"text": text, "language": language},
+                user_id=principal.user_id,
+                max_tokens=2000,
+            )
+        except LLMError as exc:
+            raise ApiError(503, "llm_unavailable", "translation is not available right now") from exc
+        return result.translation
+
