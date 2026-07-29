@@ -110,3 +110,39 @@ class SharingService:
             return share, "counsellor"
         raise not_found("share")
 
+    def messages(self, principal: Principal, share_id: str) -> list[MessageOut]:
+        with self.c.db.session(principal.ctx) as conn:
+            share, role = self._share_for(conn, principal, share_id)
+            rows = R.list_messages(conn, self.c.keys, share)
+        reader_language = share["client_language"] if role == "client" else COUNSELLOR_LANGUAGE
+        out = []
+        for r in rows:
+            body = json.loads(r["body"])
+            translated = body["translations"].get(reader_language)
+            out.append(
+                MessageOut(
+                    id=r["id"], author_role=r["author_role"], created_at=r["created_at"],
+                    text=translated or body["text"],
+                    original_text=body["text"] if translated else None,
+                )
+            )
+        return out
+
+    def post_message(self, principal: Principal, share_id: str, text: str) -> MessageOut:
+        with self.c.db.session(principal.ctx) as conn:
+            share, role = self._share_for(conn, principal, share_id)
+            if share["revoked_at"] is not None:
+                raise ApiError(409, "share_revoked", "this share was revoked")
+        source = share["client_language"] if role == "client" else COUNSELLOR_LANGUAGE
+        target = COUNSELLOR_LANGUAGE if role == "client" else share["client_language"]
+        translations = {source: text}
+        if target != source:
+            translations[target] = self._translate(principal, text, target)
+        body = json.dumps({"text": text, "language": source, "translations": translations}).encode()
+        with self.c.db.session(principal.ctx) as conn:
+            row = R.insert_message(conn, self.c.keys, share, principal.user_id, role, body)
+            R.audit(conn, principal.user_id, "message.create", "share", share_id,
+                    tenant_id=share["tenant_id"], details={"role": role})
+        return MessageOut(id=row["id"], author_role=role, text=text, original_text=None,  # type: ignore[arg-type]
+                          created_at=row["created_at"])
+
