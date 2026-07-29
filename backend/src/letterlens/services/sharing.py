@@ -167,3 +167,30 @@ class SharingService:
                         share_id=row["id"], letter_id=row["letter_id"], tenant_id=row["tenant_id"],
                         client_name=row["client_name"], client_language=row["client_language"],
                         letter_type=row["letter_type"], letter_status=row["letter_status"],
+                        case_status=row["case_status"], assigned_to=row["assigned_to"],
+                        headline=exp.headline if exp else None,
+                        next_deadline=next_deadline(state, COUNSELLOR_LANGUAGE),
+                        created_at=row["created_at"], expires_at=row["expires_at"],
+                    )
+                )
+        return items
+
+    def case(self, principal: Principal, share_id: str) -> CaseDetail:
+        self._require_counsellor(principal)
+        with self.c.db.session(principal.ctx) as conn:
+            share = R.get_share(conn, share_id)
+            if share is None or share["tenant_id"] not in principal.counselling_tenant_ids:
+                raise not_found("case")
+            view = self.letters.view(conn, share["letter_id"], share["client_language"])
+            client = R.get_user(conn, share["owner_id"])
+            R.audit(conn, principal.user_id, "case.view", "share", share_id, tenant_id=share["tenant_id"])
+            row = R.letter_row(conn, share["letter_id"])
+            assert row is not None
+            state = R.load_state(conn, self.c.keys, row)
+        return CaseDetail(
+            share_id=share_id, case_status=share["case_status"],
+            client_name=client["display_name"] if client else None,
+            client_language=share["client_language"], letter=view,
+            explanation_de=state.explanations.get(COUNSELLOR_LANGUAGE),
+        )
+
