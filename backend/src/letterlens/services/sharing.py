@@ -100,3 +100,13 @@ class SharingService:
             raise ApiError(503, "llm_unavailable", "translation is not available right now") from exc
         return result.translation
 
+    def _share_for(self, conn: Conn, principal: Principal, share_id: str) -> tuple[dict[str, Any], str]:
+        share = R.get_share(conn, share_id)
+        if share is None:
+            raise not_found("share")
+        if share["owner_id"] == principal.user_id:
+            return share, "client"
+        if share["tenant_id"] in principal.counselling_tenant_ids:
+            return share, "counsellor"
+        raise not_found("share")
+
