@@ -218,3 +218,24 @@ class SharingService:
         with self.c.db.session(principal.ctx) as conn:
             return [StatsRow(**r) for r in R.tenant_stats(conn, tenant_id, since)]
 
+    def invite(self, principal: Principal, tenant_id: str, role: str) -> InviteResponse:
+        if not principal.is_tenant_admin(tenant_id):
+            raise forbidden("tenant admins only")
+        code = "-".join(
+            "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(4)) for _ in range(3)
+        )
+        with self.c.db.session(principal.ctx) as conn:
+            R.create_invite(conn, tenant_id, role, principal.user_id, code)
+            R.audit(conn, principal.user_id, "invite.create", "tenant", tenant_id,
+                    tenant_id=tenant_id, details={"role": role})
+        return InviteResponse(code=code, expires_in_days=14)
+
+    def redeem(self, principal: Principal, code: str) -> None:
+        from letterlens.db import DbContext
+
+        with self.c.db.session(DbContext.as_system()) as conn:
+            result = R.redeem_invite(conn, code, principal.user_id)
+            if result is None:
+                raise not_found("invite")
+            R.audit(conn, principal.user_id, "invite.redeem", "tenant", result["tenant_id"],
+                    tenant_id=result["tenant_id"], details={"role": result["role"]})
