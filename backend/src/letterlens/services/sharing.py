@@ -146,3 +146,24 @@ class SharingService:
         return MessageOut(id=row["id"], author_role=role, text=text, original_text=None,  # type: ignore[arg-type]
                           created_at=row["created_at"])
 
+    # -- counsellor side --------------------------------------------------------
+
+    def _require_counsellor(self, principal: Principal) -> None:
+        if not principal.counselling_tenant_ids:
+            raise forbidden("counsellor access only")
+
+    def cases(self, principal: Principal, status: str | None) -> list[CaseItem]:
+        self._require_counsellor(principal)
+        items = []
+        with self.c.db.session(principal.ctx) as conn:
+            for row in R.tenant_cases(conn, list(principal.counselling_tenant_ids), status):
+                letter = R.letter_row(conn, row["letter_id"])
+                if letter is None:
+                    continue
+                state = R.load_state(conn, self.c.keys, letter)
+                exp = state.explanations.get(COUNSELLOR_LANGUAGE) or state.explanations.get(state.language)
+                items.append(
+                    CaseItem(
+                        share_id=row["id"], letter_id=row["letter_id"], tenant_id=row["tenant_id"],
+                        client_name=row["client_name"], client_language=row["client_language"],
+                        letter_type=row["letter_type"], letter_status=row["letter_status"],
