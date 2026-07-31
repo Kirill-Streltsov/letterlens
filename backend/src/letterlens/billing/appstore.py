@@ -47,3 +47,27 @@ def _verify_signed_by(cert: x509.Certificate, issuer: x509.Certificate) -> None:
         raise AppStoreVerificationError("certificate chain signature invalid") from exc
 
 
+def _has_extension(cert: x509.Certificate, oid: x509.ObjectIdentifier) -> bool:
+    try:
+        cert.extensions.get_extension_for_oid(oid)
+    except x509.ExtensionNotFound:
+        return False
+    return True
+
+
+def verify_signed_payload(
+    token: str, root_der: bytes | None = None, now: datetime | None = None
+) -> dict[str, Any]:
+    root_der = root_der if root_der is not None else ROOT_CERT.read_bytes()
+    now = now or datetime.now(UTC)
+    try:
+        header = json.loads(_b64url(token.split(".")[0]))
+    except (ValueError, IndexError) as exc:
+        raise AppStoreVerificationError("malformed JWS") from exc
+    if header.get("alg") != "ES256":
+        raise AppStoreVerificationError("unexpected algorithm")
+    chain_b64 = header.get("x5c") or []
+    if len(chain_b64) != 3:
+        raise AppStoreVerificationError("x5c must contain three certificates")
+    leaf, intermediate, root = (x509.load_der_x509_certificate(base64.b64decode(c)) for c in chain_b64)
+
