@@ -71,3 +71,26 @@ def verify_signed_payload(
         raise AppStoreVerificationError("x5c must contain three certificates")
     leaf, intermediate, root = (x509.load_der_x509_certificate(base64.b64decode(c)) for c in chain_b64)
 
+    pinned = x509.load_der_x509_certificate(root_der)
+    if root.fingerprint(hashes.SHA256()) != pinned.fingerprint(hashes.SHA256()):
+        raise AppStoreVerificationError("root certificate is not Apple Root CA - G3")
+    _verify_signed_by(intermediate, pinned)
+    _verify_signed_by(leaf, intermediate)
+    if not _has_extension(leaf, LEAF_OID) or not _has_extension(intermediate, INTERMEDIATE_OID):
+        raise AppStoreVerificationError("certificate is not an App Store signing certificate")
+    for cert in (leaf, intermediate):
+        if not cert.not_valid_before_utc <= now <= cert.not_valid_after_utc:
+            raise AppStoreVerificationError("certificate is outside its validity period")
+
+    try:
+        payload: dict[str, Any] = jwt.decode(
+            token,
+            key=leaf.public_key(),  # type: ignore[arg-type]
+            algorithms=["ES256"],
+            options={"verify_aud": False, "verify_exp": False, "verify_iat": False},
+        )
+    except jwt.PyJWTError as exc:
+        raise AppStoreVerificationError("JWS signature invalid") from exc
+    return payload
+
+
