@@ -94,3 +94,31 @@ def verify_signed_payload(
     return payload
 
 
+@dataclass(frozen=True)
+class Entitlement:
+    active: bool
+    expires_at: datetime | None
+    original_transaction_id: str
+    app_account_token: str | None
+
+
+def entitlement_from_transaction(
+    tx: dict[str, Any], bundle_id: str, product_id: str, environment: str, now: datetime | None = None
+) -> Entitlement:
+    now = now or datetime.now(UTC)
+    if tx.get("bundleId") != bundle_id:
+        raise AppStoreVerificationError("wrong bundle id")
+    if tx.get("productId") != product_id:
+        raise AppStoreVerificationError("unknown product")
+    if tx.get("environment") != environment:
+        raise AppStoreVerificationError("wrong environment")
+    expires_ms = tx.get("expiresDate")
+    expires = datetime.fromtimestamp(expires_ms / 1000, UTC) if expires_ms else None
+    revoked = tx.get("revocationDate") is not None
+    active = not revoked and (expires is None or expires > now)
+    return Entitlement(
+        active=active,
+        expires_at=expires,
+        original_transaction_id=str(tx.get("originalTransactionId", "")),
+        app_account_token=tx.get("appAccountToken"),
+    )
