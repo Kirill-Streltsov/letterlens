@@ -63,3 +63,37 @@ class BillingService:
             raise ApiError(502, "stripe_error", "Stripe did not return a checkout URL")
         return session.url
 
+    def stripe_webhook(self, payload: bytes, signature: str | None) -> None:
+        secret = self.c.settings.stripe_webhook_secret
+        if secret is None:
+            raise ApiError(501, "billing_disabled", "Stripe is not configured")
+        try:
+            event = stripe.Webhook.construct_event(payload, signature, secret.get_secret_value())
+        except (ValueError, stripe.SignatureVerificationError) as exc:
+            raise bad_request("invalid_signature", "webhook signature is invalid") from exc
+        with self.c.db.session(DbContext.as_system()) as conn:
+            if not R.first_time_event(conn, "stripe", event.id):
+                return
+            obj: dict[str, Any] = event.data.object  # type: ignore[assignment]
+            if event.type in {"customer.subscription.created", "customer.subscription.updated",
+                              "customer.subscription.deleted"}:
+                self._apply_subscription(conn, obj, deleted=event.type.endswith("deleted"))
+            R.audit(conn, None, f"billing.stripe.{event.type}", "event", event.id)
+
+    @staticmethod
+    def _apply_subscription(conn: Any, sub: dict[str, Any], deleted: bool) -> None:
+        metadata = sub.get("metadata") or {}
+        active = not deleted and sub.get("status") in {"active", "trialing", "past_due"}
+        items = (sub.get("items") or {}).get("data") or [{}]
+        period_end = sub.get("current_period_end") or items[0].get("current_period_end")
+        expires = datetime.fromtimestamp(period_end, UTC) if period_end else None
+        if metadata.get("kind") == "plus" and metadata.get("user_id"):
+            R.update_user(
+                conn, metadata["user_id"], plan="plus" if active else "free",
+                plan_source="stripe", plan_expires_at=expires,
+                stripe_customer_id=sub.get("customer"),
+            )
+        elif metadata.get("kind") == "seats" and metadata.get("tenant_id"):
+            quantity = int(items[0].get("quantity") or 0) if active else 0
+            R.set_tenant_seats(conn, metadata["tenant_id"], quantity, sub.get("customer"))
+
