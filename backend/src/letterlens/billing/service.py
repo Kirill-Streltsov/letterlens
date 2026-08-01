@@ -46,3 +46,20 @@ class BillingService:
             if tenant_id is None or not principal.is_tenant_admin(tenant_id):
                 raise forbidden("tenant admins only")
             price, metadata, qty = s.stripe_price_seat, {"kind": "seats", "tenant_id": tenant_id}, quantity
+        if not price:
+            raise ApiError(501, "billing_disabled", "price is not configured")
+        session = self._stripe().v1.checkout.sessions.create(
+            params={
+                "mode": "subscription",
+                "line_items": [{"price": price, "quantity": qty}],
+                "client_reference_id": metadata.get("user_id") or metadata.get("tenant_id"),
+                "metadata": metadata,
+                "subscription_data": {"metadata": metadata},
+                "success_url": f"{s.public_web_url}/billing/success",
+                "cancel_url": f"{s.public_web_url}/billing/cancel",
+            }
+        )
+        if not session.url:
+            raise ApiError(502, "stripe_error", "Stripe did not return a checkout URL")
+        return session.url
+
