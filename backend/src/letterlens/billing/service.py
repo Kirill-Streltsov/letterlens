@@ -97,3 +97,28 @@ class BillingService:
             quantity = int(items[0].get("quantity") or 0) if active else 0
             R.set_tenant_seats(conn, metadata["tenant_id"], quantity, sub.get("customer"))
 
+    # -- App Store --------------------------------------------------------------
+
+    def _entitlement(self, signed: str) -> Any:
+        s = self.c.settings
+        try:
+            tx = verify_signed_payload(signed)
+            return entitlement_from_transaction(
+                tx, s.appstore_bundle_id, s.appstore_product_plus, s.appstore_environment
+            )
+        except AppStoreVerificationError as exc:
+            raise bad_request("invalid_transaction", str(exc)) from exc
+
+    def appstore_transaction(self, principal: Principal, signed_transaction: str) -> tuple[str, datetime | None]:
+        ent = self._entitlement(signed_transaction)
+        # The app sets appAccountToken = user id at purchase; reject foreign transactions.
+        if ent.app_account_token and ent.app_account_token.lower() != principal.user_id.lower():
+            raise forbidden("transaction belongs to another account")
+        plan = "plus" if ent.active else "free"
+        with self.c.db.session(principal.ctx) as conn:
+            R.update_user(conn, principal.user_id, plan=plan, plan_source="appstore",
+                          plan_expires_at=ent.expires_at)
+            R.audit(conn, principal.user_id, "billing.appstore.transaction", "user", principal.user_id,
+                    details={"active": ent.active})
+        return plan, ent.expires_at
+
