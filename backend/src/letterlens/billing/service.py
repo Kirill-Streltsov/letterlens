@@ -122,3 +122,22 @@ class BillingService:
                     details={"active": ent.active})
         return plan, ent.expires_at
 
+    def appstore_notification(self, signed_payload: str) -> None:
+        try:
+            notification = verify_signed_payload(signed_payload)
+        except AppStoreVerificationError as exc:
+            raise bad_request("invalid_notification", str(exc)) from exc
+        data = notification.get("data") or {}
+        signed_tx = data.get("signedTransactionInfo")
+        uuid = notification.get("notificationUUID", "")
+        if not signed_tx:
+            return
+        ent = self._entitlement(signed_tx)
+        with self.c.db.session(DbContext.as_system()) as conn:
+            if not R.first_time_event(conn, "appstore", uuid):
+                return
+            if ent.app_account_token:
+                R.update_user(conn, ent.app_account_token, plan="plus" if ent.active else "free",
+                              plan_source="appstore", plan_expires_at=ent.expires_at)
+            R.audit(conn, None, f"billing.appstore.{notification.get('notificationType')}",
+                    "event", uuid)
