@@ -41,3 +41,31 @@ class Container:
     def classifier(self) -> LinearModel:
         return default_model()
 
+    @cached_property
+    def retriever(self) -> HybridRetriever:
+        index = EmbeddingIndex.load()
+        use_dense = index is not None and index.model == self.settings.embedding_model
+        return HybridRetriever(
+            index=index if use_dense else None,
+            embedder=self.gateway.embed if use_dense else None,
+        )
+
+    @cached_property
+    def deps(self) -> PipelineDeps:
+        return PipelineDeps(self.gateway, self.retriever, self.classifier)
+
+    @cached_property
+    def state_store(self) -> PgStateStore:
+        return PgStateStore(self.db, self.keys)
+
+    @cached_property
+    def runner(self) -> Runner:
+        if self.settings.pipeline_runner is PipelineRunner.STEPFUNCTIONS:
+            return StepFunctionsRunner(self.settings.state_machine_arn)
+        return InProcessRunner(self.state_store, lambda: self.deps)
+
+    @cached_property
+    def storage(self) -> ImageStorage:
+        if self.settings.letters_bucket:
+            return S3Storage(self.settings.letters_bucket, self.settings.aws_region)
+        return DisabledStorage()
