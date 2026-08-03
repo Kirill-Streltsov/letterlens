@@ -17,3 +17,27 @@ from letterlens.rag.retriever import EmbeddingIndex, HybridRetriever
 from letterlens.storage import DisabledStorage, ImageStorage, S3Storage
 
 
+@dataclass
+class Container:
+    settings: Settings
+
+    @cached_property
+    def db(self) -> Database:
+        return Database(self.settings.database_url.get_secret_value())
+
+    @cached_property
+    def keys(self) -> KeyRing:
+        return KeyRing(get_kek())
+
+    @cached_property
+    def ledger(self) -> UsageLedger:
+        return PgLedger(self.db)
+
+    @cached_property
+    def gateway(self) -> Gateway:
+        return Gateway(build_provider(self.settings), self.settings, self.ledger)
+
+    @cached_property
+    def classifier(self) -> LinearModel:
+        return default_model()
+
