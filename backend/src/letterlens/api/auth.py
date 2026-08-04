@@ -45,3 +45,26 @@ def verify_cognito_token(token: str, settings: Settings, jwks: Any | None = None
             algorithms=["RS256"],
             issuer=iss,
             options={"require": ["exp", "iat", "sub", "token_use"], "verify_aud": False},
+            leeway=30,
+        )
+    except jwt.PyJWTError as exc:
+        raise AuthError(f"invalid token: {type(exc).__name__}") from exc
+    # Cognito access tokens carry client_id instead of aud.
+    if claims.get("token_use") != "access":
+        raise AuthError("not an access token")
+    if settings.cognito_client_ids and claims.get("client_id") not in settings.cognito_client_ids:
+        raise AuthError("unknown client")
+    return Identity(sub=claims["sub"], groups=frozenset(claims.get("cognito:groups", [])))
+
+
+def authenticate(headers: dict[str, str], settings: Settings) -> Identity:
+    if settings.auth_mode is AuthMode.DEV:
+        user = headers.get("x-dev-user")
+        if not user:
+            raise AuthError("missing X-Dev-User header (dev auth mode)")
+        groups = {g.strip() for g in headers.get("x-dev-groups", "").split(",") if g.strip()}
+        return Identity(sub=f"dev:{user}", groups=frozenset(groups))
+    auth = headers.get("authorization", "")
+    if not auth.lower().startswith("bearer "):
+        raise AuthError("missing bearer token")
+    return verify_cognito_token(auth[7:].strip(), settings)
