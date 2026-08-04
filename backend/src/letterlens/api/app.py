@@ -56,3 +56,28 @@ def create_app(settings: Settings | None = None, container: Container | None = N
             allow_headers=["*"],
         )
 
+    @app.middleware("http")
+    async def context(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        rid = request.headers.get("x-request-id") or uuid.uuid4().hex
+        token = request_id_var.set(rid[:64])
+        started = time.perf_counter()
+        try:
+            response = await call_next(request)
+        finally:
+            request_id_var.reset(token)
+        response.headers["X-Request-Id"] = rid[:64]
+        for key, value in SECURITY_HEADERS.items():
+            response.headers.setdefault(key, value)
+        log.info(
+            "request",
+            extra={
+                "request_id": rid[:64],
+                "method": request.method,
+                # The route template, not the raw path: ids are not logged.
+                "route": getattr(request.scope.get("route"), "path", "unknown"),
+                "status": response.status_code,
+                "ms": int((time.perf_counter() - started) * 1000),
+            },
+        )
+        return response
+
