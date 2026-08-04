@@ -30,3 +30,29 @@ SECURITY_HEADERS = {
 }
 
 
+def create_app(settings: Settings | None = None, container: Container | None = None) -> FastAPI:
+    settings = settings or get_settings()
+    configure_logging(settings.log_level)
+    container = container or Container(settings)
+
+    app = FastAPI(
+        title="LetterLens API",
+        version="1.0.0",
+        description=(
+            "Explains German official letters in the reader's language. Facts are grounded in "
+            "source lines; dates that cannot be grounded are marked 'please check'."
+        ),
+        docs_url="/docs" if settings.env is not Environment.PROD else None,
+        redoc_url=None,
+    )
+    app.state.services = Services(container)
+
+    if settings.env is not Environment.PROD:
+        # In production the web app and the API share one CloudFront origin: no CORS.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[settings.public_web_url],
+            allow_methods=["*"],
+            allow_headers=["*"],
+        )
+
