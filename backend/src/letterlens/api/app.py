@@ -81,3 +81,30 @@ def create_app(settings: Settings | None = None, container: Container | None = N
         )
         return response
 
+    @app.exception_handler(ApiError)
+    async def api_error(request: Request, exc: ApiError) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status,
+            content={"code": exc.code, "message": exc.message, "request_id": request_id_var.get()},
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(request: Request, exc: RequestValidationError) -> JSONResponse:
+        # Do not echo input values: they can contain letter text.
+        fields = [".".join(str(p) for p in e["loc"]) for e in exc.errors()][:10]
+        return JSONResponse(
+            status_code=422,
+            content={"code": "invalid_request", "message": f"invalid fields: {fields}"},
+        )
+
+    @app.exception_handler(Exception)
+    async def unhandled(request: Request, exc: Exception) -> JSONResponse:
+        log.exception("unhandled error")
+        return JSONResponse(
+            status_code=500,
+            content={"code": "internal", "message": "internal error", "request_id": request_id_var.get()},
+        )
+
+    app.include_router(public)
+    app.include_router(router)
+    return app
