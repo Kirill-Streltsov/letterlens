@@ -25,3 +25,34 @@ class Services:
     def principals(self) -> PrincipalResolver:
         return PrincipalResolver(self.container.db)
 
+    @cached_property
+    def letters(self) -> LetterService:
+        return LetterService(self.container)
+
+    @cached_property
+    def sharing(self) -> SharingService:
+        return SharingService(self.container, self.letters)
+
+    @cached_property
+    def billing(self) -> BillingService:
+        return BillingService(self.container)
+
+
+def get_services(request: Request) -> Services:
+    services: Services = request.app.state.services
+    return services
+
+
+ServicesDep = Annotated[Services, Depends(get_services)]
+
+
+def get_principal(request: Request, services: ServicesDep) -> Principal:
+    headers = {k.lower(): v for k, v in request.headers.items()}
+    try:
+        identity = authenticate(headers, services.container.settings)
+    except AuthError as exc:
+        raise ApiError(401, "unauthorized", "authentication required") from exc
+    return services.principals.resolve(identity)
+
+
+PrincipalDep = Annotated[Principal, Depends(get_principal)]
