@@ -117,3 +117,31 @@ def delete_me(principal: PrincipalDep, services: ServicesDep) -> Response:
     return Response(status_code=204)
 
 
+@router.get("/me/export", tags=["me"])
+def export_me(principal: PrincipalDep, services: ServicesDep) -> dict[str, object]:
+    """GDPR Art. 20 export: all letters with their results, as JSON."""
+    letters = []
+    with services.container.db.session(principal.ctx) as conn:
+        for row in R.list_letters(conn, principal.user_id, limit=1000):
+            letters.append(services.letters.view(conn, row["id"], row["language"], include_images=False)
+                           .model_dump(mode="json"))
+    return {"user_id": principal.user_id, "letters": letters}
+
+
+# --- letters --------------------------------------------------------------------------------
+
+
+@router.post("/letters", status_code=202, response_model=CreateLetterResponse, tags=["letters"])
+def create_letter(
+    body: CreateLetterRequest,
+    principal: PrincipalDep,
+    services: ServicesDep,
+    background: BackgroundTasks,
+    idempotency_key: IdempotencyKey = None,
+) -> CreateLetterResponse:
+    response, start = services.letters.create(principal, body, idempotency_key)
+    if start:
+        background.add_task(services.container.runner.start, response.id)
+    return response
+
+
