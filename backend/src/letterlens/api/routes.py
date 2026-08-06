@@ -95,3 +95,25 @@ def me(principal: PrincipalDep, services: ServicesDep) -> MeResponse:
     )
 
 
+@router.patch("/me", status_code=204, tags=["me"])
+def update_me(body: UpdateMeRequest, principal: PrincipalDep, services: ServicesDep) -> Response:
+    if body.preferred_language and body.preferred_language not in languages():
+        raise ApiError(400, "language_unavailable", "unknown language")
+    with services.container.db.session(principal.ctx) as conn:
+        R.update_user(conn, principal.user_id, **body.model_dump(exclude_none=True))
+    services.principals.invalidate(principal.identity.sub)
+    return Response(status_code=204)
+
+
+@router.delete("/me", status_code=204, tags=["me"])
+def delete_me(principal: PrincipalDep, services: ServicesDep) -> Response:
+    """Delete the account and all letters. The data key is destroyed (crypto-shredding)."""
+    with services.container.db.session(principal.ctx) as conn:
+        R.audit(conn, principal.user_id, "account.delete", "user", principal.user_id)
+        keys = R.delete_user(conn, principal.user_id)
+    services.container.keys.cache.drop(principal.user_id)
+    services.container.storage.delete(keys)
+    services.principals.invalidate(principal.identity.sub)
+    return Response(status_code=204)
+
+
