@@ -71,3 +71,27 @@ def list_languages() -> list[LanguageInfo]:
     ]
 
 
+# --- me ---------------------------------------------------------------------------------
+
+
+@router.get("/me", response_model=MeResponse, tags=["me"])
+def me(principal: PrincipalDep, services: ServicesDep) -> MeResponse:
+    settings = services.container.settings
+    with services.container.db.session(principal.ctx) as conn:
+        used = R.letters_this_month(conn, principal.user_id)
+    return MeResponse(
+        id=principal.user_id,
+        display_name=principal.user.get("display_name"),
+        preferred_language=principal.user["preferred_language"],
+        plan=principal.plan,  # type: ignore[arg-type]
+        plan_expires_at=principal.user.get("plan_expires_at"),
+        letters_this_month=used,
+        letters_limit=None if principal.plan == "plus" else settings.free_letters_per_month,
+        memberships=[
+            MembershipInfo(tenant_id=m.tenant_id, tenant_name=m.name, role=m.role, kind=m.kind)
+            for m in principal.memberships
+        ],
+        is_platform_admin=principal.is_platform_admin,
+    )
+
+
