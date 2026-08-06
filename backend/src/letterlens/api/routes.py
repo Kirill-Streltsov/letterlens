@@ -51,3 +51,23 @@ from letterlens.i18n import languages
 from letterlens.pipeline.runner import EXPLAIN_ONLY
 from letterlens.services.sharing import COUNSELLOR_LANGUAGE
 
+router = APIRouter(prefix="/v1")
+public = APIRouter()
+
+IdempotencyKey = Annotated[str | None, Header(alias="Idempotency-Key", max_length=80)]
+
+
+@public.get("/health", tags=["ops"])
+def health() -> dict[str, str]:
+    return {"status": "ok"}
+
+
+@router.get("/languages", response_model=list[LanguageInfo], tags=["me"])
+def list_languages() -> list[LanguageInfo]:
+    return [
+        LanguageInfo(code=l.code, name=l.name, native_name=l.native_name, rtl=l.rtl, status=l.status.value)
+        for l in languages().values()
+        if l.status.value != "disabled"
+    ]
+
+
