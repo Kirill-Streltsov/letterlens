@@ -320,3 +320,24 @@ def costs(principal: PrincipalDep, services: ServicesDep,
         return [CostRow(**r) for r in R.cost_report(conn, days)]
 
 
+@router.get("/admin/letters/{letter_id}/cost", response_model=LetterCost, tags=["admin"])
+def letter_cost(letter_id: str, principal: PrincipalDep, services: ServicesDep) -> LetterCost:
+    """Answers: what did this request cost? Readers can query their own letters."""
+    lid = _uuid(letter_id)
+    if principal.is_platform_admin:
+        ctx = DbContext.as_system()
+    else:
+        ctx = principal.ctx
+    with services.container.db.session(ctx) as conn:
+        if not principal.is_platform_admin and R.letter_row(conn, lid) is None:
+            raise ApiError(404, "not_found", "letter not found")
+        return LetterCost(letter_id=lid, **R.letter_cost(conn, lid))
+
+
+def _uuid(value: str) -> str:
+    import uuid
+
+    try:
+        return str(uuid.UUID(value))
+    except ValueError as exc:
+        raise ApiError(404, "not_found", "not found") from exc
