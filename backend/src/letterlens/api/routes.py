@@ -265,3 +265,31 @@ def translate(body: TranslateRequest, principal: PrincipalDep, services: Service
     )
 
 
+@router.get("/counsellor/tenants/{tenant_id}/stats", response_model=list[StatsRow], tags=["counsellor"])
+def tenant_stats(tenant_id: str, principal: PrincipalDep, services: ServicesDep,
+                 months: Annotated[int, Query(ge=1, le=24)] = 12) -> list[StatsRow]:
+    return services.sharing.stats(principal, _uuid(tenant_id), months)
+
+
+@router.post("/counsellor/invites", response_model=InviteResponse, tags=["counsellor"])
+def create_invite(body: InviteRequest, principal: PrincipalDep, services: ServicesDep) -> InviteResponse:
+    return services.sharing.invite(principal, _uuid(body.tenant_id), body.role)
+
+
+# --- billing ---------------------------------------------------------------------------------
+
+
+@router.post("/billing/checkout", response_model=CheckoutResponse, tags=["billing"])
+def checkout(body: CheckoutRequest, principal: PrincipalDep, services: ServicesDep) -> CheckoutResponse:
+    return CheckoutResponse(
+        url=services.billing.checkout(principal, body.product, body.tenant_id, body.quantity)
+    )
+
+
+@router.post("/billing/stripe/webhook", status_code=204, tags=["billing"])
+async def stripe_webhook(request: Request, services: ServicesDep) -> Response:
+    payload = await request.body()
+    services.billing.stripe_webhook(payload, request.headers.get("stripe-signature"))
+    return Response(status_code=204)
+
+
