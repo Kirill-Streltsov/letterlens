@@ -169,3 +169,29 @@ def request_explanation(
     return {"started": start}
 
 
+@router.patch("/letters/{letter_id}", status_code=204, tags=["letters"])
+def update_letter(letter_id: str, body: RetentionRequest, principal: PrincipalDep,
+                  services: ServicesDep) -> Response:
+    services.letters.set_retention(principal, _uuid(letter_id), body.retention_days)
+    return Response(status_code=204)
+
+
+@router.delete("/letters/{letter_id}", status_code=204, tags=["letters"])
+def delete_letter(letter_id: str, principal: PrincipalDep, services: ServicesDep) -> Response:
+    services.letters.delete(principal, _uuid(letter_id))
+    return Response(status_code=204)
+
+
+@router.post("/letters/{letter_id}/images", response_model=ImageUploadResponse, tags=["letters"])
+def upload_images(letter_id: str, body: ImageUploadRequest, principal: PrincipalDep,
+                  services: ServicesDep) -> ImageUploadResponse:
+    targets = services.letters.image_targets(principal, _uuid(letter_id), body.count)
+    return ImageUploadResponse(targets=[UploadTarget(**t) for t in targets])
+
+
+@router.post("/letters/{letter_id}/questions", response_model=QuestionResponse, tags=["letters"])
+def ask_question(letter_id: str, body: QuestionRequest, principal: PrincipalDep,
+                 services: ServicesDep) -> QuestionResponse:
+    return services.letters.ask(principal, _uuid(letter_id), body.question, body.language)
+
+
