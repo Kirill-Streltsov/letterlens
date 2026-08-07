@@ -195,3 +195,27 @@ def ask_question(letter_id: str, body: QuestionRequest, principal: PrincipalDep,
     return services.letters.ask(principal, _uuid(letter_id), body.question, body.language)
 
 
+# --- sharing ------------------------------------------------------------------------------
+
+
+@router.get("/counselling-services", response_model=list[CounsellingService], tags=["sharing"])
+def counselling_services(principal: PrincipalDep, services: ServicesDep,
+                         city: Annotated[str | None, Query(max_length=80)] = None) -> list[CounsellingService]:
+    return services.sharing.services(principal, city)
+
+
+@router.post("/letters/{letter_id}/shares", status_code=201, response_model=ShareInfo, tags=["sharing"])
+def share_letter(letter_id: str, body: ShareRequest, principal: PrincipalDep,
+                 services: ServicesDep, background: BackgroundTasks) -> ShareInfo:
+    info, needs_german = services.sharing.share(principal, _uuid(letter_id), body)
+    if needs_german:
+        background.add_task(services.container.runner.start, letter_id, EXPLAIN_ONLY, COUNSELLOR_LANGUAGE)
+    return info
+
+
+@router.delete("/shares/{share_id}", status_code=204, tags=["sharing"])
+def revoke_share(share_id: str, principal: PrincipalDep, services: ServicesDep) -> Response:
+    services.sharing.revoke(principal, _uuid(share_id))
+    return Response(status_code=204)
+
+
