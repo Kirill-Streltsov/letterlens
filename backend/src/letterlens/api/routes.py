@@ -293,3 +293,30 @@ async def stripe_webhook(request: Request, services: ServicesDep) -> Response:
     return Response(status_code=204)
 
 
+@router.post("/billing/appstore/transactions", response_model=PlanResponse, tags=["billing"])
+def appstore_transaction(body: AppStoreTransactionRequest, principal: PrincipalDep,
+                         services: ServicesDep) -> PlanResponse:
+    plan, expires = services.billing.appstore_transaction(principal, body.signed_transaction)
+    services.principals.invalidate(principal.identity.sub)
+    return PlanResponse(plan=plan, plan_expires_at=expires)  # type: ignore[arg-type]
+
+
+@router.post("/billing/appstore/notifications", status_code=204, tags=["billing"])
+async def appstore_notification(request: Request, services: ServicesDep) -> Response:
+    body = await request.json()
+    services.billing.appstore_notification(str(body.get("signedPayload", "")))
+    return Response(status_code=204)
+
+
+# --- platform admin ----------------------------------------------------------------------------
+
+
+@router.get("/admin/costs", response_model=list[CostRow], tags=["admin"])
+def costs(principal: PrincipalDep, services: ServicesDep,
+          days: Annotated[int, Query(ge=1, le=90)] = 14) -> list[CostRow]:
+    if not principal.is_platform_admin:
+        raise forbidden("platform admins only")
+    with services.container.db.session(DbContext.as_system()) as conn:
+        return [CostRow(**r) for r in R.cost_report(conn, days)]
+
+
