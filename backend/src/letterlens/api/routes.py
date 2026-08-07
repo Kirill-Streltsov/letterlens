@@ -219,3 +219,24 @@ def revoke_share(share_id: str, principal: PrincipalDep, services: ServicesDep) 
     return Response(status_code=204)
 
 
+@router.get("/shares/{share_id}/messages", response_model=list[MessageOut], tags=["sharing"])
+def list_messages(share_id: str, principal: PrincipalDep, services: ServicesDep) -> list[MessageOut]:
+    return services.sharing.messages(principal, _uuid(share_id))
+
+
+@router.post("/shares/{share_id}/messages", status_code=201, response_model=MessageOut, tags=["sharing"])
+def post_message(share_id: str, body: MessageRequest, principal: PrincipalDep,
+                 services: ServicesDep) -> MessageOut:
+    return services.sharing.post_message(principal, _uuid(share_id), body.text)
+
+
+@router.post("/invites/redeem", status_code=204, tags=["sharing"])
+def redeem_invite(body: RedeemRequest, principal: PrincipalDep, services: ServicesDep) -> Response:
+    services.sharing.redeem(principal, body.code)
+    services.principals.invalidate(principal.identity.sub)
+    return Response(status_code=204)
+
+
+# --- counsellor -----------------------------------------------------------------------------
+
+
