@@ -240,3 +240,28 @@ def redeem_invite(body: RedeemRequest, principal: PrincipalDep, services: Servic
 # --- counsellor -----------------------------------------------------------------------------
 
 
+@router.get("/counsellor/cases", response_model=list[CaseItem], tags=["counsellor"])
+def cases(principal: PrincipalDep, services: ServicesDep,
+          status: Annotated[str | None, Query(pattern="^(new|in_progress|closed)$")] = None) -> list[CaseItem]:
+    return services.sharing.cases(principal, status)
+
+
+@router.get("/counsellor/cases/{share_id}", response_model=CaseDetail, tags=["counsellor"])
+def case_detail(share_id: str, principal: PrincipalDep, services: ServicesDep) -> CaseDetail:
+    return services.sharing.case(principal, _uuid(share_id))
+
+
+@router.patch("/counsellor/cases/{share_id}", status_code=204, tags=["counsellor"])
+def update_case(share_id: str, body: CaseUpdate, principal: PrincipalDep, services: ServicesDep) -> Response:
+    services.sharing.update_case(principal, _uuid(share_id), body.case_status, body.assigned_to)
+    return Response(status_code=204)
+
+
+@router.post("/counsellor/translate", response_model=TranslateResponse, tags=["counsellor"])
+def translate(body: TranslateRequest, principal: PrincipalDep, services: ServicesDep) -> TranslateResponse:
+    return TranslateResponse(
+        translation=services.sharing.translate(principal, body.text, body.language),
+        language=body.language,
+    )
+
+
