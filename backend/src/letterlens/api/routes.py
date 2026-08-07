@@ -145,3 +145,27 @@ def create_letter(
     return response
 
 
+@router.get("/letters", response_model=list[LetterListItem], tags=["letters"])
+def list_letters(principal: PrincipalDep, services: ServicesDep) -> list[LetterListItem]:
+    return services.letters.list(principal)
+
+
+@router.get("/letters/{letter_id}", response_model=LetterView, tags=["letters"])
+def get_letter(
+    letter_id: str, principal: PrincipalDep, services: ServicesDep,
+    lang: Annotated[str, Query(max_length=8)] = "en",
+) -> LetterView:
+    return services.letters.get(principal, _uuid(letter_id), lang)
+
+
+@router.post("/letters/{letter_id}/explanations", status_code=202, tags=["letters"])
+def request_explanation(
+    letter_id: str, body: ExplanationRequest, principal: PrincipalDep, services: ServicesDep,
+    background: BackgroundTasks,
+) -> dict[str, bool]:
+    start = services.letters.request_explanation(principal, _uuid(letter_id), body.language)
+    if start:
+        background.add_task(services.container.runner.start, letter_id, EXPLAIN_ONLY, body.language)
+    return {"started": start}
+
+
