@@ -71,3 +71,24 @@ class CreateLetterRequest(ApiModel):
     retention_days: int = Field(default=30, ge=1, le=365)
 
 
+class CreateLetterResponse(ApiModel):
+    id: str
+    status: LetterStatus
+    expires_at: datetime
+
+
+class UploadTarget(ApiModel):
+    key: str
+    url: str
+    fields: dict[str, str]
+
+
+class ImageUploadRequest(ApiModel):
+    count: int = Field(ge=1, le=6)
+    consent: Literal[True]
+
+
+class ImageUploadResponse(ApiModel):
+    targets: list[UploadTarget]
+
+
