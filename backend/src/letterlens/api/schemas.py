@@ -92,3 +92,30 @@ class ImageUploadResponse(ApiModel):
     targets: list[UploadTarget]
 
 
+class DeadlineSummary(ApiModel):
+    due_date: date | None
+    status: str
+    label: str
+
+
+class LetterListItem(ApiModel):
+    id: str
+    status: LetterStatus
+    letter_type: str | None
+    headline: str | None
+    sender: str | None
+    next_deadline: DeadlineSummary | None
+    created_at: datetime
+    expires_at: datetime
+    shared: bool
+
+
+class ShareInfo(ApiModel):
+    id: str
+    tenant_id: str
+    tenant_name: str
+    case_status: str
+    expires_at: datetime
+    revoked: bool
+
+
