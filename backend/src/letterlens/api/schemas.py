@@ -45,3 +45,29 @@ class MembershipInfo(ApiModel):
     kind: str
 
 
+class MeResponse(ApiModel):
+    id: str
+    display_name: str | None
+    preferred_language: str
+    plan: Literal["free", "plus"]
+    plan_expires_at: datetime | None
+    letters_this_month: int
+    letters_limit: int | None
+    memberships: list[MembershipInfo]
+    is_platform_admin: bool
+
+
+class UpdateMeRequest(ApiModel):
+    display_name: str | None = Field(default=None, max_length=80)
+    preferred_language: str | None = Field(default=None, max_length=8)
+
+
+# --- Letters --------------------------------------------------------------------
+
+
+class CreateLetterRequest(ApiModel):
+    document: LetterDocument
+    language: str = Field(default="en", max_length=8)
+    retention_days: int = Field(default=30, ge=1, le=365)
+
+
