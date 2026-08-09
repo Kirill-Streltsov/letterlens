@@ -119,3 +119,25 @@ class ShareInfo(ApiModel):
     revoked: bool
 
 
+class LetterView(ApiModel):
+    id: str
+    status: LetterStatus
+    error: str | None
+    language: str
+    created_at: datetime
+    expires_at: datetime
+    lines: list[OcrLine]
+    classification: Classification | None
+    facts: VerifiedFacts | None
+    explanation: Explanation | None
+    explanation_languages: list[str]
+    degraded: bool
+    degraded_reasons: list[str]
+    image_urls: list[str]
+    shares: list[ShareInfo]
+
+
+class ExplanationRequest(ApiModel):
+    language: str = Field(max_length=8)
+
+
