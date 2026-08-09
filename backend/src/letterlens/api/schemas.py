@@ -21,3 +21,27 @@ class ApiModel(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+class ErrorBody(ApiModel):
+    code: str
+    message: str
+    request_id: str | None = None
+
+
+# --- Me -----------------------------------------------------------------------
+
+
+class LanguageInfo(ApiModel):
+    code: str
+    name: str
+    native_name: str
+    rtl: bool
+    status: str
+
+
+class MembershipInfo(ApiModel):
+    tenant_id: str
+    tenant_name: str
+    role: str
+    kind: str
+
+
