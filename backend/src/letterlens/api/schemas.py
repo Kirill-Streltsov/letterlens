@@ -141,3 +141,29 @@ class ExplanationRequest(ApiModel):
     language: str = Field(max_length=8)
 
 
+class RetentionRequest(ApiModel):
+    retention_days: int = Field(ge=1, le=365)
+
+
+class QuestionRequest(ApiModel):
+    question: str = Field(min_length=3, max_length=600)
+    language: str = Field(default="en", max_length=8)
+
+
+class CitationOut(ApiModel):
+    id: str
+    title: str
+    source_url: str
+    source_name: str
+    checked_on: date
+
+
+class QuestionResponse(ApiModel):
+    answer: str | None
+    refused: bool
+    reason: Literal["legal_advice", "prompt_injection", "off_topic", "unverified"] | None
+    handover_suggested: bool
+    line_ids: list[str]
+    citations: list[CitationOut]
+
+
