@@ -218,3 +218,27 @@ class CaseItem(ApiModel):
     expires_at: datetime
 
 
+class CaseDetail(ApiModel):
+    share_id: str
+    case_status: str
+    client_name: str | None
+    client_language: str
+    letter: LetterView
+    explanation_de: Explanation | None
+
+
+class CaseUpdate(ApiModel):
+    case_status: Literal["new", "in_progress", "closed"] | None = None
+    assigned_to: str | None = None
+
+
+class TranslateRequest(ApiModel):
+    text: str = Field(min_length=1, max_length=4000)
+    language: str = Field(max_length=8)
+
+
+class TranslateResponse(ApiModel):
+    translation: str
+    language: str
+
+
