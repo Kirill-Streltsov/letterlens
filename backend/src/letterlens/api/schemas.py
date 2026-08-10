@@ -289,3 +289,27 @@ class PlanResponse(ApiModel):
 # --- Admin ---------------------------------------------------------------------------------
 
 
+class CostRow(ApiModel):
+    day: date
+    task: str
+    model: str
+    prompt_version: str
+    calls: int
+    failures: int
+    input_tokens: int
+    output_tokens: int
+    list_price_usd: float
+    p50_ms: int | None
+    p95_ms: int | None
+
+
+class LetterCost(ApiModel):
+    letter_id: str
+    calls: int
+    input_tokens: int
+    output_tokens: int
+    list_price_usd: float
+
+
+def dump(model: BaseModel) -> dict[str, Any]:
+    return model.model_dump(mode="json")
