@@ -264,3 +264,28 @@ class RedeemRequest(ApiModel):
     code: str = Field(min_length=6, max_length=40)
 
 
+# --- Billing --------------------------------------------------------------------------
+
+
+class CheckoutRequest(ApiModel):
+    product: Literal["plus", "seats"]
+    tenant_id: str | None = None
+    quantity: int = Field(default=1, ge=1, le=500)
+
+
+class CheckoutResponse(ApiModel):
+    url: str
+
+
+class AppStoreTransactionRequest(ApiModel):
+    signed_transaction: str = Field(min_length=20, max_length=20000)
+
+
+class PlanResponse(ApiModel):
+    plan: Literal["free", "plus"]
+    plan_expires_at: datetime | None
+
+
+# --- Admin ---------------------------------------------------------------------------------
+
+
