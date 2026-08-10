@@ -242,3 +242,25 @@ class TranslateResponse(ApiModel):
     language: str
 
 
+class StatsRow(ApiModel):
+    month: date
+    letter_type: str
+    language: str
+    cases: int
+    closed: int
+
+
+class InviteRequest(ApiModel):
+    tenant_id: str
+    role: Literal["counsellor", "admin"] = "counsellor"
+
+
+class InviteResponse(ApiModel):
+    code: str
+    expires_in_days: int
+
+
+class RedeemRequest(ApiModel):
+    code: str = Field(min_length=6, max_length=40)
+
+
