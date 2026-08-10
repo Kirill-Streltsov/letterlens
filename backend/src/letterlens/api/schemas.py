@@ -167,3 +167,31 @@ class QuestionResponse(ApiModel):
     citations: list[CitationOut]
 
 
+# --- Sharing and messages ----------------------------------------------------------
+
+
+CONSENT_VERSION = "share-consent-v1"
+
+
+class CounsellingService(ApiModel):
+    id: str
+    name: str
+    city: str | None
+    languages: list[str]
+
+
+class ShareRequest(ApiModel):
+    tenant_id: str
+    consent: Literal[True]
+    consent_text_version: Literal["share-consent-v1"]
+    days: int = Field(default=30, ge=1, le=90)
+
+
+class MessageOut(ApiModel):
+    id: str
+    author_role: Literal["client", "counsellor"]
+    text: str
+    original_text: str | None
+    created_at: datetime
+
+
