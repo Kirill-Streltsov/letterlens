@@ -195,3 +195,26 @@ class MessageOut(ApiModel):
     created_at: datetime
 
 
+class MessageRequest(ApiModel):
+    text: str = Field(min_length=1, max_length=4000)
+
+
+# --- Counsellor ----------------------------------------------------------------------
+
+
+class CaseItem(ApiModel):
+    share_id: str
+    letter_id: str
+    tenant_id: str
+    client_name: str | None
+    client_language: str
+    letter_type: str | None
+    letter_status: str
+    case_status: str
+    assigned_to: str | None
+    headline: str | None
+    next_deadline: DeadlineSummary | None
+    created_at: datetime
+    expires_at: datetime
+
+
