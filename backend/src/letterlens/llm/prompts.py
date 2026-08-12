@@ -49,8 +49,7 @@ TYPE_GUIDANCE: dict[LetterType, str] = {
         "Effective dates ('ab dem') are not deadlines; consent dates are."
     ),
     LetterType.OTHER: (
-        "Other letter. Extract payment dates and amounts carefully. Effective dates are not "
-        "deadlines."
+        "Other letter. Extract payment dates and amounts carefully. Effective dates are not deadlines."
     ),
 }
 
@@ -98,9 +97,7 @@ Rules:
 - Write every text field in {language_name}."""
 
 
-def explain_user(
-    numbered_text: str, facts: dict[str, Any], passages: list[Passage]
-) -> str:
+def explain_user(numbered_text: str, facts: dict[str, Any], passages: list[Passage]) -> str:
     refs = "\n".join(f"[{p.id}] {p.title}: {p.text}" for p in passages)
     return (
         f"<letter>\n{numbered_text}\n</letter>\n\n"
