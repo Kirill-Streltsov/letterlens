@@ -142,12 +142,16 @@ class Gateway:
                     response = self.provider.complete(request, self.settings.llm_timeout_seconds)
                 except RetryableError as exc:
                     last_error = exc
-                    self._record(task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started)
+                    self._record(
+                        task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started
+                    )
                     self._sleep(min(8.0, 0.5 * 2 ** (attempt - 1)) + random.uniform(0, 0.25))  # noqa: S311
                     continue
                 except PermanentError as exc:
                     last_error = exc
-                    self._record(task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started)
+                    self._record(
+                        task, model, prompt_version, attempt, model_index, exc, user_id, letter_id, started
+                    )
                     break
 
                 call = LLMCall(
@@ -182,9 +186,7 @@ class Gateway:
         raise last_error if isinstance(last_error, LLMError) else LLMError("no model available")
 
     def embed(self, texts: list[str]) -> list[list[float]]:
-        return self.provider.embed(
-            texts, self.settings.embedding_model, self.settings.llm_timeout_seconds
-        )
+        return self.provider.embed(texts, self.settings.embedding_model, self.settings.llm_timeout_seconds)
 
     def _record(
         self,
