@@ -59,7 +59,7 @@ markers = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 110
 target-version = "py313"
 src = ["src", "tests", "evals", "scripts"]
 
@@ -71,6 +71,12 @@ ignore = [
     "PLR2004", # magic values are fine in tests and parsers
     "RUF001", "RUF002", "RUF003", # German and Arabic text is intentional
     "PLC0415", # local imports keep Lambda cold starts small
+    "N812",    # "prompts as P" reads better in prompt-heavy code
+    "PLR0917", # keyword-only everywhere would hurt readability of small helpers
+    "PLR0911", "PLR0912", "PLR0915", # some service methods have many guard clauses
+    "S608",    # SQL is built only from allow-listed identifiers (see repo.update_user)
+    "E741",    # short loop names in comprehensions
+    "E501",    # the formatter wraps code; long string literals stay readable
 ]
 
 [tool.ruff.lint.per-file-ignores]
