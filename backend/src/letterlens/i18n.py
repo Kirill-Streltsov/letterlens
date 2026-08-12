@@ -62,22 +62,22 @@ REFUSAL: dict[str, str] = {
     "en": (
         "I can explain what the letter says, but I cannot assess your personal case or tell "
         "you what to decide. A counselling service can do this for free. Tap "
-        "\"Talk to a counsellor\" to share this letter with one."
+        '"Talk to a counsellor" to share this letter with one.'
     ),
     "de": (
         "Ich kann erklären, was im Brief steht. Ich kann aber Ihren persönlichen Fall nicht "
         "rechtlich prüfen und Ihnen keine Entscheidung empfehlen. Eine Beratungsstelle hilft "
-        "Ihnen kostenlos. Tippen Sie auf \"Mit Beratung sprechen\"."
+        'Ihnen kostenlos. Tippen Sie auf "Mit Beratung sprechen".'
     ),
     "tr": (
         "Mektupta ne yazdığını açıklayabilirim, ancak kişisel durumunuzu hukuki olarak "
         "değerlendiremem ve size ne karar vermeniz gerektiğini söyleyemem. Bir danışma "
-        "merkezi bunu ücretsiz yapabilir. Mektubu paylaşmak için \"Danışmanla konuş\" "
+        'merkezi bunu ücretsiz yapabilir. Mektubu paylaşmak için "Danışmanla konuş" '
         "düğmesine dokunun."
     ),
     "ar": (
         "يمكنني شرح ما يقوله الخطاب، لكن لا يمكنني تقييم حالتك الشخصية قانونياً أو إخبارك "
-        "بما يجب أن تقرره. يمكن لمركز استشارات مساعدتك مجاناً. اضغط على \"تحدث مع مستشار\" "
+        'بما يجب أن تقرره. يمكن لمركز استشارات مساعدتك مجاناً. اضغط على "تحدث مع مستشار" '
         "لمشاركة هذا الخطاب."
     ),
     "uk": (
@@ -113,10 +113,8 @@ DISCLAIMER: dict[str, str] = {
     "tr": "Genel bilgidir, hukuki danışmanlık değildir. Tarihleri ve tutarları her zaman "
     "orijinal mektupta kontrol edin.",
     "ar": "معلومات عامة وليست استشارة قانونية. تحقق دائماً من التواريخ والمبالغ في الخطاب الأصلي.",
-    "uk": "Загальна інформація, не юридична консультація. Завжди перевіряйте дати й суми в "
-    "оригіналі.",
-    "ru": "Общая информация, не юридическая консультация. Всегда проверяйте даты и суммы в "
-    "оригинале.",
+    "uk": "Загальна інформація, не юридична консультація. Завжди перевіряйте дати й суми в оригіналі.",
+    "ru": "Общая информация, не юридическая консультация. Всегда проверяйте даты и суммы в оригинале.",
 }
 
 
