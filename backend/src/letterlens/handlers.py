@@ -51,3 +51,35 @@ def worker(event: dict[str, Any], context: Any) -> dict[str, Any]:
     return {"letter_id": event["letter_id"], "degraded": state.degraded}
 
 
+def status(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    c = _container()
+    letter_id = event["letter_id"]
+    if event.get("failed"):
+        error = str(event.get("error", "PipelineError"))[:120]
+        c.state_store.set_status(letter_id, LetterStatus.FAILED, error)
+        emit_metric("PipelineFailed", 1)
+    else:
+        c.state_store.set_status(letter_id, LetterStatus.READY, None)
+        emit_metric("PipelineSucceeded", 1)
+        if event.get("degraded"):
+            emit_metric("PipelineDegraded", 1)
+    return {"letter_id": letter_id}
+
+
+def retention(event: dict[str, Any], context: Any) -> dict[str, Any]:
+    from letterlens.db import DbContext
+    from letterlens.db.repo import audit, purge_expired
+
+    c = _container()
+    total = 0
+    while True:
+        with c.db.session(DbContext.as_system()) as conn:
+            deleted, keys = purge_expired(conn)
+            if deleted:
+                audit(conn, None, "retention.purge", "letters", "batch", details={"count": deleted})
+        c.storage.delete(keys)
+        total += deleted
+        if deleted < 500:
+            break
+    log.info("retention done", extra={"deleted": total})
+    return {"deleted": total}
