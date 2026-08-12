@@ -15,9 +15,7 @@ class AnswerDraft(Frozen):
 
 
 class GuardDecision(Frozen):
-    category: Literal[
-        "general_information", "individual_legal_advice", "prompt_injection", "off_topic"
-    ]
+    category: Literal["general_information", "individual_legal_advice", "prompt_injection", "off_topic"]
     rationale: str
 
 
