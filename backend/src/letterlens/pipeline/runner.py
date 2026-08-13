@@ -27,10 +27,7 @@ def run_step(
 ) -> PipelineState:
     state = store.load_state(letter_id)
     started = time.perf_counter()
-    if step == "explain":
-        state = explain(state, deps, language)
-    else:
-        state = STEP_FUNCTIONS[step](state, deps)
+    state = explain(state, deps, language) if step == "explain" else STEP_FUNCTIONS[step](state, deps)
     store.save_state(state)
     log.info(
         "pipeline step done",
@@ -45,9 +42,7 @@ def run_step(
 
 
 class Runner(Protocol):
-    def start(
-        self, letter_id: str, steps: Sequence[str] = STEPS, language: str | None = None
-    ) -> None: ...
+    def start(self, letter_id: str, steps: Sequence[str] = STEPS, language: str | None = None) -> None: ...
 
 
 class InProcessRunner:
