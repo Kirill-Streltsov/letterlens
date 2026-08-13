@@ -60,7 +60,7 @@ _POSTCODE_CITY = re.compile(r"^\d{5}\s+[A-ZÄÖÜ][\wäöüß. -]+$")
 _STREET = re.compile(r"^[A-ZÄÖÜ][\wäöüß. -]+\s\d{1,4}\s?[a-zA-Z]?$")
 _PERSON = re.compile(r"^(?:[A-ZÄÖÜÇŞİ][\w'-]+)(?:\s+[A-ZÄÖÜÇŞİ][\w'-]+){1,3}$")
 _ORG_WORDS = re.compile(
-    r"(?i)finanzamt|jobcenter|stadt|kreis|gmbh|\beg\b|kasse|behörde|amt\b|service|"
+    r"(?i)finanzamt|jobcenter|\bstadt\b|\bkreis\b|gmbh|\beg\b|kasse|behörde|amt\b|service|"
     r"versicherung|aok|barmer|dak|ikk|stadtwerke|inkasso|hausverwaltung|postfach|abteilung"
 )
 
@@ -100,10 +100,7 @@ class PiiVault:
         new_lines: list[OcrLine] = []
         for line, flag in zip(doc.lines, flags, strict=True):
             text = line.text
-            if flag:
-                text = self.placeholder(flag, text.strip())
-            else:
-                text = self.redact_text(text)
+            text = self.placeholder(flag, text.strip()) if flag else self.redact_text(text)
             new_lines.append(line.model_copy(update={"text": text}))
         return doc.model_copy(update={"lines": new_lines})
 
