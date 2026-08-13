@@ -7,6 +7,7 @@ tests/test_classifier_parity.py proves that both give the same probabilities.
 
 from __future__ import annotations
 
+import itertools
 import json
 import math
 import re
@@ -34,7 +35,7 @@ def analyze(text: str) -> list[str]:
     """Feature extractor shared by training and serving. Do not change without retraining."""
     words = _WORD.findall(normalize_text(text))
     features = [f"w:{w}" for w in words]
-    features += [f"b:{a}_{b}" for a, b in zip(words, words[1:], strict=False)]
+    features += [f"b:{a}_{b}" for a, b in itertools.pairwise(words)]
     for word in words:
         padded = f" {word} "
         if len(padded) >= 4:
@@ -78,9 +79,7 @@ class LinearModel:
         return Classification(
             letter_type=label,
             confidence=round(confidence, 4),
-            probabilities={
-                LetterType(c): round(p, 4) for c, p in zip(self.classes, probs, strict=True)
-            },
+            probabilities={LetterType(c): round(p, 4) for c, p in zip(self.classes, probs, strict=True)},
             model_version=self.version,
             abstained=abstained,
         )
