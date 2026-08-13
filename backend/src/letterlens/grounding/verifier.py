@@ -87,9 +87,7 @@ def _verify_deadline(
             status, note = FactStatus.NEEDS_CHECK, NOTE_NOT_IN_SOURCE
         if letter_date is not None and explicit < letter_date:
             status, note = FactStatus.NEEDS_CHECK, NOTE_BEFORE_LETTER
-        return VerifiedDeadline(
-            due_date=explicit, status=status, is_estimate=False, note=note, **common
-        )
+        return VerifiedDeadline(due_date=explicit, status=status, is_estimate=False, note=note, **common)
 
     # Relative deadline: the period text must be in the cited line.
     period = parse_relative_period(cited) or (
@@ -140,29 +138,29 @@ def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
 
     amounts: list[VerifiedAmount] = []
     seen_amounts: set[tuple[Decimal, str]] = set()
-    for item in extraction.amounts:
-        value = parse_decimal_value(item.value)
+    for amt in extraction.amounts:
+        value = parse_decimal_value(amt.value)
         if value is None:
             continue
-        ids = _valid_ids(item.line_ids, lines)
+        ids = _valid_ids(amt.line_ids, lines)
         if value in find_amounts(_text(ids, lines)):
             status, note = FactStatus.VERIFIED, None
         elif value in doc_amounts:
             status, note = FactStatus.NEEDS_CHECK, NOTE_OTHER_LINE
         else:
             status, note = FactStatus.NEEDS_CHECK, NOTE_NOT_IN_SOURCE
-        key = (value, item.direction)
-        if key in seen_amounts:
+        amount_key = (value, amt.direction)
+        if amount_key in seen_amounts:
             continue
-        seen_amounts.add(key)
+        seen_amounts.add(amount_key)
         amounts.append(
             VerifiedAmount(
                 id=f"a{len(amounts) + 1}",
                 value=value,
-                currency=(item.currency or "EUR").upper()[:3],
-                direction=item.direction if item.direction in {"to_pay", "to_receive"} else "info",
+                currency=(amt.currency or "EUR").upper()[:3],
+                direction=amt.direction if amt.direction in {"to_pay", "to_receive"} else "info",
                 status=status,
-                description=item.description.strip()[:300],
+                description=amt.description.strip()[:300],
                 line_ids=ids,
                 note=note,
             )
