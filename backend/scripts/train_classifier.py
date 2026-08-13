@@ -46,9 +46,7 @@ def build_dataset(per_template: int, seed: int) -> tuple[list[str], list[str], l
 
 
 def make_vectorizer() -> TfidfVectorizer:
-    return TfidfVectorizer(
-        analyzer=analyze, sublinear_tf=True, min_df=2, max_features=30_000, norm="l2"
-    )
+    return TfidfVectorizer(analyzer=analyze, sublinear_tf=True, min_df=2, max_features=30_000, norm="l2")
 
 
 def make_model() -> LogisticRegression:
@@ -124,14 +122,14 @@ def main() -> None:
     texts, labels, groups = build_dataset(args.per_template, args.seed)
     y = np.array([CLASSES.index(lbl) for lbl in labels])
 
-    lotO, cal_logits, y_cal = leave_one_template_out(texts, labels, groups)
+    loto, cal_logits, y_cal = leave_one_template_out(texts, labels, groups)
     temperature = fit_temperature(cal_logits, y_cal)
     raw_probs = softmax(cal_logits)
     cal_probs = softmax(cal_logits / temperature)
     abstain = cal_probs.max(axis=1) < 0.5
     answered = ~abstain
-    lotO["abstain_rate"] = float(abstain.mean())
-    lotO["accuracy_when_answered"] = float(
+    loto["abstain_rate"] = float(abstain.mean())
+    loto["accuracy_when_answered"] = float(
         (cal_probs.argmax(axis=1)[answered] == y_cal[answered]).mean() if answered.any() else 0
     )
 
@@ -143,9 +141,7 @@ def main() -> None:
     vocab = vec.vocabulary_
     terms: dict[str, list[float]] = {}
     for term, idx in vocab.items():
-        terms[term] = [round(float(vec.idf_[idx]), 6)] + [
-            round(float(w), 6) for w in clf.coef_[:, idx]
-        ]
+        terms[term] = [round(float(vec.idf_[idx]), 6)] + [round(float(w), 6) for w in clf.coef_[:, idx]]
     version = f"lt-{datetime.now(UTC):%Y%m%d}-{len(vocab)}"
     artifact = {
         "version": version,
@@ -162,7 +158,7 @@ def main() -> None:
         "trained_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "samples": len(texts),
         "features": len(vocab),
-        "leave_one_template_out": lotO,
+        "leave_one_template_out": loto,
         "calibration": {
             "temperature": temperature,
             "nll_before": float(log_loss(y_cal, raw_probs, labels=list(range(len(CLASSES))))),
@@ -174,10 +170,14 @@ def main() -> None:
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(json.dumps(report, indent=2), encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k != "leave_one_template_out"}, indent=2))
-    print("leave-one-template-out accuracy:", round(lotO["accuracy"], 4))
-    print("abstain rate:", round(lotO["abstain_rate"], 3),
-          "accuracy when answered:", round(lotO["accuracy_when_answered"], 3))
-    for template, acc in lotO["per_template_accuracy"].items():
+    print("leave-one-template-out accuracy:", round(loto["accuracy"], 4))
+    print(
+        "abstain rate:",
+        round(loto["abstain_rate"], 3),
+        "accuracy when answered:",
+        round(loto["accuracy_when_answered"], 3),
+    )
+    for template, acc in loto["per_template_accuracy"].items():
         print(f"  {template:32s} {acc:.3f}")
 
 
