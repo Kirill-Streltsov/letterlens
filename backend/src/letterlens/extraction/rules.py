@@ -40,9 +40,7 @@ _TO_PAY = re.compile(
     r"zu erstatten|offen|gesamtbetrag|insgesamt|erhöhung|auf\s",
     re.IGNORECASE,
 )
-_ACTION = re.compile(
-    r"^(bitte|reichen sie|senden sie|zahlen sie|bringen sie|überweisen sie)", re.IGNORECASE
-)
+_ACTION = re.compile(r"^(bitte|reichen sie|senden sie|zahlen sie|bringen sie|überweisen sie)", re.IGNORECASE)
 _SKIP_SUBJECT = re.compile(r"^(sehr geehrte|liebe|anbei|datum)", re.IGNORECASE)
 
 
