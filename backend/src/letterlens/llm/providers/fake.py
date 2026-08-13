@@ -83,8 +83,7 @@ class FakeProvider:
             label = _DIRECTION_TEXT.get(a["direction"], "")
             summary.append({"text": f"Amount {label}: {a['value']} EUR.", "line_ids": a["line_ids"]})
         next_steps = [
-            {"text": f"General information: {p['title']}.", "citation_ids": [p["id"]]}
-            for p in passages[:3]
+            {"text": f"General information: {p['title']}.", "citation_ids": [p["id"]]} for p in passages[:3]
         ]
         return {
             "headline": f"Letter from {sender}",
