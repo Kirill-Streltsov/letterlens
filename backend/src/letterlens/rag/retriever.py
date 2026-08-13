@@ -25,9 +25,52 @@ RRF_K = 60
 
 _TOKEN = re.compile(r"[a-z]{3,}")
 _STOP = frozenset(
-    "the and for that this with are can from not was has have will must der die das und "
-    "ist sie ihr ihre den dem des ein eine einer von mit auf bis zum zur nach bei wir uns "
-    "oder auch werden wird sind".split()
+    [
+        "the",
+        "and",
+        "for",
+        "that",
+        "this",
+        "with",
+        "are",
+        "can",
+        "from",
+        "not",
+        "was",
+        "has",
+        "have",
+        "will",
+        "must",
+        "der",
+        "die",
+        "das",
+        "und",
+        "ist",
+        "sie",
+        "ihr",
+        "ihre",
+        "den",
+        "dem",
+        "des",
+        "ein",
+        "eine",
+        "einer",
+        "von",
+        "mit",
+        "auf",
+        "bis",
+        "zum",
+        "zur",
+        "nach",
+        "bei",
+        "wir",
+        "uns",
+        "oder",
+        "auch",
+        "werden",
+        "wird",
+        "sind",
+    ]
 )
 
 Embedder = Callable[[list[str]], list[list[float]]]
@@ -102,7 +145,7 @@ class HybridRetriever:
             return {}
         try:
             [qvec] = self.embedder([query])
-        except Exception:  # noqa: BLE001 - dense retrieval is optional; BM25 still works
+        except Exception:
             return {}
         scored = [
             (i, cosine(qvec, self.index.vectors[self.entries[i].id]))
