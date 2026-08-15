@@ -29,14 +29,12 @@ def migrate(admin_url: str, app_password: str | None = None, directory: Path = M
             if path.stem in done:
                 continue
             with conn.transaction():
-                conn.execute(path.read_text(encoding="utf-8"))  # type: ignore[arg-type]
+                conn.execute(path.read_text(encoding="utf-8"))
                 conn.execute("INSERT INTO schema_migrations (version) VALUES (%s)", (path.stem,))
             applied.append(path.stem)
         if app_password:
             conn.execute(
-                sql.SQL("ALTER ROLE letterlens_app LOGIN PASSWORD {}").format(
-                    sql.Literal(app_password)
-                )
+                sql.SQL("ALTER ROLE letterlens_app LOGIN PASSWORD {}").format(sql.Literal(app_password))
             )
     return applied
 
@@ -46,7 +44,7 @@ def main() -> None:
     if not admin_url:
         sys.exit("LETTERLENS_DATABASE_ADMIN_URL is not set")
     applied = migrate(admin_url, os.environ.get("LETTERLENS_DB_APP_PASSWORD"))
-    print(f"applied: {applied or 'nothing'}")  # noqa: T201
+    print(f"applied: {applied or 'nothing'}")
 
 
 if __name__ == "__main__":
