@@ -67,13 +67,19 @@ def get_user(conn: Conn, user_id: str) -> dict[str, Any] | None:
 
 
 def update_user(conn: Conn, user_id: str, **fields: Any) -> None:
-    allowed = {"display_name", "preferred_language", "plan", "plan_source", "plan_expires_at",
-               "stripe_customer_id"}
+    allowed = {
+        "display_name",
+        "preferred_language",
+        "plan",
+        "plan_source",
+        "plan_expires_at",
+        "stripe_customer_id",
+    }
     sets = {k: v for k, v in fields.items() if k in allowed}
     if not sets:
         return
     assignments = ", ".join(f"{k} = %({k})s" for k in sets)
-    conn.execute(f"UPDATE users SET {assignments} WHERE id = %(id)s", {**sets, "id": user_id})  # noqa: S608 - keys are allow-listed
+    conn.execute(f"UPDATE users SET {assignments} WHERE id = %(id)s", {**sets, "id": user_id})
 
 
 def delete_user(conn: Conn, user_id: str) -> list[str]:
@@ -100,9 +106,7 @@ class KeyRing:
         cached = self.cache.get(user_id)
         if cached is not None:
             return cached
-        row = conn.execute(
-            "SELECT wrapped_dek FROM user_keys WHERE user_id = %s", (user_id,)
-        ).fetchone()
+        row = conn.execute("SELECT wrapped_dek FROM user_keys WHERE user_id = %s", (user_id,)).fetchone()
         if row is None:
             if not create:
                 raise LookupError("no data key for this user")
@@ -135,9 +139,7 @@ class KeyRing:
 # ---------------------------------------------------------------------------
 
 
-def insert_letter(
-    conn: Conn, keys: KeyRing, state: PipelineState, retention_days: int
-) -> datetime:
+def insert_letter(conn: Conn, keys: KeyRing, state: PipelineState, retention_days: int) -> datetime:
     expires = utcnow() + timedelta(days=retention_days)
     blob = keys.seal(conn, state.owner_id, state.letter_id, state.model_dump_json().encode())
     conn.execute(
@@ -204,9 +206,7 @@ def add_image_keys(conn: Conn, letter_id: str, keys: list[str]) -> None:
 
 
 def delete_letter(conn: Conn, letter_id: str) -> list[str] | None:
-    row = conn.execute(
-        "DELETE FROM letters WHERE id = %s RETURNING image_keys", (letter_id,)
-    ).fetchone()
+    row = conn.execute("DELETE FROM letters WHERE id = %s RETURNING image_keys", (letter_id,)).fetchone()
     return list(row["image_keys"]) if row else None
 
 
@@ -230,8 +230,7 @@ def purge_expired(conn: Conn, limit: int = 500) -> tuple[int, list[str]]:
 
 def counselling_services(conn: Conn, city: str | None = None) -> list[dict[str, Any]]:
     query = (
-        "SELECT id::text, name, city, languages FROM tenants"
-        " WHERE kind = 'counselling' AND public_listing"
+        "SELECT id::text, name, city, languages FROM tenants WHERE kind = 'counselling' AND public_listing"
     )
     params: tuple[Any, ...] = ()
     if city:
@@ -386,8 +385,15 @@ def redeem_invite(conn: Conn, code: str, user_id: str) -> dict[str, Any] | None:
     return row
 
 
-def create_tenant(conn: Conn, name: str, kind: str, city: str | None, languages: list[str],
-                  public_listing: bool, seats: int = 0) -> str:
+def create_tenant(
+    conn: Conn,
+    name: str,
+    kind: str,
+    city: str | None,
+    languages: list[str],
+    public_listing: bool,
+    seats: int = 0,
+) -> str:
     row = conn.execute(
         "INSERT INTO tenants (name, kind, city, languages, public_listing, seats)"
         " VALUES (%s, %s, %s, %s, %s, %s) RETURNING id::text",
@@ -407,8 +413,7 @@ def add_member(conn: Conn, tenant_id: str, user_id: str, role: str) -> None:
 
 def set_tenant_seats(conn: Conn, tenant_id: str, seats: int, stripe_customer: str | None) -> None:
     conn.execute(
-        "UPDATE tenants SET seats = %s, stripe_customer_id = coalesce(%s, stripe_customer_id)"
-        " WHERE id = %s",
+        "UPDATE tenants SET seats = %s, stripe_customer_id = coalesce(%s, stripe_customer_id) WHERE id = %s",
         (seats, stripe_customer, tenant_id),
     )
 
@@ -463,8 +468,7 @@ def idempotent_response(conn: Conn, user_id: str, key: str) -> dict[str, Any] | 
 
 def store_idempotent_response(conn: Conn, user_id: str, key: str, response: dict[str, Any]) -> None:
     conn.execute(
-        "INSERT INTO idempotency_keys (user_id, key, response) VALUES (%s, %s, %s)"
-        " ON CONFLICT DO NOTHING",
+        "INSERT INTO idempotency_keys (user_id, key, response) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
         (user_id, key, Jsonb(response)),
     )
 
@@ -535,10 +539,20 @@ class PgLedger:
                 " user_id, letter_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,"
                 " %s, %s)",
                 (
-                    call.task.value, call.provider, call.model, call.prompt_version,
-                    call.input_tokens, call.output_tokens, call.list_price_usd, call.latency_ms,
-                    call.attempts, call.fallback_used, call.ok, call.error,
-                    _uuid_or_none(call.user_id), _uuid_or_none(call.letter_id),
+                    call.task.value,
+                    call.provider,
+                    call.model,
+                    call.prompt_version,
+                    call.input_tokens,
+                    call.output_tokens,
+                    call.list_price_usd,
+                    call.latency_ms,
+                    call.attempts,
+                    call.fallback_used,
+                    call.ok,
+                    call.error,
+                    _uuid_or_none(call.user_id),
+                    _uuid_or_none(call.letter_id),
                 ),
             )
 
