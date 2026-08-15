@@ -10,6 +10,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Any
 
 from letterlens.domain import (
@@ -24,7 +25,7 @@ from letterlens.domain import (
     VerifiedFacts,
 )
 from letterlens.extraction.rules import extract_with_rules
-from letterlens.grounding.german import find_amounts, find_dates
+from letterlens.grounding.german import find_amounts, find_dates, parse_amount
 from letterlens.grounding.verifier import verify
 from letterlens.i18n import COUNSELLING_HINT, DISCLAIMER, languages, localized
 from letterlens.llm import Gateway, Task
@@ -117,33 +118,47 @@ def _facts_for_prompt(facts: VerifiedFacts, vault: PiiVault) -> dict[str, Any]:
     return redacted
 
 
+def number_forms(token: str) -> set[str]:
+    """All normalized readings of a number token: raw, German amount, English amount, date."""
+    tok = token.strip(".,")
+    forms = {tok}
+    dates = find_dates(tok)
+    if dates:
+        forms.add(dates[0].isoformat())
+    if re.fullmatch(r"\d+\.\d{1,2}", tok):  # English decimal: 1523.00
+        forms.add(str(Decimal(tok).quantize(Decimal("0.01"))))
+    if re.fullmatch(r"\d{1,3}(,\d{3})+(\.\d{1,2})?", tok):  # English thousands: 1,523.00
+        forms.add(str(Decimal(tok.replace(",", "")).quantize(Decimal("0.01"))))
+    if not dates and (german := parse_amount(tok)) is not None and ("," in tok or "." in tok):
+        forms.add(str(german))
+    if tok.isdigit():
+        forms.add(str(int(tok)))
+    return forms
+
+
 def allowed_numbers(state: PipelineState) -> set[str]:
-    """Every number that the explanation may mention: from the letter and the verified facts."""
+    """Normalized numbers that an explanation may mention: from the letter and verified facts."""
     text = state.document.plain_text()
-    allowed = {n for n in _NUMBER.findall(text)}
+    allowed: set[str] = set()
+    for tok in _NUMBER.findall(text):
+        allowed |= number_forms(tok)
     for d in find_dates(text):
-        allowed |= {str(d.day), str(d.month), str(d.year), f"{d.day:02d}", f"{d.month:02d}"}
-        allowed.add(d.isoformat())
+        allowed |= {d.isoformat(), str(d.day), str(d.month), str(d.year)}
     for a in find_amounts(text):
-        allowed |= {str(a), str(a).replace(".", ","), str(int(a))}
+        allowed |= {str(a), str(int(a))}
     if state.facts:
         for dl in state.facts.deadlines:
             if dl.due_date:
                 dd = dl.due_date
-                allowed |= {dd.isoformat(), str(dd.day), str(dd.month), str(dd.year),
-                            f"{dd.day:02d}", f"{dd.month:02d}", f"{dd.day:02d}.{dd.month:02d}.{dd.year}"}
-    allowed |= {str(n) for n in range(0, 13)}  # small counts ("2 weeks", "1 month")
+                allowed |= {dd.isoformat(), str(dd.day), str(dd.month), str(dd.year)}
+    allowed |= {str(n) for n in range(0, 32)}  # counts and day numbers ("2 weeks", "the 4th day")
     return allowed
 
 
 def unsupported_numbers(text: str, allowed: set[str]) -> list[str]:
-    tokens = _NUMBER.findall(text.translate(_EASTERN_DIGITS))
-    bad = []
-    for tok in tokens:
-        pieces = [tok, tok.rstrip(".,")] + re.split(r"[.,]", tok)
-        if not any(p in allowed for p in pieces if p):
-            bad.append(tok)
-    return bad
+    """Numbers in generated text that occur neither in the letter nor in the verified facts."""
+    normalized = text.translate(_EASTERN_DIGITS).replace("\u066b", ",").replace("\u066c", ".")
+    return [tok for tok in _NUMBER.findall(normalized) if not number_forms(tok) & allowed]
 
 
 def sanitize_explanation(
@@ -253,7 +268,7 @@ def explain(state: PipelineState, deps: PipelineDeps, language: str | None = Non
     except LLMError as exc:
         log.warning("explain degraded", extra={"letter_id": state.letter_id, "error": type(exc).__name__})
         draft = ExplanationDraft.model_validate(
-            FakeProvider._explain(  # noqa: SLF001 - the template explainer is the fallback
+            FakeProvider._explain(
                 {"facts": facts_json, "passages": passages_ctx, "letter_type": letter_type.value}
             )
         )
