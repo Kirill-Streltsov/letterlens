@@ -44,9 +44,7 @@ class S3Storage:
             import boto3
             from botocore.config import Config
 
-            client = boto3.client(
-                "s3", region_name=region, config=Config(signature_version="s3v4")
-            )
+            client = boto3.client("s3", region_name=region, config=Config(signature_version="s3v4"))
         self.client = client
         self.bucket = bucket
 
