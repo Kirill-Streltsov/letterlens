@@ -56,19 +56,35 @@ class SharingService:
             if not any(s["id"] == body.tenant_id for s in R.counselling_services(conn, None)):
                 raise not_found("counselling service")
             share = R.create_share(
-                conn, letter_id, principal.user_id, body.tenant_id, body.consent_text_version,
-                body.days, row["language"],
+                conn,
+                letter_id,
+                principal.user_id,
+                body.tenant_id,
+                body.consent_text_version,
+                body.days,
+                row["language"],
             )
-            R.audit(conn, principal.user_id, "share.create", "share", share["id"],
-                    tenant_id=body.tenant_id, details={"letter_id": letter_id, "days": body.days,
-                                                       "consent": body.consent_text_version})
+            R.audit(
+                conn,
+                principal.user_id,
+                "share.create",
+                "share",
+                share["id"],
+                tenant_id=body.tenant_id,
+                details={"letter_id": letter_id, "days": body.days, "consent": body.consent_text_version},
+            )
             state = R.load_state(conn, self.c.keys, row)
             needs_german = COUNSELLOR_LANGUAGE not in state.explanations and row["status"] == "ready"
-            tenant_name = next(s["tenant_name"] for s in R.shares_for_letter(conn, letter_id)
-                               if s["id"] == share["id"])
+            tenant_name = next(
+                s["tenant_name"] for s in R.shares_for_letter(conn, letter_id) if s["id"] == share["id"]
+            )
         info = ShareInfo(
-            id=share["id"], tenant_id=share["tenant_id"], tenant_name=tenant_name,
-            case_status=share["case_status"], expires_at=share["expires_at"], revoked=False,
+            id=share["id"],
+            tenant_id=share["tenant_id"],
+            tenant_name=tenant_name,
+            case_status=share["case_status"],
+            expires_at=share["expires_at"],
+            revoked=False,
         )
         return info, needs_german
 
@@ -78,8 +94,7 @@ class SharingService:
             if share is None or share["owner_id"] != principal.user_id:
                 raise not_found("share")
             R.revoke_share(conn, share_id)
-            R.audit(conn, principal.user_id, "share.revoke", "share", share_id,
-                    tenant_id=share["tenant_id"])
+            R.audit(conn, principal.user_id, "share.revoke", "share", share_id, tenant_id=share["tenant_id"])
 
     # -- messages -------------------------------------------------------------
 
@@ -121,7 +136,9 @@ class SharingService:
             translated = body["translations"].get(reader_language)
             out.append(
                 MessageOut(
-                    id=r["id"], author_role=r["author_role"], created_at=r["created_at"],
+                    id=r["id"],
+                    author_role=r["author_role"],
+                    created_at=r["created_at"],
                     text=translated or body["text"],
                     original_text=body["text"] if translated else None,
                 )
@@ -141,10 +158,22 @@ class SharingService:
         body = json.dumps({"text": text, "language": source, "translations": translations}).encode()
         with self.c.db.session(principal.ctx) as conn:
             row = R.insert_message(conn, self.c.keys, share, principal.user_id, role, body)
-            R.audit(conn, principal.user_id, "message.create", "share", share_id,
-                    tenant_id=share["tenant_id"], details={"role": role})
-        return MessageOut(id=row["id"], author_role=role, text=text, original_text=None,  # type: ignore[arg-type]
-                          created_at=row["created_at"])
+            R.audit(
+                conn,
+                principal.user_id,
+                "message.create",
+                "share",
+                share_id,
+                tenant_id=share["tenant_id"],
+                details={"role": role},
+            )
+        return MessageOut(
+            id=row["id"],
+            author_role=role,
+            text=text,
+            original_text=None,
+            created_at=row["created_at"],
+        )
 
     # -- counsellor side --------------------------------------------------------
 
@@ -164,13 +193,19 @@ class SharingService:
                 exp = state.explanations.get(COUNSELLOR_LANGUAGE) or state.explanations.get(state.language)
                 items.append(
                     CaseItem(
-                        share_id=row["id"], letter_id=row["letter_id"], tenant_id=row["tenant_id"],
-                        client_name=row["client_name"], client_language=row["client_language"],
-                        letter_type=row["letter_type"], letter_status=row["letter_status"],
-                        case_status=row["case_status"], assigned_to=row["assigned_to"],
+                        share_id=row["id"],
+                        letter_id=row["letter_id"],
+                        tenant_id=row["tenant_id"],
+                        client_name=row["client_name"],
+                        client_language=row["client_language"],
+                        letter_type=row["letter_type"],
+                        letter_status=row["letter_status"],
+                        case_status=row["case_status"],
+                        assigned_to=row["assigned_to"],
                         headline=exp.headline if exp else None,
                         next_deadline=next_deadline(state, COUNSELLOR_LANGUAGE),
-                        created_at=row["created_at"], expires_at=row["expires_at"],
+                        created_at=row["created_at"],
+                        expires_at=row["expires_at"],
                     )
                 )
         return items
@@ -188,22 +223,32 @@ class SharingService:
             assert row is not None
             state = R.load_state(conn, self.c.keys, row)
         return CaseDetail(
-            share_id=share_id, case_status=share["case_status"],
+            share_id=share_id,
+            case_status=share["case_status"],
             client_name=client["display_name"] if client else None,
-            client_language=share["client_language"], letter=view,
+            client_language=share["client_language"],
+            letter=view,
             explanation_de=state.explanations.get(COUNSELLOR_LANGUAGE),
         )
 
-    def update_case(self, principal: Principal, share_id: str, case_status: str | None,
-                    assigned_to: str | None) -> None:
+    def update_case(
+        self, principal: Principal, share_id: str, case_status: str | None, assigned_to: str | None
+    ) -> None:
         self._require_counsellor(principal)
         with self.c.db.session(principal.ctx) as conn:
             share = R.get_share(conn, share_id)
             if share is None or share["tenant_id"] not in principal.counselling_tenant_ids:
                 raise not_found("case")
             R.update_case(conn, share_id, case_status, assigned_to)
-            R.audit(conn, principal.user_id, "case.update", "share", share_id,
-                    tenant_id=share["tenant_id"], details={"case_status": case_status})
+            R.audit(
+                conn,
+                principal.user_id,
+                "case.update",
+                "share",
+                share_id,
+                tenant_id=share["tenant_id"],
+                details={"case_status": case_status},
+            )
 
     def translate(self, principal: Principal, text: str, language: str) -> str:
         self._require_counsellor(principal)
@@ -221,13 +266,18 @@ class SharingService:
     def invite(self, principal: Principal, tenant_id: str, role: str) -> InviteResponse:
         if not principal.is_tenant_admin(tenant_id):
             raise forbidden("tenant admins only")
-        code = "-".join(
-            "".join(secrets.choice(_INVITE_ALPHABET) for _ in range(4)) for _ in range(3)
-        )
+        code = "-".join("".join(secrets.choice(_INVITE_ALPHABET) for _ in range(4)) for _ in range(3))
         with self.c.db.session(principal.ctx) as conn:
             R.create_invite(conn, tenant_id, role, principal.user_id, code)
-            R.audit(conn, principal.user_id, "invite.create", "tenant", tenant_id,
-                    tenant_id=tenant_id, details={"role": role})
+            R.audit(
+                conn,
+                principal.user_id,
+                "invite.create",
+                "tenant",
+                tenant_id,
+                tenant_id=tenant_id,
+                details={"role": role},
+            )
         return InviteResponse(code=code, expires_in_days=14)
 
     def redeem(self, principal: Principal, code: str) -> None:
@@ -237,5 +287,12 @@ class SharingService:
             result = R.redeem_invite(conn, code, principal.user_id)
             if result is None:
                 raise not_found("invite")
-            R.audit(conn, principal.user_id, "invite.redeem", "tenant", result["tenant_id"],
-                    tenant_id=result["tenant_id"], details={"role": result["role"]})
+            R.audit(
+                conn,
+                principal.user_id,
+                "invite.redeem",
+                "tenant",
+                result["tenant_id"],
+                tenant_id=result["tenant_id"],
+                details={"role": result["role"]},
+            )
