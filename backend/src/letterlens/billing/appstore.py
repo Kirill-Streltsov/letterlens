@@ -61,7 +61,7 @@ def verify_signed_payload(
     root_der = root_der if root_der is not None else ROOT_CERT.read_bytes()
     now = now or datetime.now(UTC)
     try:
-        header = json.loads(_b64url(token.split(".")[0]))
+        header = json.loads(_b64url(token.split(".", maxsplit=1)[0]))
     except (ValueError, IndexError) as exc:
         raise AppStoreVerificationError("malformed JWS") from exc
     if header.get("alg") != "ES256":
