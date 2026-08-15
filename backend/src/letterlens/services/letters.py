@@ -90,9 +90,7 @@ class LetterService:
                     return CreateLetterResponse.model_validate(previous), False
             limit = None if plus else settings.free_letters_per_month
             if not R.consume_letter_quota(conn, principal.user_id, limit):
-                raise ApiError(
-                    402, "quota_exceeded", f"the free plan includes {limit} letters per month"
-                )
+                raise ApiError(402, "quota_exceeded", f"the free plan includes {limit} letters per month")
             state = PipelineState(
                 letter_id=R.new_id(),
                 owner_id=principal.user_id,
@@ -100,8 +98,14 @@ class LetterService:
                 document=body.document,
             )
             expires = R.insert_letter(conn, self.c.keys, state, retention)
-            R.audit(conn, principal.user_id, "letter.create", "letter", state.letter_id,
-                    details={"lines": len(body.document.lines), "engine": body.document.ocr_engine})
+            R.audit(
+                conn,
+                principal.user_id,
+                "letter.create",
+                "letter",
+                state.letter_id,
+                details={"lines": len(body.document.lines), "engine": body.document.ocr_engine},
+            )
             response = CreateLetterResponse(
                 id=state.letter_id, status=LetterStatus.RECEIVED, expires_at=expires
             )
@@ -157,7 +161,7 @@ class LetterService:
         with self.c.db.session(principal.ctx) as conn:
             return self.view(conn, letter_id, language)
 
-    def list(self, principal: Principal) -> list[LetterListItem]:
+    def list_for(self, principal: Principal) -> list[LetterListItem]:
         items = []
         with self.c.db.session(principal.ctx) as conn:
             for row in R.list_letters(conn, principal.user_id):
@@ -231,7 +235,9 @@ class LetterService:
     def ask(self, principal: Principal, letter_id: str, question: str, language: str) -> QuestionResponse:
         _require_language(language)
         with self.c.db.session(principal.ctx) as conn:
-            if R.hit_rate_limit(conn, f"{principal.user_id}:questions", self.c.settings.rate_limit_per_minute):
+            if R.hit_rate_limit(
+                conn, f"{principal.user_id}:questions", self.c.settings.rate_limit_per_minute
+            ):
                 raise ApiError(429, "rate_limited", "too many questions, try again in a minute")
             _, state = self._row_and_state(conn, letter_id)
         if state.facts is None:
@@ -239,14 +245,11 @@ class LetterService:
 
         def refusal(reason: str) -> QuestionResponse:
             emit_metric("GuardrailBlocked", 1, reason=reason)
-            if reason == "off_topic":
-                text = localized(OFF_TOPIC, language)
-            else:
-                text = localized(REFUSAL, language)
+            text = localized(OFF_TOPIC, language) if reason == "off_topic" else localized(REFUSAL, language)
             return QuestionResponse(
                 answer=text,
                 refused=True,
-                reason=reason,  # type: ignore[arg-type]
+                reason=reason,
                 handover_suggested=reason == "legal_advice",
                 line_ids=[],
                 citations=[],
@@ -261,8 +264,14 @@ class LetterService:
         # Layer 2: LLM classifier.
         try:
             decision = gw.generate(
-                Task.GUARD, GuardDecision, P.GUARD_SYSTEM, P.guard_user(question), P.GUARD_VERSION,
-                context={"question": question}, user_id=principal.user_id, letter_id=letter_id,
+                Task.GUARD,
+                GuardDecision,
+                P.GUARD_SYSTEM,
+                P.guard_user(question),
+                P.GUARD_VERSION,
+                context={"question": question},
+                user_id=principal.user_id,
+                letter_id=letter_id,
                 max_tokens=300,
             )
         except LLMError:
@@ -284,8 +293,9 @@ class LetterService:
                 Task.ANSWER,
                 AnswerDraft,
                 P.answer_system(lang.name),
-                P.answer_user(redacted.as_numbered_text(), _facts_for_prompt(state.facts, vault),
-                              passages, question),
+                P.answer_user(
+                    redacted.as_numbered_text(), _facts_for_prompt(state.facts, vault), passages, question
+                ),
                 P.ANSWER_VERSION,
                 context={"question": question, "passages": [p.model_dump(mode="json") for p in passages]},
                 user_id=principal.user_id,
@@ -303,23 +313,34 @@ class LetterService:
         if unsupported_numbers(answer, allowed_numbers(state)):
             emit_metric("GuardrailBlocked", 1, reason="unverified")
             return QuestionResponse(
-                answer=None, refused=True, reason="unverified", handover_suggested=True,
-                line_ids=[], citations=[],
+                answer=None,
+                refused=True,
+                reason="unverified",
+                handover_suggested=True,
+                line_ids=[],
+                citations=[],
             )
         passage_by_id = {p.id: p for p in passages}
         line_ids = [i for i in draft.line_ids if i in state.document.line_map()]
         citations = [
             CitationOut(
-                id=p.id, title=p.title, source_url=p.source_url,
-                source_name=p.source_name, checked_on=p.checked_on,
+                id=p.id,
+                title=p.title,
+                source_url=p.source_url,
+                source_name=p.source_name,
+                checked_on=p.checked_on,
             )
             for c in draft.citation_ids
             if (p := passage_by_id.get(c)) is not None
         ]
         emit_metric("QuestionsAnswered", 1)
         return QuestionResponse(
-            answer=answer, refused=False, reason=None, handover_suggested=False,
-            line_ids=line_ids, citations=citations,
+            answer=answer,
+            refused=False,
+            reason=None,
+            handover_suggested=False,
+            line_ids=line_ids,
+            citations=citations,
         )
 
 
