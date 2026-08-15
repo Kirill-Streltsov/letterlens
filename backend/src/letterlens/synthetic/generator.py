@@ -238,9 +238,7 @@ def tax_reminder(ctx: Ctx) -> Built:
         "Mit freundlichen Grüßen",
         "Im Auftrag",
     ]
-    return lines, sender, {"Steuernummer": stnr}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], []
+    return lines, sender, {"Steuernummer": stnr}, [DeadlineLabel("explicit_date", date=due.isoformat())], []
 
 
 def tax_arrears(ctx: Ctx) -> Built:
@@ -266,13 +264,17 @@ def tax_arrears(ctx: Ctx) -> Built:
         "",
         "Mit freundlichen Grüßen",
     ]
-    return lines, sender, {"Steuernummer": stnr}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], [
-        AmountLabel(str(principal), "to_pay"),
-        AmountLabel(str(surcharge), "to_pay"),
-        AmountLabel(str(total), "to_pay"),
-    ]
+    return (
+        lines,
+        sender,
+        {"Steuernummer": stnr},
+        [DeadlineLabel("explicit_date", date=due.isoformat())],
+        [
+            AmountLabel(str(principal), "to_pay"),
+            AmountLabel(str(surcharge), "to_pay"),
+            AmountLabel(str(total), "to_pay"),
+        ],
+    )
 
 
 # --------------------------------------------------------------------------
@@ -314,9 +316,13 @@ def jobcenter_approval(ctx: Ctx) -> Built:
         f"Gegen diesen Bescheid kann {rel} Widerspruch erhoben werden.",
         f"Der Widerspruch ist schriftlich oder zur Niederschrift beim Jobcenter {city} einzulegen.",
     ]
-    return lines, sender, {"BG-Nummer": bg}, [
-        DeadlineLabel("relative", relative_expression=rel)
-    ], [AmountLabel(str(monthly), "to_receive")]
+    return (
+        lines,
+        sender,
+        {"BG-Nummer": bg},
+        [DeadlineLabel("relative", relative_expression=rel)],
+        [AmountLabel(str(monthly), "to_receive")],
+    )
 
 
 def jobcenter_documents(ctx: Ctx) -> Built:
@@ -348,9 +354,7 @@ def jobcenter_documents(ctx: Ctx) -> Built:
         "",
         "Mit freundlichen Grüßen",
     ]
-    return lines, sender, {"BG-Nummer": bg}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], []
+    return lines, sender, {"BG-Nummer": bg}, [DeadlineLabel("explicit_date", date=due.isoformat())], []
 
 
 def jobcenter_invitation(ctx: Ctx) -> Built:
@@ -396,10 +400,16 @@ def familienkasse_refund(ctx: Ctx) -> Built:
         "Rechtsbehelfsbelehrung",
         f"Gegen diesen Bescheid kann {rel} Einspruch eingelegt werden.",
     ]
-    return lines, sender, {"Kindergeld-Nr.": kg}, [
-        DeadlineLabel("explicit_date", date=due.isoformat()),
-        DeadlineLabel("relative", relative_expression=rel),
-    ], [AmountLabel(str(amount), "to_pay")]
+    return (
+        lines,
+        sender,
+        {"Kindergeld-Nr.": kg},
+        [
+            DeadlineLabel("explicit_date", date=due.isoformat()),
+            DeadlineLabel("relative", relative_expression=rel),
+        ],
+        [AmountLabel(str(amount), "to_pay")],
+    )
 
 
 # --------------------------------------------------------------------------
@@ -427,13 +437,17 @@ def insurance_arrears(ctx: Ctx) -> Built:
         "Bei weiterem Zahlungsverzug ruht Ihr Leistungsanspruch teilweise.",
         "Haben Sie Fragen? Rufen Sie uns an.",
     ]
-    return lines, sender, {"Versichertennummer": kvnr}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], [
-        AmountLabel(str(principal), "to_pay"),
-        AmountLabel(str(fee), "to_pay"),
-        AmountLabel(str(total), "to_pay"),
-    ]
+    return (
+        lines,
+        sender,
+        {"Versichertennummer": kvnr},
+        [DeadlineLabel("explicit_date", date=due.isoformat())],
+        [
+            AmountLabel(str(principal), "to_pay"),
+            AmountLabel(str(fee), "to_pay"),
+            AmountLabel(str(total), "to_pay"),
+        ],
+    )
 
 
 def insurance_questionnaire(ctx: Ctx) -> Built:
@@ -450,9 +464,13 @@ def insurance_questionnaire(ctx: Ctx) -> Built:
         f"senden Sie ihn bis zum {ctx.d(due)} zurück.",
         "Ohne Ihre Angaben können wir die Familienversicherung nicht fortführen.",
     ]
-    return lines, sender, {"Versichertennummer": kvnr}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], []
+    return (
+        lines,
+        sender,
+        {"Versichertennummer": kvnr},
+        [DeadlineLabel("explicit_date", date=due.isoformat())],
+        [],
+    )
 
 
 def insurance_rejection(ctx: Ctx) -> Built:
@@ -471,9 +489,13 @@ def insurance_rejection(ctx: Ctx) -> Built:
         "Rechtsbehelfsbelehrung",
         f"Gegen diesen Bescheid können Sie {rel} Widerspruch einlegen.",
     ]
-    return lines, sender, {"Versichertennummer": kvnr}, [
-        DeadlineLabel("relative", relative_expression=rel)
-    ], []
+    return (
+        lines,
+        sender,
+        {"Versichertennummer": kvnr},
+        [DeadlineLabel("relative", relative_expression=rel)],
+        [],
+    )
 
 
 # --------------------------------------------------------------------------
@@ -501,9 +523,13 @@ def immigration_appointment(ctx: Ctx) -> Built:
         f"Die Gebühr beträgt voraussichtlich {ctx.m(fee)}.",
         "Bitte sagen Sie den Termin ab, wenn Sie ihn nicht wahrnehmen können.",
     ]
-    return lines, sender, {"Aktenzeichen": az}, [
-        DeadlineLabel("appointment", date=appt.isoformat())
-    ], [AmountLabel(str(fee), "to_pay")]
+    return (
+        lines,
+        sender,
+        {"Aktenzeichen": az},
+        [DeadlineLabel("appointment", date=appt.isoformat())],
+        [AmountLabel(str(fee), "to_pay")],
+    )
 
 
 def immigration_hearing(ctx: Ctx) -> Built:
@@ -521,9 +547,7 @@ def immigration_hearing(ctx: Ctx) -> Built:
         "Sie können auch fehlende Nachweise einreichen.",
         "Nach Ablauf der Frist entscheiden wir nach Aktenlage.",
     ]
-    return lines, sender, {"Aktenzeichen": az}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], []
+    return lines, sender, {"Aktenzeichen": az}, [DeadlineLabel("explicit_date", date=due.isoformat())], []
 
 
 def immigration_fiction(ctx: Ctx) -> Built:
@@ -542,9 +566,7 @@ def immigration_fiction(ctx: Ctx) -> Built:
         "- Arbeitsvertrag und letzte drei Gehaltsabrechnungen",
         "- Nachweis über ausreichenden Wohnraum",
     ]
-    return lines, sender, {"Aktenzeichen": az}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], []
+    return lines, sender, {"Aktenzeichen": az}, [DeadlineLabel("explicit_date", date=due.isoformat())], []
 
 
 # --------------------------------------------------------------------------
@@ -611,9 +633,13 @@ def landlord_rent_increase(ctx: Ctx) -> Built:
         f"Bitte erteilen Sie Ihre Zustimmung bis zum {ctx.d(consent)}.",
         "Den Mietspiegel und die Berechnung finden Sie in der Anlage.",
     ]
-    return lines, sender, {"Mieternummer": unit}, [
-        DeadlineLabel("explicit_date", date=consent.isoformat())
-    ], [AmountLabel(str(old), "info"), AmountLabel(str(new), "to_pay")]
+    return (
+        lines,
+        sender,
+        {"Mieternummer": unit},
+        [DeadlineLabel("explicit_date", date=consent.isoformat())],
+        [AmountLabel(str(old), "info"), AmountLabel(str(new), "to_pay")],
+    )
 
 
 def landlord_reminder(ctx: Ctx) -> Built:
@@ -631,9 +657,13 @@ def landlord_reminder(ctx: Ctx) -> Built:
         "Bei weiterem Zahlungsverzug behalten wir uns rechtliche Schritte vor.",
         "Wenn Sie Schwierigkeiten haben, sprechen Sie uns bitte an.",
     ]
-    return lines, sender, {"Vertragsnummer": unit}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], [AmountLabel(str(arrears), "to_pay")]
+    return (
+        lines,
+        sender,
+        {"Vertragsnummer": unit},
+        [DeadlineLabel("explicit_date", date=due.isoformat())],
+        [AmountLabel(str(arrears), "to_pay")],
+    )
 
 
 # --------------------------------------------------------------------------
@@ -655,9 +685,13 @@ def broadcast_fee(ctx: Ctx) -> Built:
         f"Bitte überweisen Sie den Betrag bis zum {ctx.d(due)}.",
         "Unter bestimmten Voraussetzungen ist eine Befreiung möglich.",
     ]
-    return lines, sender, {"Beitragsnummer": nr}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], [AmountLabel(str(amount), "to_pay")]
+    return (
+        lines,
+        sender,
+        {"Beitragsnummer": nr},
+        [DeadlineLabel("explicit_date", date=due.isoformat())],
+        [AmountLabel(str(amount), "to_pay")],
+    )
 
 
 def collection_agency(ctx: Ctx) -> Built:
@@ -678,13 +712,17 @@ def collection_agency(ctx: Ctx) -> Built:
         f"Zahlen Sie den Gesamtbetrag bis zum {ctx.d(due)}.",
         "Prüfen Sie die Forderung. Bei Fragen wenden Sie sich an uns.",
     ]
-    return lines, sender, {"Unser Zeichen": case}, [
-        DeadlineLabel("explicit_date", date=due.isoformat())
-    ], [
-        AmountLabel(str(claim), "to_pay"),
-        AmountLabel(str(costs), "to_pay"),
-        AmountLabel(str(total), "to_pay"),
-    ]
+    return (
+        lines,
+        sender,
+        {"Unser Zeichen": case},
+        [DeadlineLabel("explicit_date", date=due.isoformat())],
+        [
+            AmountLabel(str(claim), "to_pay"),
+            AmountLabel(str(costs), "to_pay"),
+            AmountLabel(str(total), "to_pay"),
+        ],
+    )
 
 
 def utility_installment(ctx: Ctx) -> Built:
@@ -751,16 +789,15 @@ def add_ocr_noise(lines: list[str], rnd: Rand, rate: float) -> list[str]:
     """Simulate typical OCR errors. Digits are never changed, so labels stay valid."""
     noisy = []
     for line in lines:
+        out = line
         if line and rnd.r.random() < rate:
             src, dst = rnd.pick(_OCR_SWAPS)
-            line = line.replace(src, dst, 1)
-        noisy.append(line)
+            out = line.replace(src, dst, 1)
+        noisy.append(out)
     return noisy
 
 
-def generate(
-    letter_type: LetterType, template_id: str, seed: int, noise: float = 0.0
-) -> SyntheticLetter:
+def generate(letter_type: LetterType, template_id: str, seed: int, noise: float = 0.0) -> SyntheticLetter:
     rnd = Rand(seed)
     ctx = Ctx(
         rnd=rnd,
