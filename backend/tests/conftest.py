@@ -38,3 +38,35 @@ def admin_url() -> str:
     return os.environ.get("LETTERLENS_TEST_ADMIN_URL", DEFAULT_ADMIN)
 
 
+@pytest.fixture(scope="session")
+def database_urls(admin_url: str) -> Iterator[tuple[str, str]]:
+    try:
+        with psycopg.connect(admin_url, autocommit=True, connect_timeout=3) as conn:
+            name = f"letterlens_test_{uuid.uuid4().hex[:8]}"
+            conn.execute(f'CREATE DATABASE "{name}"')
+    except psycopg.OperationalError:
+        pytest.skip("PostgreSQL is not available (start it with: docker compose up -d)")
+    test_admin = _with_db(admin_url, name)
+    migrate(test_admin, APP_PASSWORD)
+    app_url = _with_db(admin_url, name, "letterlens_app", APP_PASSWORD)
+    yield test_admin, app_url
+    with psycopg.connect(admin_url, autocommit=True) as conn:
+        conn.execute(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)')
+
+
+@pytest.fixture(scope="session")
+def db(database_urls: tuple[str, str]) -> Iterator[Database]:
+    database = Database(database_urls[1])
+    yield database
+    database.close()
+
+
+@pytest.fixture
+def settings(database_urls: tuple[str, str]) -> Settings:
+    return Settings(env="test", database_url=database_urls[1], llm_provider="fake")
+
+
+@pytest.fixture
+def system(db: Database) -> Iterator[psycopg.Connection]:  # type: ignore[type-arg]
+    with db.session(DbContext.as_system()) as conn:
+        yield conn
