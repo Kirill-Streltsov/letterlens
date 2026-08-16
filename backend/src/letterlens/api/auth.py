@@ -28,10 +28,7 @@ def _jwks_client(url: str) -> PyJWKClient:
 
 
 def issuer(settings: Settings) -> str:
-    return (
-        f"https://cognito-idp.{settings.cognito_region}.amazonaws.com/"
-        f"{settings.cognito_user_pool_id}"
-    )
+    return f"https://cognito-idp.{settings.cognito_region}.amazonaws.com/{settings.cognito_user_pool_id}"
 
 
 def verify_cognito_token(token: str, settings: Settings, jwks: Any | None = None) -> Identity:
