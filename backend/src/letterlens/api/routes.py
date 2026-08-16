@@ -83,7 +83,7 @@ def me(principal: PrincipalDep, services: ServicesDep) -> MeResponse:
         id=principal.user_id,
         display_name=principal.user.get("display_name"),
         preferred_language=principal.user["preferred_language"],
-        plan=principal.plan,  # type: ignore[arg-type]
+        plan=principal.plan,
         plan_expires_at=principal.user.get("plan_expires_at"),
         letters_this_month=used,
         letters_limit=None if principal.plan == "plus" else settings.free_letters_per_month,
@@ -123,8 +123,11 @@ def export_me(principal: PrincipalDep, services: ServicesDep) -> dict[str, objec
     letters = []
     with services.container.db.session(principal.ctx) as conn:
         for row in R.list_letters(conn, principal.user_id, limit=1000):
-            letters.append(services.letters.view(conn, row["id"], row["language"], include_images=False)
-                           .model_dump(mode="json"))
+            letters.append(
+                services.letters.view(conn, row["id"], row["language"], include_images=False).model_dump(
+                    mode="json"
+                )
+            )
     return {"user_id": principal.user_id, "letters": letters}
 
 
@@ -147,12 +150,14 @@ def create_letter(
 
 @router.get("/letters", response_model=list[LetterListItem], tags=["letters"])
 def list_letters(principal: PrincipalDep, services: ServicesDep) -> list[LetterListItem]:
-    return services.letters.list(principal)
+    return services.letters.list_for(principal)
 
 
 @router.get("/letters/{letter_id}", response_model=LetterView, tags=["letters"])
 def get_letter(
-    letter_id: str, principal: PrincipalDep, services: ServicesDep,
+    letter_id: str,
+    principal: PrincipalDep,
+    services: ServicesDep,
     lang: Annotated[str, Query(max_length=8)] = "en",
 ) -> LetterView:
     return services.letters.get(principal, _uuid(letter_id), lang)
@@ -160,7 +165,10 @@ def get_letter(
 
 @router.post("/letters/{letter_id}/explanations", status_code=202, tags=["letters"])
 def request_explanation(
-    letter_id: str, body: ExplanationRequest, principal: PrincipalDep, services: ServicesDep,
+    letter_id: str,
+    body: ExplanationRequest,
+    principal: PrincipalDep,
+    services: ServicesDep,
     background: BackgroundTasks,
 ) -> dict[str, bool]:
     start = services.letters.request_explanation(principal, _uuid(letter_id), body.language)
@@ -170,8 +178,9 @@ def request_explanation(
 
 
 @router.patch("/letters/{letter_id}", status_code=204, tags=["letters"])
-def update_letter(letter_id: str, body: RetentionRequest, principal: PrincipalDep,
-                  services: ServicesDep) -> Response:
+def update_letter(
+    letter_id: str, body: RetentionRequest, principal: PrincipalDep, services: ServicesDep
+) -> Response:
     services.letters.set_retention(principal, _uuid(letter_id), body.retention_days)
     return Response(status_code=204)
 
@@ -183,15 +192,17 @@ def delete_letter(letter_id: str, principal: PrincipalDep, services: ServicesDep
 
 
 @router.post("/letters/{letter_id}/images", response_model=ImageUploadResponse, tags=["letters"])
-def upload_images(letter_id: str, body: ImageUploadRequest, principal: PrincipalDep,
-                  services: ServicesDep) -> ImageUploadResponse:
+def upload_images(
+    letter_id: str, body: ImageUploadRequest, principal: PrincipalDep, services: ServicesDep
+) -> ImageUploadResponse:
     targets = services.letters.image_targets(principal, _uuid(letter_id), body.count)
     return ImageUploadResponse(targets=[UploadTarget(**t) for t in targets])
 
 
 @router.post("/letters/{letter_id}/questions", response_model=QuestionResponse, tags=["letters"])
-def ask_question(letter_id: str, body: QuestionRequest, principal: PrincipalDep,
-                 services: ServicesDep) -> QuestionResponse:
+def ask_question(
+    letter_id: str, body: QuestionRequest, principal: PrincipalDep, services: ServicesDep
+) -> QuestionResponse:
     return services.letters.ask(principal, _uuid(letter_id), body.question, body.language)
 
 
@@ -199,14 +210,20 @@ def ask_question(letter_id: str, body: QuestionRequest, principal: PrincipalDep,
 
 
 @router.get("/counselling-services", response_model=list[CounsellingService], tags=["sharing"])
-def counselling_services(principal: PrincipalDep, services: ServicesDep,
-                         city: Annotated[str | None, Query(max_length=80)] = None) -> list[CounsellingService]:
+def counselling_services(
+    principal: PrincipalDep, services: ServicesDep, city: Annotated[str | None, Query(max_length=80)] = None
+) -> list[CounsellingService]:
     return services.sharing.services(principal, city)
 
 
 @router.post("/letters/{letter_id}/shares", status_code=201, response_model=ShareInfo, tags=["sharing"])
-def share_letter(letter_id: str, body: ShareRequest, principal: PrincipalDep,
-                 services: ServicesDep, background: BackgroundTasks) -> ShareInfo:
+def share_letter(
+    letter_id: str,
+    body: ShareRequest,
+    principal: PrincipalDep,
+    services: ServicesDep,
+    background: BackgroundTasks,
+) -> ShareInfo:
     info, needs_german = services.sharing.share(principal, _uuid(letter_id), body)
     if needs_german:
         background.add_task(services.container.runner.start, letter_id, EXPLAIN_ONLY, COUNSELLOR_LANGUAGE)
@@ -225,8 +242,9 @@ def list_messages(share_id: str, principal: PrincipalDep, services: ServicesDep)
 
 
 @router.post("/shares/{share_id}/messages", status_code=201, response_model=MessageOut, tags=["sharing"])
-def post_message(share_id: str, body: MessageRequest, principal: PrincipalDep,
-                 services: ServicesDep) -> MessageOut:
+def post_message(
+    share_id: str, body: MessageRequest, principal: PrincipalDep, services: ServicesDep
+) -> MessageOut:
     return services.sharing.post_message(principal, _uuid(share_id), body.text)
 
 
@@ -241,8 +259,11 @@ def redeem_invite(body: RedeemRequest, principal: PrincipalDep, services: Servic
 
 
 @router.get("/counsellor/cases", response_model=list[CaseItem], tags=["counsellor"])
-def cases(principal: PrincipalDep, services: ServicesDep,
-          status: Annotated[str | None, Query(pattern="^(new|in_progress|closed)$")] = None) -> list[CaseItem]:
+def cases(
+    principal: PrincipalDep,
+    services: ServicesDep,
+    status: Annotated[str | None, Query(pattern="^(new|in_progress|closed)$")] = None,
+) -> list[CaseItem]:
     return services.sharing.cases(principal, status)
 
 
@@ -266,8 +287,12 @@ def translate(body: TranslateRequest, principal: PrincipalDep, services: Service
 
 
 @router.get("/counsellor/tenants/{tenant_id}/stats", response_model=list[StatsRow], tags=["counsellor"])
-def tenant_stats(tenant_id: str, principal: PrincipalDep, services: ServicesDep,
-                 months: Annotated[int, Query(ge=1, le=24)] = 12) -> list[StatsRow]:
+def tenant_stats(
+    tenant_id: str,
+    principal: PrincipalDep,
+    services: ServicesDep,
+    months: Annotated[int, Query(ge=1, le=24)] = 12,
+) -> list[StatsRow]:
     return services.sharing.stats(principal, _uuid(tenant_id), months)
 
 
@@ -294,11 +319,12 @@ async def stripe_webhook(request: Request, services: ServicesDep) -> Response:
 
 
 @router.post("/billing/appstore/transactions", response_model=PlanResponse, tags=["billing"])
-def appstore_transaction(body: AppStoreTransactionRequest, principal: PrincipalDep,
-                         services: ServicesDep) -> PlanResponse:
+def appstore_transaction(
+    body: AppStoreTransactionRequest, principal: PrincipalDep, services: ServicesDep
+) -> PlanResponse:
     plan, expires = services.billing.appstore_transaction(principal, body.signed_transaction)
     services.principals.invalidate(principal.identity.sub)
-    return PlanResponse(plan=plan, plan_expires_at=expires)  # type: ignore[arg-type]
+    return PlanResponse(plan=plan, plan_expires_at=expires)
 
 
 @router.post("/billing/appstore/notifications", status_code=204, tags=["billing"])
@@ -312,8 +338,9 @@ async def appstore_notification(request: Request, services: ServicesDep) -> Resp
 
 
 @router.get("/admin/costs", response_model=list[CostRow], tags=["admin"])
-def costs(principal: PrincipalDep, services: ServicesDep,
-          days: Annotated[int, Query(ge=1, le=90)] = 14) -> list[CostRow]:
+def costs(
+    principal: PrincipalDep, services: ServicesDep, days: Annotated[int, Query(ge=1, le=90)] = 14
+) -> list[CostRow]:
     if not principal.is_platform_admin:
         raise forbidden("platform admins only")
     with services.container.db.session(DbContext.as_system()) as conn:
@@ -324,10 +351,7 @@ def costs(principal: PrincipalDep, services: ServicesDep,
 def letter_cost(letter_id: str, principal: PrincipalDep, services: ServicesDep) -> LetterCost:
     """Answers: what did this request cost? Readers can query their own letters."""
     lid = _uuid(letter_id)
-    if principal.is_platform_admin:
-        ctx = DbContext.as_system()
-    else:
-        ctx = principal.ctx
+    ctx = DbContext.as_system() if principal.is_platform_admin else principal.ctx
     with services.container.db.session(ctx) as conn:
         if not principal.is_platform_admin and R.letter_row(conn, lid) is None:
             raise ApiError(404, "not_found", "letter not found")
