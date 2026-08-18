@@ -101,3 +101,28 @@ def test_unknown_language_is_rejected(client: TestClient) -> None:
     assert r.status_code == 400 and r.json()["code"] == "language_unavailable"
 
 
+def test_validation_error_does_not_echo_input(client: TestClient) -> None:
+    body = letter_body()
+    body["document"]["lines"][0]["page"] = "SECRET-TEXT"  # type: ignore[index]
+    r = client.post("/v1/letters", json=body, headers=user())
+    assert r.status_code == 422 and "SECRET-TEXT" not in r.text
+
+
+def test_question_guardrail(client: TestClient) -> None:
+    h = user()
+    lid = create(client, h)
+    advice = client.post(
+        f"/v1/letters/{lid}/questions",
+        json={"question": "Sollte ich Einspruch einlegen?", "language": "de"},
+        headers=h,
+    ).json()
+    assert advice["refused"] and advice["reason"] == "legal_advice" and advice["handover_suggested"]
+    assert "Beratung" in advice["answer"]
+    info = client.post(
+        f"/v1/letters/{lid}/questions",
+        json={"question": "What does Einspruch mean?", "language": "en"},
+        headers=h,
+    ).json()
+    assert not info["refused"] and info["citations"]
+
+
