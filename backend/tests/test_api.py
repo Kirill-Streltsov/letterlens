@@ -126,3 +126,31 @@ def test_question_guardrail(client: TestClient) -> None:
     assert not info["refused"] and info["citations"]
 
 
+def test_second_language(client: TestClient) -> None:
+    h = user()
+    lid = create(client, h)
+    r = client.post(f"/v1/letters/{lid}/explanations", json={"language": "de"}, headers=h)
+    assert r.status_code == 202 and r.json() == {"started": True}
+    view = client.get(f"/v1/letters/{lid}?lang=de", headers=h).json()
+    assert view["explanation"]["language"] == "de"
+    assert set(view["explanation_languages"]) == {"en", "de"}
+
+
+def test_sharing_flow(client: TestClient) -> None:
+    services = client.app.state.services  # type: ignore[attr-defined]
+    counsellor, other_counsellor = user(), user()
+    with services.container.db.session(DbContext.as_system()) as conn:
+        tenant = R.create_tenant(
+            conn, f"Service {uuid.uuid4().hex[:4]}", "counselling", "Bochum", ["de"], True
+        )
+        other = R.create_tenant(conn, f"Other {uuid.uuid4().hex[:4]}", "counselling", "Essen", ["de"], True)
+        R.add_member(
+            conn, tenant, str(R.resolve_user(conn, "dev:" + counsellor["X-Dev-User"])["id"]), "admin"
+        )
+        R.add_member(
+            conn,
+            other,
+            str(R.resolve_user(conn, "dev:" + other_counsellor["X-Dev-User"])["id"]),
+            "counsellor",
+        )
+
