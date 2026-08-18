@@ -52,3 +52,30 @@ def create(client: TestClient, headers: dict[str, str], n: int = 0) -> str:
     return str(r.json()["id"])
 
 
+def test_requires_auth(client: TestClient) -> None:
+    r = client.get("/v1/me")
+    assert r.status_code == 401 and r.json()["code"] == "unauthorized"
+
+
+def test_letter_lifecycle(client: TestClient) -> None:
+    h = user()
+    lid = create(client, h)
+    view = client.get(f"/v1/letters/{lid}", headers=h).json()
+    assert view["status"] == "ready"
+    assert view["classification"]["letter_type"] == "tax"
+    assert {d["status"] for d in view["facts"]["deadlines"]} == {"verified", "needs_check"}
+    assert view["explanation"]["citations"]
+    assert client.get("/v1/letters", headers=h).json()[0]["id"] == lid
+    assert client.delete(f"/v1/letters/{lid}", headers=h).status_code == 204
+    assert client.get(f"/v1/letters/{lid}", headers=h).status_code == 404
+
+
+def test_other_users_get_404(client: TestClient) -> None:
+    lid = create(client, user())
+    intruder = user()
+    assert client.get(f"/v1/letters/{lid}", headers=intruder).status_code == 404
+    assert client.delete(f"/v1/letters/{lid}", headers=intruder).status_code == 404
+    q = {"question": "What is this?", "language": "en"}
+    assert client.post(f"/v1/letters/{lid}/questions", json=q, headers=intruder).status_code == 404
+
+
