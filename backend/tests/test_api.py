@@ -79,3 +79,25 @@ def test_other_users_get_404(client: TestClient) -> None:
     assert client.post(f"/v1/letters/{lid}/questions", json=q, headers=intruder).status_code == 404
 
 
+def test_idempotency_key(client: TestClient) -> None:
+    h = {**user(), "Idempotency-Key": "abc-1"}
+    a = client.post("/v1/letters", json=letter_body(), headers=h).json()
+    b = client.post("/v1/letters", json=letter_body(), headers=h).json()
+    assert a["id"] == b["id"]
+    me = client.get("/v1/me", headers=h).json()
+    assert me["letters_this_month"] == 1
+
+
+def test_free_quota(client: TestClient) -> None:
+    h = user()
+    for _ in range(3):
+        create(client, h)
+    r = client.post("/v1/letters", json=letter_body(), headers=h)
+    assert r.status_code == 402 and r.json()["code"] == "quota_exceeded"
+
+
+def test_unknown_language_is_rejected(client: TestClient) -> None:
+    r = client.post("/v1/letters", json=letter_body(language="xx"), headers=user())
+    assert r.status_code == 400 and r.json()["code"] == "language_unavailable"
+
+
