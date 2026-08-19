@@ -235,3 +235,29 @@ def test_stripe_webhook_upgrades_plan_once(client: TestClient) -> None:
                 "status": "active",
                 "customer": "cus_1",
                 "current_period_end": int(time.time()) + 86400 * 30,
+                "metadata": {"kind": "plus", "user_id": me["id"]},
+                "items": {"data": [{"quantity": 1}]},
+            }
+        },
+    }
+    payload = json.dumps(event).encode()
+    bad = client.post(
+        "/v1/billing/stripe/webhook", content=payload, headers={"Stripe-Signature": "t=1,v1=00"}
+    )
+    assert bad.status_code == 400
+    for _ in range(2):  # the second delivery is ignored
+        r = client.post(
+            "/v1/billing/stripe/webhook",
+            content=payload,
+            headers={"Stripe-Signature": stripe_signature(payload, WEBHOOK_SECRET)},
+        )
+        assert r.status_code == 204
+    client.app.state.services.principals.invalidate("dev:" + h["X-Dev-User"])  # type: ignore[attr-defined]
+    assert client.get("/v1/me", headers=h).json()["plan"] == "plus"
+
+
+def test_security_headers(client: TestClient) -> None:
+    r = client.get("/health")
+    assert r.headers["X-Content-Type-Options"] == "nosniff"
+    assert r.headers["Cache-Control"] == "no-store"
+    assert r.headers["X-Request-Id"]
