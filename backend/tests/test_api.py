@@ -185,3 +185,23 @@ def test_sharing_flow(client: TestClient) -> None:
     stats = client.get(f"/v1/counsellor/tenants/{tenant}/stats", headers=counsellor).json()
     assert stats[0]["closed"] == 1
 
+    invite = client.post("/v1/counsellor/invites", json={"tenant_id": tenant}, headers=counsellor).json()
+    newbie = user()
+    assert client.post("/v1/invites/redeem", json={"code": invite["code"]}, headers=newbie).status_code == 204
+    assert len(client.get("/v1/counsellor/cases", headers=newbie).json()) == 1
+    assert client.post("/v1/invites/redeem", json={"code": invite["code"]}, headers=user()).status_code == 404
+
+    assert client.delete(f"/v1/shares/{share['id']}", headers=h).status_code == 204
+    assert client.get("/v1/counsellor/cases", headers=counsellor).json() == []
+
+
+def test_account_deletion_crypto_shreds(client: TestClient) -> None:
+    h = user()
+    lid = create(client, h)
+    assert client.get("/v1/me/export", headers=h).json()["letters"][0]["id"] == lid
+    assert client.delete("/v1/me", headers=h).status_code == 204
+    services = client.app.state.services  # type: ignore[attr-defined]
+    with services.container.db.session(DbContext.as_system()) as conn:
+        assert R.letter_row(conn, lid) is None
+
+
