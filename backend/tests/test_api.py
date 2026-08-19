@@ -205,3 +205,33 @@ def test_account_deletion_crypto_shreds(client: TestClient) -> None:
         assert R.letter_row(conn, lid) is None
 
 
+def test_cost_endpoint(client: TestClient) -> None:
+    h = user()
+    lid = create(client, h)
+    cost = client.get(f"/v1/admin/letters/{lid}/cost", headers=h).json()
+    assert cost["calls"] >= 2 and cost["input_tokens"] > 0
+    assert client.get("/v1/admin/costs", headers=h).status_code == 403
+    admin = {**user(), "X-Dev-Groups": "platform_admin"}
+    assert client.get("/v1/admin/costs", headers=admin).status_code == 200
+
+
+def stripe_signature(payload: bytes, secret: str) -> str:
+    ts = int(time.time())
+    mac = hmac.new(secret.encode(), f"{ts}.".encode() + payload, hashlib.sha256).hexdigest()
+    return f"t={ts},v1={mac}"
+
+
+def test_stripe_webhook_upgrades_plan_once(client: TestClient) -> None:
+    h = user()
+    me = client.get("/v1/me", headers=h).json()
+    event = {
+        "id": f"evt_{uuid.uuid4().hex}",
+        "object": "event",
+        "type": "customer.subscription.updated",
+        "data": {
+            "object": {
+                "id": "sub_1",
+                "object": "subscription",
+                "status": "active",
+                "customer": "cus_1",
+                "current_period_end": int(time.time()) + 86400 * 30,
