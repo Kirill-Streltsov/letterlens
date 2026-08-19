@@ -48,3 +48,35 @@ def cert(
     return builder.sign(issuer_key, hashes.SHA256())
 
 
+class Chain:
+    def __init__(self, leaf_oid: x509.ObjectIdentifier | None = LEAF_OID) -> None:
+        self.root_key = ec.generate_private_key(ec.SECP256R1())
+        self.root = cert("Test Root", self.root_key, None, ca=True)
+        self.int_key = ec.generate_private_key(ec.SECP256R1())
+        self.intermediate = cert(
+            "Test WWDR", self.int_key, (self.root.subject, self.root_key), INTERMEDIATE_OID, ca=True
+        )
+        self.leaf_key = ec.generate_private_key(ec.SECP256R1())
+        self.leaf = cert("Test Leaf", self.leaf_key, (self.intermediate.subject, self.int_key), leaf_oid)
+
+    def root_der(self) -> bytes:
+        return self.root.public_bytes(serialization.Encoding.DER)
+
+    def sign(self, payload: dict[str, Any]) -> str:
+        x5c = [
+            base64.b64encode(c.public_bytes(serialization.Encoding.DER)).decode()
+            for c in (self.leaf, self.intermediate, self.root)
+        ]
+        return jwt.encode(payload, self.leaf_key, algorithm="ES256", headers={"x5c": x5c})
+
+
+TX = {
+    "bundleId": "app.letterlens.ios",
+    "productId": "app.letterlens.plus.monthly",
+    "environment": "Sandbox",
+    "originalTransactionId": "1000",
+    "expiresDate": int((NOW + timedelta(days=30)).timestamp() * 1000),
+    "appAccountToken": "8a2d0f2e-0000-4000-8000-000000000001",
+}
+
+
