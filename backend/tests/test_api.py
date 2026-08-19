@@ -154,3 +154,34 @@ def test_sharing_flow(client: TestClient) -> None:
             "counsellor",
         )
 
+    h = user()
+    lid = create(client, h)
+    bad = {"tenant_id": tenant, "consent": False, "consent_text_version": "share-consent-v1"}
+    assert client.post(f"/v1/letters/{lid}/shares", json=bad, headers=h).status_code == 422
+    body = {"tenant_id": tenant, "consent": True, "consent_text_version": "share-consent-v1"}
+    share = client.post(f"/v1/letters/{lid}/shares", json=body, headers=h).json()
+
+    cases = client.get("/v1/counsellor/cases", headers=counsellor).json()
+    assert [c["share_id"] for c in cases] == [share["id"]]
+    assert client.get("/v1/counsellor/cases", headers=other_counsellor).json() == []
+    assert client.get(f"/v1/counsellor/cases/{share['id']}", headers=other_counsellor).status_code == 404
+
+    detail = client.get(f"/v1/counsellor/cases/{share['id']}", headers=counsellor).json()
+    assert detail["explanation_de"] is not None  # German summary prepared on share
+
+    sent = client.post(
+        f"/v1/shares/{share['id']}/messages", json={"text": "Bitte Termin vereinbaren."}, headers=counsellor
+    )
+    assert sent.status_code == 201
+    seen = client.get(f"/v1/shares/{share['id']}/messages", headers=h).json()
+    assert seen[0]["original_text"] == "Bitte Termin vereinbaren."
+
+    assert (
+        client.patch(
+            f"/v1/counsellor/cases/{share['id']}", json={"case_status": "closed"}, headers=counsellor
+        ).status_code
+        == 204
+    )
+    stats = client.get(f"/v1/counsellor/tenants/{tenant}/stats", headers=counsellor).json()
+    assert stats[0]["closed"] == 1
+
