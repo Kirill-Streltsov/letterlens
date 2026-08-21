@@ -46,3 +46,25 @@ def token(**claims: Any) -> str:
     return jwt.encode(base, KEY, algorithm="RS256", headers={"kid": "k1"})
 
 
+JWKS = FakeJwks(KEY.public_key())
+
+
+def test_valid_token() -> None:
+    identity = verify_cognito_token(token(), SETTINGS, JWKS)
+    assert identity.sub == "abc" and "counsellor" in identity.groups
+
+
+@pytest.mark.parametrize(
+    "claims",
+    [
+        {"exp": int(time.time()) - 120},
+        {"token_use": "id"},
+        {"client_id": "other"},
+        {"iss": "https://evil.example"},
+    ],
+)
+def test_invalid_tokens(claims: dict[str, Any]) -> None:
+    with pytest.raises(AuthError):
+        verify_cognito_token(token(**claims), SETTINGS, JWKS)
+
+
