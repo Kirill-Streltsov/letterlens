@@ -109,3 +109,29 @@ def test_tampered_payload_is_rejected() -> None:
         verify_signed_payload(f"{header}.{forged}.{sig}", chain.root_der(), NOW)
 
 
+def test_expired_or_revoked_is_inactive() -> None:
+    expired = {**TX, "expiresDate": int((NOW - timedelta(days=1)).timestamp() * 1000)}
+    revoked = {**TX, "revocationDate": 1}
+    for tx in (expired, revoked):
+        ent = entitlement_from_transaction(
+            tx, "app.letterlens.ios", "app.letterlens.plus.monthly", "Sandbox", NOW
+        )
+        assert not ent.active
+
+
+def test_wrong_bundle_is_rejected() -> None:
+    with pytest.raises(AppStoreVerificationError, match="bundle"):
+        entitlement_from_transaction(
+            {**TX, "bundleId": "com.evil"},
+            "app.letterlens.ios",
+            "app.letterlens.plus.monthly",
+            "Sandbox",
+            NOW,
+        )
+
+
+def test_real_apple_root_is_bundled() -> None:
+    from letterlens.billing.appstore import ROOT_CERT
+
+    root = x509.load_der_x509_certificate(ROOT_CERT.read_bytes())
+    assert root.fingerprint(hashes.SHA256()).hex().upper().startswith("63343ABFB89A6A03")
