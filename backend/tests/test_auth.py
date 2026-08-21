@@ -68,3 +68,25 @@ def test_invalid_tokens(claims: dict[str, Any]) -> None:
         verify_cognito_token(token(**claims), SETTINGS, JWKS)
 
 
+def test_wrong_key() -> None:
+    other = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    with pytest.raises(AuthError):
+        verify_cognito_token(token(), SETTINGS, FakeJwks(other.public_key()))
+
+
+def test_dev_mode_header() -> None:
+    dev = Settings(env="test", auth_mode="dev")
+    identity = authenticate({"x-dev-user": "alice", "x-dev-groups": "counsellor"}, dev)
+    assert identity.sub == "dev:alice"
+    with pytest.raises(AuthError):
+        authenticate({}, dev)
+
+
+def test_dev_mode_is_refused_in_prod() -> None:
+    with pytest.raises(ValueError, match="auth_mode=dev"):
+        Settings(env="prod", auth_mode="dev", llm_provider="mistral", llm_training_opt_out_confirmed=True)
+
+
+def test_mistral_in_prod_needs_opt_out_confirmation() -> None:
+    with pytest.raises(ValueError, match="training opt-out"):
+        Settings(env="prod", auth_mode="cognito", llm_provider="mistral")
