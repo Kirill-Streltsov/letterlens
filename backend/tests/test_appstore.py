@@ -80,3 +80,32 @@ TX = {
 }
 
 
+def test_valid_transaction() -> None:
+    chain = Chain()
+    payload = verify_signed_payload(chain.sign(TX), chain.root_der(), NOW)
+    ent = entitlement_from_transaction(
+        payload, "app.letterlens.ios", "app.letterlens.plus.monthly", "Sandbox", NOW
+    )
+    assert ent.active and ent.app_account_token == TX["appAccountToken"]
+
+
+def test_foreign_root_is_rejected() -> None:
+    chain, other = Chain(), Chain()
+    with pytest.raises(AppStoreVerificationError, match="root"):
+        verify_signed_payload(chain.sign(TX), other.root_der(), NOW)
+
+
+def test_missing_apple_oid_is_rejected() -> None:
+    chain = Chain(leaf_oid=None)
+    with pytest.raises(AppStoreVerificationError, match="App Store signing"):
+        verify_signed_payload(chain.sign(TX), chain.root_der(), NOW)
+
+
+def test_tampered_payload_is_rejected() -> None:
+    chain = Chain()
+    header, _, sig = chain.sign(TX).split(".")
+    forged = base64.urlsafe_b64encode(b'{"bundleId":"x"}').rstrip(b"=").decode()
+    with pytest.raises(AppStoreVerificationError):
+        verify_signed_payload(f"{header}.{forged}.{sig}", chain.root_der(), NOW)
+
+
