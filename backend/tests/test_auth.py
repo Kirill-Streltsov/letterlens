@@ -19,3 +19,30 @@ SETTINGS = Settings(
 KEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
+@dataclass
+class FakeJwks:
+    key: Any
+
+    def get_signing_key_from_jwt(self, token: str) -> Any:
+        @dataclass
+        class Signing:
+            key: Any
+
+        return Signing(self.key)
+
+
+def token(**claims: Any) -> str:
+    now = int(time.time())
+    base = {
+        "sub": "abc",
+        "iss": issuer(SETTINGS),
+        "token_use": "access",
+        "client_id": "client-1",
+        "iat": now,
+        "exp": now + 600,
+        "cognito:groups": ["counsellor"],
+    }
+    base.update(claims)
+    return jwt.encode(base, KEY, algorithm="RS256", headers={"kid": "k1"})
+
+
