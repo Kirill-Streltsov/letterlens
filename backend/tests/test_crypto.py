@@ -19,3 +19,21 @@ def test_tamper_detection() -> None:
         decrypt(key, bytes(blob), "a")
 
 
+def test_wrap_unwrap_bound_to_user() -> None:
+    kek = Kek(new_dek())
+    dek = new_dek()
+    wrapped = kek.wrap(dek, "user-a")
+    assert kek.unwrap(wrapped, "user-a") == dek
+    with pytest.raises(CryptoError):
+        kek.unwrap(wrapped, "user-b")
+
+
+def test_nonces_are_unique() -> None:
+    key = new_dek()
+    assert encrypt(key, b"same", "a") != encrypt(key, b"same", "a")
+
+
+def test_dek_cache_expiry() -> None:
+    cache = DekCache(ttl=-1)
+    cache.put("u", b"k")
+    assert cache.get("u") is None
