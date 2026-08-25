@@ -49,3 +49,29 @@ class ScriptedProvider:
         return [[0.0] for _ in texts]
 
 
+def gateway(script: list[object], **settings: object) -> tuple[Gateway, ScriptedProvider, InMemoryLedger]:
+    provider = ScriptedProvider(script)
+    ledger = InMemoryLedger()
+    base = {"llm_model_guard": "mistral-small-latest", "llm_fallback_models": ["backup-model"]}
+    gw = Gateway(provider, Settings(env="test", **{**base, **settings}), ledger, sleep=lambda _: None)
+    return gw, provider, ledger
+
+
+def call(gw: Gateway, user_id: str | None = "u1") -> GuardDecision:
+    return gw.generate(Task.GUARD, GuardDecision, "sys", "user", "guard-v2", user_id=user_id)
+
+
+def test_success_records_cost() -> None:
+    gw, _, ledger = gateway([VALID])
+    assert call(gw).category == "general_information"
+    [entry] = ledger.calls
+    assert entry.ok and entry.list_price_usd > 0 and entry.prompt_version == "guard-v2"
+
+
+def test_retry_then_success() -> None:
+    gw, provider, ledger = gateway([RetryableError("429"), VALID])
+    call(gw)
+    assert len(provider.requests) == 2
+    assert [c.ok for c in ledger.calls] == [False, True]
+
+
