@@ -59,3 +59,27 @@ def test_parse_relative_period(text: str, expected: RelativePeriod) -> None:
     assert parse_relative_period(f"Der Einspruch ist {text} einzulegen.") == expected
 
 
+def test_no_period_in_plain_text() -> None:
+    assert parse_relative_period("Bitte zahlen Sie bis zum 01.12.2026.") is None
+
+
+def test_one_month_after_notification() -> None:
+    # Letter dated Tue 2026-03-10 -> received Sat 03-14 -> next working day Mon 03-16
+    # -> one month later Thu 2026-04-16.
+    est = estimate_deadline(RelativePeriod(1, Unit.MONTHS, Anchor.NOTIFICATION), date(2026, 3, 10))
+    assert est.start_date == date(2026, 3, 16)
+    assert est.due_date == date(2026, 4, 16)
+
+
+def test_end_on_holiday_moves_to_next_working_day() -> None:
+    # Letter 2026-11-30 -> received Fri 12-04 -> plus 3 weeks = Fri 12-25 (holiday)
+    # -> 12-26 holiday, 12-27 Sunday -> Mon 2026-12-28.
+    est = estimate_deadline(RelativePeriod(3, Unit.WEEKS, Anchor.NOTIFICATION), date(2026, 11, 30))
+    assert est.start_date == date(2026, 12, 4)
+    assert est.due_date == date(2026, 12, 28)
+    assert "moved from 2026-12-25" in est.rule
+
+
+def test_letter_date_anchor() -> None:
+    est = estimate_deadline(RelativePeriod(14, Unit.DAYS, Anchor.LETTER_DATE), date(2026, 6, 1))
+    assert est.due_date == date(2026, 6, 15)
