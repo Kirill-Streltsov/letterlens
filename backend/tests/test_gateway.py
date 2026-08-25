@@ -75,3 +75,33 @@ def test_retry_then_success() -> None:
     assert [c.ok for c in ledger.calls] == [False, True]
 
 
+def test_fallback_after_permanent_error() -> None:
+    gw, provider, ledger = gateway([PermanentError("400"), VALID])
+    call(gw)
+    assert [r.model for r in provider.requests] == ["mistral-small-latest", "backup-model"]
+    assert ledger.calls[-1].fallback_used
+
+
+def test_fallback_after_retries_exhausted() -> None:
+    gw, provider, _ = gateway([RetryableError("x")] * 3 + [VALID])
+    call(gw)
+    assert provider.requests[-1].model == "backup-model"
+
+
+def test_schema_repair_once() -> None:
+    gw, provider, _ = gateway(["not json", VALID])
+    call(gw)
+    assert "not valid JSON" in provider.requests[1].user
+
+
+def test_schema_failure_after_repair_falls_back_then_raises() -> None:
+    gw, _, _ = gateway(["bad", "bad", "bad", "bad"])
+    with pytest.raises(SchemaError):
+        call(gw)
+
+
+def test_code_fences_are_accepted() -> None:
+    gw, _, _ = gateway([f"```json\n{VALID}\n```"])
+    assert call(gw).rationale == "ok"
+
+
