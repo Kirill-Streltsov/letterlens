@@ -22,3 +22,25 @@ def test_short_year_and_spaces() -> None:
     assert find_dates("Frist: 5. 1. 27") == [date(2027, 1, 5)]
 
 
+def test_invalid_dates_are_ignored() -> None:
+    assert find_dates("am 31.02.2026 und 44.01.2026") == []
+
+
+def test_iso_dates() -> None:
+    assert find_dates("due 2026-03-01") == [date(2026, 3, 1)]
+
+
+def test_reference_numbers_are_not_dates() -> None:
+    assert find_dates("Steuernummer 123/456/78901") == []
+
+
+def test_amount_formats() -> None:
+    text = "Nachzahlung: 1.234,56 €, Gebühr EUR 12,00 und 99 Euro, total 1 234,50 EUR"
+    assert find_amounts(text) == [
+        Decimal("1234.56"),
+        Decimal("12.00"),
+        Decimal("99.00"),
+        Decimal("1234.50"),
+    ]
+
+
