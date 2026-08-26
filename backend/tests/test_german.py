@@ -44,3 +44,27 @@ def test_amount_formats() -> None:
     ]
 
 
+def test_numbers_without_currency_are_not_amounts() -> None:
+    assert find_amounts("Zimmer 203, Postfach 1234") == []
+
+
+def test_parse_llm_values() -> None:
+    assert parse_decimal_value("1234.5") == Decimal("1234.50")
+    assert parse_decimal_value("1.234,56 €") == Decimal("1234.56")
+    assert parse_decimal_value("abc") is None
+    assert parse_iso_date("2026-12-01") == date(2026, 12, 1)
+    assert parse_iso_date("01.12.2026") == date(2026, 12, 1)
+    assert parse_iso_date(None) is None
+
+
+@given(st.dates(min_value=date(2000, 1, 1), max_value=date(2069, 12, 31)), st.sampled_from([0, 1]))
+def test_date_round_trip(d: date, style: int) -> None:
+    assert find_dates(f"Frist bis zum {fmt_date(d, style)}.") == [d]
+
+
+@given(
+    st.decimals(min_value=Decimal("0.01"), max_value=Decimal("999999.99"), places=2),
+    st.sampled_from([0, 1]),
+)
+def test_amount_round_trip(value: Decimal, style: int) -> None:
+    assert find_amounts(f"Betrag: {fmt_eur(value, style)}") == [value]
