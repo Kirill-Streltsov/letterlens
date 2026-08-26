@@ -105,3 +105,27 @@ def test_code_fences_are_accepted() -> None:
     assert call(gw).rationale == "ok"
 
 
+def test_monthly_budget_blocks_before_call() -> None:
+    gw, provider, ledger = gateway([VALID], monthly_llm_budget_usd=0.001)
+    ledger.record(LLMCall(Task.GUARD, "x", "m", "v", 0, 0, 1.0, 0, 1, False, True))
+    with pytest.raises(BudgetExceededError):
+        call(gw)
+    assert provider.requests == []
+
+
+def test_user_token_budget() -> None:
+    gw, _, ledger = gateway([VALID], user_daily_token_budget=50)
+    ledger.record(LLMCall(Task.GUARD, "x", "m", "v", 40, 20, 0.0, 0, 1, False, True, user_id="u1"))
+    with pytest.raises(BudgetExceededError):
+        call(gw)
+    gw2, _, _ = gateway([VALID], user_daily_token_budget=50)
+    assert call(gw2, user_id="other")
+
+
+def test_strict_schema_is_sent() -> None:
+    gw, provider, _ = gateway([VALID])
+    call(gw)
+    schema = provider.requests[0].json_schema
+    assert schema is not None
+    assert schema["additionalProperties"] is False
+    assert set(schema["required"]) == {"category", "rationale"}
