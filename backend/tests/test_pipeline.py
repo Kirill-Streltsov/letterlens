@@ -47,3 +47,24 @@ def test_full_run() -> None:
     assert exp.summary and exp.disclaimer and not state.degraded
 
 
+def test_llm_never_sees_recipient_name() -> None:
+    provider = FakeProvider()
+    runner, store = make_runner(provider)
+    lid = submit(store)
+    name = next(x for x in store.load_state(lid).document.lines if x.text == "Yusuf Öztürk")
+    runner.start(lid)
+    for request in provider.calls:
+        assert name.text not in request.user
+
+
+def test_degraded_mode_when_llm_fails() -> None:
+    runner, store = make_runner(FakeProvider(fail_tasks={Task.EXTRACT, Task.EXPLAIN}))
+    lid = submit(store)
+    runner.start(lid)
+    state = store.load_state(lid)
+    assert store.status[lid][0] is LetterStatus.READY
+    assert state.degraded
+    assert {r.split(":")[0] for r in state.degraded_reasons} == {"extract", "explain"}
+    assert state.facts and state.facts.deadlines
+
+
