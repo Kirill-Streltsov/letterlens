@@ -45,3 +45,26 @@ def test_address_block_name_and_street() -> None:
     assert vault.restore("Dear [NAME_1]") == "Dear Ayşe Yılmaz"
 
 
+def test_same_value_same_placeholder() -> None:
+    vault = PiiVault()
+    a = vault.redact_text("BG-Nummer 12345BG0012345")
+    b = vault.redact_text("Ihre 12345BG0012345")
+    assert a.split()[-1] == b.split()[-1]
+
+
+def test_synthetic_letters_have_no_recipient_names_after_redaction() -> None:
+    for letter in generate_corpus(2):
+        vault = PiiVault()
+        redacted = vault.redact_document(to_document(letter)).plain_text()
+        name = next(line for line in letter.lines[3:8] if line and " " in line and not line[0].isdigit())
+        assert name not in redacted, letter.id
+
+
+def test_restore_nested() -> None:
+    vault = PiiVault()
+    vault.redact_text("x@y.de")
+    assert vault.restore({"a": ["[EMAIL_1]"], "b": 1}) == {"a": ["x@y.de"], "b": 1}
+
+
+def test_scrub_for_logs() -> None:
+    assert "4711" not in scrub_for_logs("Kundennummer: 4711-0815 Frau Müller")
