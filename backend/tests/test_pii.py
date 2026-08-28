@@ -19,3 +19,29 @@ def test_identifiers_are_pseudonymized_and_restored() -> None:
     assert vault.restore(redacted) == text
 
 
+def test_dates_and_amounts_survive() -> None:
+    vault = PiiVault()
+    text = "Bitte zahlen Sie 1.523,00 € bis zum 05.01.2027, Postfach 1234, 44787 Bochum"
+    assert vault.redact_text(text) == text
+
+
+def test_address_block_name_and_street() -> None:
+    vault = PiiVault()
+    redacted = vault.redact_document(
+        doc(
+            "Finanzamt Bochum-Mitte",
+            "Postfach 1234",
+            "44701 Bochum",
+            "Ayşe Yılmaz",
+            "Bergstraße 49",
+            "45127 Essen",
+            "Datum: 10.01.2026",
+        )
+    )
+    texts = [line.text for line in redacted.lines]
+    assert texts[0] == "Finanzamt Bochum-Mitte"  # sender is kept
+    assert texts[3] == "[NAME_1]"
+    assert texts[4] == "[ADDRESS_1]"
+    assert vault.restore("Dear [NAME_1]") == "Dear Ayşe Yılmaz"
+
+
