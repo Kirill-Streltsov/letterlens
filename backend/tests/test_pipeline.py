@@ -68,3 +68,26 @@ def test_degraded_mode_when_llm_fails() -> None:
     assert state.facts and state.facts.deadlines
 
 
+def test_second_language_run() -> None:
+    runner, store = make_runner(FakeProvider())
+    lid = submit(store)
+    runner.start(lid)
+    runner.start(lid, EXPLAIN_ONLY, "de")
+    assert set(store.load_state(lid).explanations) == {"en", "de"}
+
+
+def test_failure_marks_letter_failed() -> None:
+    runner, store = make_runner(FakeProvider())
+    store.save_state(PipelineState(letter_id="x", owner_id="u1", document=to_document(generate_corpus(1)[0])))
+    runner.start("missing-id")
+    assert store.status["missing-id"][0] is LetterStatus.FAILED
+
+
+@pytest.fixture
+def ready_state() -> PipelineState:
+    runner, store = make_runner(FakeProvider())
+    lid = submit(store)
+    runner.start(lid)
+    return store.load_state(lid)
+
+
