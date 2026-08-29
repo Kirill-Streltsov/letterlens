@@ -91,3 +91,28 @@ def ready_state() -> PipelineState:
     return store.load_state(lid)
 
 
+def test_sanitizer_drops_advice_invented_numbers_and_uncited_steps(ready_state: PipelineState) -> None:
+    assert ready_state.facts and ready_state.passages
+    draft = ExplanationDraft(
+        headline="Tax decision https://evil.example",
+        letter_kind="Tax letter",
+        summary=[
+            SummarySentence(text="You must pay 1.523,00 EUR.", line_ids=["p1-l14", "p9-l9"]),
+            SummarySentence(text="You should object to this decision.", line_ids=[]),
+            SummarySentence(text="You must pay 9.999,00 EUR.", line_ids=[]),
+        ],
+        next_steps=[
+            NextStep(text="An objection is free.", citation_ids=["c1", "c99"]),
+            NextStep(text="Ask your neighbour.", citation_ids=[]),
+        ],
+        deadline_labels=[FactLabel(id="d1", label="Pay"), FactLabel(id="d42", label="x")],
+        amount_labels=[],
+    )
+    exp, stats = sanitize_explanation(draft, ready_state, ready_state.passages, "en", "m", PiiVault())
+    assert [s.text for s in exp.summary] == ["You must pay 1.523,00 EUR."]
+    assert exp.summary[0].line_ids == ["p1-l14"]
+    assert [s.citation_ids for s in exp.next_steps] == [["c1"]]
+    assert "http" not in exp.headline
+    assert set(exp.deadline_labels) == {"d1"}
+    assert stats == {"dropped_advisory": 1, "dropped_numbers": 1, "dropped_uncited": 1}
+    assert [c.id for c in exp.citations] == ["c1"]
