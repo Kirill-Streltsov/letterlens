@@ -93,3 +93,27 @@ def test_counsellor_sees_shared_letter_only(db: Database, world: dict[str, str])
     assert visible_letters(db, ctx(world, "carol", "t_x")) == {world["letter_alice"]}
 
 
+def test_other_tenant_sees_nothing(db: Database, world: dict[str, str]) -> None:
+    assert visible_letters(db, ctx(world, "dave", "t_y")) == set()
+    with db.session(ctx(world, "dave", "t_y")) as conn:
+        assert R.get_share(conn, world["share"]) is None
+
+
+def test_forged_tenant_claim_without_share_sees_nothing(db: Database, world: dict[str, str]) -> None:
+    # Even if a bug put the wrong tenant in the context, only shared letters are visible.
+    assert visible_letters(db, ctx(world, "dave", "t_x", "t_y")) == {world["letter_alice"]}
+    assert world["letter_bob"] not in visible_letters(db, ctx(world, "dave", "t_x", "t_y"))
+
+
+def test_counsellor_cannot_change_letter(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "carol", "t_x")) as conn:
+        assert R.delete_letter(conn, world["letter_alice"]) is None
+
+
+def test_counsellor_can_update_case_status(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "carol", "t_x")) as conn:
+        assert R.update_case(conn, world["share"], "in_progress", None)
+    with db.session(ctx(world, "dave", "t_y")) as conn:
+        assert not R.update_case(conn, world["share"], "closed", None)
+
+
