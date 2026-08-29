@@ -45,3 +45,29 @@ def world(db: Database) -> dict[str, str]:
     return ids
 
 
+def ctx(world: dict[str, str], who: str, *tenants: str) -> DbContext:
+    return DbContext(user_id=world[who], tenant_ids=tuple(world[t] for t in tenants))
+
+
+def visible_letters(db: Database, context: DbContext) -> set[str]:
+    with db.session(context) as conn:
+        return {r["id"] for r in conn.execute("SELECT id::text FROM letters").fetchall()}
+
+
+def test_app_role_cannot_bypass_rls(db: Database) -> None:
+    with db.session(DbContext()) as conn:
+        row = conn.execute(
+            "SELECT rolbypassrls, rolsuper FROM pg_roles WHERE rolname = current_user"
+        ).fetchone()
+    assert row == {"rolbypassrls": False, "rolsuper": False}
+
+
+def test_no_context_sees_nothing(db: Database, world: dict[str, str]) -> None:
+    assert visible_letters(db, DbContext()) == set()
+
+
+def test_client_sees_only_own_letters(db: Database, world: dict[str, str]) -> None:
+    assert visible_letters(db, ctx(world, "alice")) == {world["letter_alice"]}
+    assert visible_letters(db, ctx(world, "bob")) == {world["letter_bob"]}
+
+
