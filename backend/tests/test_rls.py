@@ -71,3 +71,25 @@ def test_client_sees_only_own_letters(db: Database, world: dict[str, str]) -> No
     assert visible_letters(db, ctx(world, "bob")) == {world["letter_bob"]}
 
 
+def test_client_cannot_update_or_delete_foreign_letter(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "bob")) as conn:
+        assert R.delete_letter(conn, world["letter_alice"]) is None
+        updated = conn.execute(
+            "UPDATE letters SET status = 'failed' WHERE id = %s RETURNING id", (world["letter_alice"],)
+        ).fetchone()
+        assert updated is None
+
+
+def test_client_cannot_insert_letter_for_someone_else(db: Database, world: dict[str, str]) -> None:
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), db.session(ctx(world, "bob")) as conn:
+        conn.execute(
+            "INSERT INTO letters (owner_id, status, language, state, expires_at)"
+            " VALUES (%s, 'received', 'en', '\\x00', now())",
+            (world["alice"],),
+        )
+
+
+def test_counsellor_sees_shared_letter_only(db: Database, world: dict[str, str]) -> None:
+    assert visible_letters(db, ctx(world, "carol", "t_x")) == {world["letter_alice"]}
+
+
