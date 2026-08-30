@@ -48,3 +48,28 @@ def extraction(**overrides: object) -> Extraction:
                 description="Objection",
                 line_ids=["p1-l6"],
             ),
+        ],
+        "amounts": [
+            ExtractedAmount(
+                value="1523.00", currency="EUR", description="Due", direction="to_pay", line_ids=["p1-l4"]
+            )
+        ],
+        "required_actions": [],
+    }
+    base.update(overrides)
+    return Extraction(**base)  # type: ignore[arg-type]
+
+
+def test_grounded_facts_are_verified() -> None:
+    facts = verify(extraction(), DOC)
+    assert facts.letter_date == date(2026, 3, 10)
+    assert facts.letter_date_status is FactStatus.VERIFIED
+    pay, objection = facts.deadlines
+    assert pay.status is FactStatus.VERIFIED and pay.due_date == date(2026, 4, 14)
+    assert objection.is_estimate and objection.status is FactStatus.NEEDS_CHECK
+    assert objection.due_date == date(2026, 4, 16)
+    assert facts.amounts[0].value == Decimal("1523.00")
+    assert facts.amounts[0].status is FactStatus.VERIFIED
+    assert facts.grounding_rate == 1.0
+
+
