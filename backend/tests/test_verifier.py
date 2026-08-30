@@ -73,3 +73,26 @@ def test_grounded_facts_are_verified() -> None:
     assert facts.grounding_rate == 1.0
 
 
+def test_hallucinated_date_needs_check() -> None:
+    wrong = ExtractedDeadline(
+        kind="explicit_date",
+        date="2026-04-20",
+        relative_expression=None,
+        description="Pay",
+        line_ids=["p1-l5"],
+    )
+    facts = verify(extraction(deadlines=[wrong]), DOC)
+    assert facts.deadlines[0].status is FactStatus.NEEDS_CHECK
+    assert facts.deadlines[0].note == NOTE_NOT_IN_SOURCE
+    assert facts.grounding_rate < 1.0
+
+
+def test_wrong_line_citation_needs_check() -> None:
+    misplaced = ExtractedAmount(
+        value="1523.00", currency="EUR", description="Due", direction="to_pay", line_ids=["p1-l1"]
+    )
+    facts = verify(extraction(amounts=[misplaced]), DOC)
+    assert facts.amounts[0].status is FactStatus.NEEDS_CHECK
+    assert facts.amounts[0].note == NOTE_OTHER_LINE
+
+
