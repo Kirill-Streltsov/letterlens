@@ -117,3 +117,32 @@ def test_counsellor_can_update_case_status(db: Database, world: dict[str, str]) 
         assert not R.update_case(conn, world["share"], "closed", None)
 
 
+def test_revoked_share_hides_letter(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "alice")) as conn:
+        assert R.revoke_share(conn, world["share"])
+    try:
+        assert visible_letters(db, ctx(world, "carol", "t_x")) == set()
+    finally:
+        with db.session(DbContext.as_system()) as conn:
+            conn.execute("UPDATE shares SET revoked_at = NULL WHERE id = %s", (world["share"],))
+
+
+def test_expired_share_hides_letter(db: Database, world: dict[str, str]) -> None:
+    with db.session(DbContext.as_system()) as conn:
+        conn.execute(
+            "UPDATE shares SET expires_at = now() - interval '1 minute' WHERE id = %s", (world["share"],)
+        )
+    try:
+        assert visible_letters(db, ctx(world, "carol", "t_x")) == set()
+    finally:
+        with db.session(DbContext.as_system()) as conn:
+            conn.execute(
+                "UPDATE shares SET expires_at = now() + interval '30 days' WHERE id = %s", (world["share"],)
+            )
+
+
+def test_letters_cannot_be_shared_with_employers(db: Database, world: dict[str, str]) -> None:
+    with pytest.raises(psycopg.errors.CheckViolation), db.session(ctx(world, "bob")) as conn:
+        R.create_share(conn, world["letter_bob"], world["bob"], world["t_emp"], "share-consent-v1", 30, "en")
+
+
