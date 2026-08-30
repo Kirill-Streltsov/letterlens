@@ -165,3 +165,32 @@ def test_audit_log_is_append_only(db: Database, world: dict[str, str]) -> None:
         conn.execute("UPDATE audit_log SET action = 'x'")
 
 
+def test_ledger_rows_of_others_are_hidden(db: Database, world: dict[str, str]) -> None:
+    with db.session(DbContext.as_system()) as conn:
+        conn.execute(
+            "INSERT INTO llm_calls (task, provider, model, prompt_version, input_tokens,"
+            " output_tokens, list_price_usd, latency_ms, attempts, fallback_used, ok, user_id)"
+            " VALUES ('extract','p','m','v',1,1,0,1,1,false,true,%s)",
+            (world["alice"],),
+        )
+    with db.session(ctx(world, "bob")) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM llm_calls WHERE user_id = %s", (world["alice"],)
+        ).fetchone() == {"n": 0}
+
+
+def test_messages_visible_to_participants_only(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "carol", "t_x")) as conn:
+        share = R.get_share(conn, world["share"])
+        assert share is not None
+        # The counsellor can read the owner's wrapped key through the active share.
+        R.insert_message(conn, R.KeyRing(KEYS.kek), share, world["carol"], "counsellor", b"{}")
+    for who, tenants, expected in (
+        ("alice", (), 1),
+        ("carol", ("t_x",), 1),
+        ("dave", ("t_y",), 0),
+        ("bob", (), 0),
+    ):
+        with db.session(ctx(world, who, *tenants)) as conn:
+            n = conn.execute("SELECT count(*) AS n FROM messages").fetchone()
+        assert n == {"n": expected}, who
