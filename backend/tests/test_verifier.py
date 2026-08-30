@@ -25,3 +25,26 @@ LINES = [
 DOC = LetterDocument(lines=[OcrLine(page=1, index=i, text=t) for i, t in enumerate(LINES, 1)])
 
 
+def extraction(**overrides: object) -> Extraction:
+    base: dict[str, object] = {
+        "sender": ExtractedText(value="Finanzamt Bochum-Mitte", line_ids=["p1-l1"]),
+        "subject": ExtractedText(value=None, line_ids=[]),
+        "letter_date": ExtractedDate(value="2026-03-10", line_ids=["p1-l3"]),
+        "reference_numbers": [
+            ExtractedReference(label="Steuernummer", value="123/456/78901", line_ids=["p1-l2"])
+        ],
+        "deadlines": [
+            ExtractedDeadline(
+                kind="explicit_date",
+                date="2026-04-14",
+                relative_expression=None,
+                description="Pay",
+                line_ids=["p1-l5"],
+            ),
+            ExtractedDeadline(
+                kind="relative",
+                date=None,
+                relative_expression="innerhalb eines Monats nach Bekanntgabe",
+                description="Objection",
+                line_ids=["p1-l6"],
+            ),
