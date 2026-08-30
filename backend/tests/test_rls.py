@@ -146,3 +146,22 @@ def test_letters_cannot_be_shared_with_employers(db: Database, world: dict[str, 
         R.create_share(conn, world["letter_bob"], world["bob"], world["t_emp"], "share-consent-v1", 30, "en")
 
 
+def test_employee_membership_grants_no_letter_access(db: Database, world: dict[str, str]) -> None:
+    assert visible_letters(db, ctx(world, "erin", "t_emp")) == set()
+
+
+def test_keys_of_other_users_are_hidden(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "bob")) as conn:
+        rows = conn.execute("SELECT user_id::text FROM user_keys").fetchall()
+    assert {r["user_id"] for r in rows} <= {world["bob"]}
+
+
+def test_audit_log_is_append_only(db: Database, world: dict[str, str]) -> None:
+    with db.session(ctx(world, "alice")) as conn:
+        R.audit(conn, world["alice"], "test.event", "letter", world["letter_alice"])
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), db.session(ctx(world, "alice")) as conn:
+        conn.execute("DELETE FROM audit_log")
+    with pytest.raises(psycopg.errors.InsufficientPrivilege), db.session(DbContext.as_system()) as conn:
+        conn.execute("UPDATE audit_log SET action = 'x'")
+
+
