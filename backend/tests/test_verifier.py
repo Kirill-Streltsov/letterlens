@@ -96,3 +96,29 @@ def test_wrong_line_citation_needs_check() -> None:
     assert facts.amounts[0].note == NOTE_OTHER_LINE
 
 
+def test_unknown_line_ids_are_dropped() -> None:
+    bad = ExtractedAmount(
+        value="1523.00", currency="EUR", description="Due", direction="to_pay", line_ids=["p9-l99"]
+    )
+    facts = verify(extraction(amounts=[bad]), DOC)
+    assert facts.amounts[0].line_ids == []
+    assert facts.amounts[0].status is FactStatus.NEEDS_CHECK
+
+
+def test_relative_deadline_must_be_in_cited_line() -> None:
+    invented = ExtractedDeadline(
+        kind="relative",
+        date=None,
+        relative_expression="innerhalb von zwei Wochen",
+        description="Reply",
+        line_ids=["p1-l4"],
+    )
+    facts = verify(extraction(deadlines=[invented]), DOC)
+    assert facts.deadlines[0].due_date is None
+    assert facts.deadlines[0].note == NOTE_NOT_IN_SOURCE
+
+
+def test_reference_not_in_letter_is_dropped() -> None:
+    fake_ref = ExtractedReference(label="Aktenzeichen", value="XYZ-1", line_ids=["p1-l2"])
+    facts = verify(extraction(reference_numbers=[fake_ref]), DOC)
+    assert facts.reference_numbers == []
