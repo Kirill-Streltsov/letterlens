@@ -35,7 +35,7 @@ from letterlens.llm.types import LLMError
 from letterlens.ml.classifier import LinearModel
 from letterlens.pipeline.state import PipelineState
 from letterlens.rag.retriever import HybridRetriever
-from letterlens.safety.guardrail import is_advisory_output
+from letterlens.safety.guardrail import is_advisory_output, neutralize_injections
 from letterlens.safety.pii import PiiVault
 
 log = logging.getLogger(__name__)
@@ -63,7 +63,8 @@ def classify(state: PipelineState, deps: PipelineDeps) -> PipelineState:
 def extract(state: PipelineState, deps: PipelineDeps) -> PipelineState:
     letter_type = state.classification.letter_type if state.classification else LetterType.OTHER
     vault = PiiVault()
-    redacted = vault.redact_document(state.document)
+    cleaned, _ = neutralize_injections(state.document)
+    redacted = vault.redact_document(cleaned)
     try:
         draft = deps.gateway.generate(
             Task.EXTRACT,
@@ -78,7 +79,7 @@ def extract(state: PipelineState, deps: PipelineDeps) -> PipelineState:
         state.extraction = Extraction.model_validate(vault.restore(draft.model_dump(mode="json")))
     except LLMError as exc:
         log.warning("extract degraded", extra={"letter_id": state.letter_id, "error": type(exc).__name__})
-        state.extraction = extract_with_rules(state.document)
+        state.extraction = extract_with_rules(cleaned)
         state.mark_degraded(f"extract:{type(exc).__name__}")
     return state
 
@@ -244,7 +245,8 @@ def explain(state: PipelineState, deps: PipelineDeps, language: str | None = Non
     passages = state.passages or []
     letter_type = state.classification.letter_type if state.classification else LetterType.OTHER
     vault = PiiVault()
-    redacted = vault.redact_document(state.document)
+    cleaned, _ = neutralize_injections(state.document)
+    redacted = vault.redact_document(cleaned)
     facts_json = _facts_for_prompt(state.facts, vault)
     passages_ctx = [p.model_dump(mode="json") for p in passages]
     model_name = deps.gateway.models_for(Task.EXPLAIN)[0]
