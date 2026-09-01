@@ -29,7 +29,7 @@ from letterlens.llm.types import LLMError
 from letterlens.observability import emit_metric
 from letterlens.pipeline.state import PipelineState
 from letterlens.pipeline.steps import _facts_for_prompt, allowed_numbers, unsupported_numbers
-from letterlens.safety.guardrail import check_question_rules, is_advisory_output
+from letterlens.safety.guardrail import check_question_rules, is_advisory_output, neutralize_injections
 from letterlens.safety.pii import PiiVault
 from letterlens.services.principal import Principal
 
@@ -286,7 +286,8 @@ class LetterService:
 
         lang = languages().get(language) or languages()["en"]
         vault = PiiVault()
-        redacted = vault.redact_document(state.document)
+        cleaned, _ = neutralize_injections(state.document)
+        redacted = vault.redact_document(cleaned)
         passages = state.passages or []
         try:
             draft = gw.generate(
