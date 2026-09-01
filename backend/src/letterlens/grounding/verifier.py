@@ -121,9 +121,14 @@ def _verify_deadline(
 
 
 def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
-    lines = doc.line_map()
-    doc_dates = set(find_dates(doc.plain_text()))
-    doc_amounts = set(find_amounts(doc.plain_text()))
+    from letterlens.safety.guardrail import neutralize_injections
+
+    # Lines that look like instructions to a model are never a valid source.
+    _, suspicious = neutralize_injections(doc)
+    lines = {k: v for k, v in doc.line_map().items() if k not in suspicious}
+    trusted_text = "\n".join(line.text for line in lines.values())
+    doc_dates = set(find_dates(trusted_text))
+    doc_amounts = set(find_amounts(trusted_text))
     letter_date, letter_date_status = _verify_letter_date(extraction, doc, lines)
 
     deadlines: list[VerifiedDeadline] = []
