@@ -16,6 +16,8 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
+from letterlens.domain import LetterDocument
+
 
 class Verdict(StrEnum):
     ALLOW = "allow"
@@ -94,6 +96,8 @@ _INJECTION_PATTERNS = [
     r"system prompt|developer mode|jailbreak",
     r"reveal (your|the) (prompt|instructions)|zeige (deinen|den) prompt",
     r"</?(system|assistant|letter|document)>",
+    r"^\s*(system|assistant|developer)\s*:",
+    r"(report|set|change|output) the (deadline|amount|date) (as|to)\b",
 ]
 
 # Generated text that reads like an individual recommendation.
@@ -139,3 +143,22 @@ def is_advisory_output(text: str) -> str | None:
 
 def looks_like_injection(text: str) -> bool:
     return any(p.search(text) for p in _INJECTION)
+
+
+SUSPICIOUS_LINE = "[text removed: it looks like instructions to a computer]"
+
+
+def neutralize_injections(doc: LetterDocument) -> tuple[LetterDocument, frozenset[str]]:
+    """Replace lines that look like instructions to a model.
+
+    Returns the cleaned document and the ids of the replaced lines. The verifier
+    never accepts these lines as a source, so a planted date cannot become "verified".
+    """
+    flagged = frozenset(line.id for line in doc.lines if looks_like_injection(line.text))
+    if not flagged:
+        return doc, flagged
+    lines = [
+        line.model_copy(update={"text": SUSPICIOUS_LINE}) if line.id in flagged else line
+        for line in doc.lines
+    ]
+    return doc.model_copy(update={"lines": lines}), flagged
