@@ -49,3 +49,29 @@ HANDWRITTEN: list[SyntheticLetter] = [
         Gesamtbetrag: 425,90 EUR
         Sie können gegen den Anspruch Widerspruch erheben, und zwar innerhalb von zwei Wochen ab Zustellung.
         Verwenden Sie dafür den beigefügten Vordruck.
+    """,
+        [DeadlineLabel("relative", relative_expression="innerhalb von zwei Wochen ab Zustellung")],
+        [AmountLabel("389.90", "to_pay"), AmountLabel("36.00", "to_pay"), AmountLabel("425.90", "to_pay")],
+    ),
+    _l(
+        "fine",
+        "other",
+        "Kreis Unna - Bußgeldstelle",
+        "2026-09-03",
+        """
+        Kreis Unna - Der Landrat - Bußgeldstelle
+        Friedrich-Ebert-Straße 17, 59425 Unna
+        Aktenzeichen 701.334512.3
+        Unna, den 03.09.2026
+        Bußgeldbescheid
+        Ihnen wird vorgeworfen, am 14.08.2026 die zulässige Höchstgeschwindigkeit überschritten zu haben.
+        Geldbuße: 70,00 €   Gebühr: 25,00 €   Auslagen: 3,50 €
+        Gesamtbetrag 98,50 €
+        Der Bescheid wird rechtskräftig, wenn kein Einspruch innerhalb von zwei Wochen nach Zustellung eingelegt wird.
+        Zahlen Sie den Gesamtbetrag bitte bis zum 01.10.2026.
+    """,
+        [
+            DeadlineLabel("relative", relative_expression="innerhalb von zwei Wochen nach Zustellung"),
+            DeadlineLabel("explicit_date", date="2026-10-01"),
+        ],
+        [
