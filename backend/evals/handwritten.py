@@ -31,3 +31,21 @@ def _l(
     )
 
 
+HANDWRITTEN: list[SyntheticLetter] = [
+    _l(
+        "court-order",
+        "other",
+        "Amtsgericht Hagen",
+        "2026-10-12",
+        """
+        Amtsgericht Hagen - Zentrales Mahngericht -
+        58084 Hagen
+        Geschäftszeichen: 26-4471123-0-3
+        Hagen, 12.10.2026
+        Mahnbescheid
+        Antragsteller: Fernabsatz Direkt GmbH
+        Hauptforderung: 389,90 EUR
+        Kosten des Verfahrens: 36,00 EUR
+        Gesamtbetrag: 425,90 EUR
+        Sie können gegen den Anspruch Widerspruch erheben, und zwar innerhalb von zwei Wochen ab Zustellung.
+        Verwenden Sie dafür den beigefügten Vordruck.
