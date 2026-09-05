@@ -126,3 +126,29 @@ HANDWRITTEN: list[SyntheticLetter] = [
         "Familienkasse Nordrhein-Westfalen Ost",
         "2026-09-21",
         """
+        Familienkasse Nordrhein-Westfalen Ost
+        Kindergeldnummer 615FK112233
+        Datum 21.09.2026
+        Überprüfung des Kindergeldanspruchs
+        Bitte legen Sie bis zum 23.10.2026 eine Schulbescheinigung für Ihr Kind vor.
+        Ohne Nachweis müssen wir die Zahlung einstellen.
+    """,
+        [DeadlineLabel("explicit_date", date="2026-10-23")],
+        [],
+    ),
+    _l(
+        "sick-pay",
+        "health_insurance",
+        "BKK Ruhr",
+        "2026-05-11",
+        """
+        BKK Ruhr · Krankengeld
+        Versicherten-Nr. Q554433221
+        Datum: 11.05.2026
+        Bescheid über Krankengeld
+        Ab dem 04.05.2026 zahlen wir Ihnen Krankengeld in Höhe von 61,17 EUR kalendertäglich.
+        Bitte senden Sie uns den Auszahlschein spätestens am 25.05.2026 zurück.
+        Gegen diesen Bescheid ist der Widerspruch innerhalb eines Monats nach Bekanntgabe zulässig.
+    """,
+        [
+            DeadlineLabel("explicit_date", date="2026-05-25"),
