@@ -75,3 +75,29 @@ HANDWRITTEN: list[SyntheticLetter] = [
             DeadlineLabel("explicit_date", date="2026-10-01"),
         ],
         [
+            AmountLabel("70.00", "to_pay"),
+            AmountLabel("25.00", "to_pay"),
+            AmountLabel("3.50", "to_pay"),
+            AmountLabel("98.50", "to_pay"),
+        ],
+    ),
+    _l(
+        "termination",
+        "landlord",
+        "Hausverwaltung Kerkhoff",
+        "2026-06-30",
+        """
+        Hausverwaltung Kerkhoff
+        Wittener Straße 220 · 44803 Bochum
+        Bochum, 30. Juni 2026
+        Kündigung des Mietverhältnisses über die Wohnung Hustadtring 41, 2. OG links
+        hiermit kündigen wir das Mietverhältnis fristgemäß zum 31.12.2026 wegen Eigenbedarfs.
+        Wir bitten Sie, die Wohnung bis zum 31.12.2026 geräumt zu übergeben.
+        Auf Ihr Widerspruchsrecht nach § 574 BGB weisen wir hin. Der Widerspruch muss spätestens zwei Monate vor Beendigung erklärt werden.
+    """,
+        [DeadlineLabel("explicit_date", date="2026-12-31")],
+        [],
+    ),
+    _l(
+        "jobcenter-change",
+        "benefits",
