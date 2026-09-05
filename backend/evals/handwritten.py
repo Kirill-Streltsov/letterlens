@@ -204,3 +204,28 @@ HANDWRITTEN: list[SyntheticLetter] = [
     ),
     _l(
         "property-tax",
+        "tax",
+        "Stadt Gelsenkirchen - Steueramt",
+        "2026-01-20",
+        """
+        Stadt Gelsenkirchen · Referat Finanzen · Steueramt
+        Kassenzeichen 300.112.445.7
+        Gelsenkirchen, 20.01.2026
+        Grundbesitzabgabenbescheid 2026
+        Grundsteuer B: 412,60 EUR jährlich, fällig in Raten zu je 103,15 EUR
+        Die erste Rate ist am 15.02.2026 fällig.
+        Gegen diesen Bescheid kann innerhalb eines Monats nach Bekanntgabe Klage beim Verwaltungsgericht erhoben werden.
+    """,
+        [
+            DeadlineLabel("explicit_date", date="2026-02-15"),
+            DeadlineLabel("relative", relative_expression="innerhalb eines Monats nach Bekanntgabe"),
+        ],
+        [AmountLabel("412.60", "to_pay"), AmountLabel("103.15", "to_pay")],
+    ),
+    _l(
+        "energy-reminder",
+        "other",
+        "Stadtwerke Witten",
+        "2026-11-02",
+        """
+        Stadtwerke Witten GmbH
