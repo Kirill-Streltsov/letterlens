@@ -101,3 +101,28 @@ HANDWRITTEN: list[SyntheticLetter] = [
     _l(
         "jobcenter-change",
         "benefits",
+        "Jobcenter EN",
+        "2026-08-17",
+        """
+        Jobcenter EN
+        Standort Witten
+        Datum: 17.08.2026
+        Änderungsbescheid
+        Wegen der Aufnahme Ihrer Beschäftigung werden die Leistungen ab 01.09.2026 neu berechnet.
+        Neuer monatlicher Anspruch: 312,44 EUR
+        Für August wurden 214,10 EUR zu viel gezahlt. Dieser Betrag ist zu erstatten.
+        Bitte überweisen Sie 214,10 EUR bis 30.09.2026.
+        Gegen diesen Bescheid kann innerhalb eines Monats nach Bekanntgabe Widerspruch erhoben werden.
+    """,
+        [
+            DeadlineLabel("explicit_date", date="2026-09-30"),
+            DeadlineLabel("relative", relative_expression="innerhalb eines Monats nach Bekanntgabe"),
+        ],
+        [AmountLabel("312.44", "to_receive"), AmountLabel("214.10", "to_pay")],
+    ),
+    _l(
+        "kindergeld-school",
+        "benefits",
+        "Familienkasse Nordrhein-Westfalen Ost",
+        "2026-09-21",
+        """
