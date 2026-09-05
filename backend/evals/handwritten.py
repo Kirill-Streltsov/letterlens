@@ -152,3 +152,29 @@ HANDWRITTEN: list[SyntheticLetter] = [
     """,
         [
             DeadlineLabel("explicit_date", date="2026-05-25"),
+            DeadlineLabel("relative", relative_expression="innerhalb eines Monats nach Bekanntgabe"),
+        ],
+        [AmountLabel("61.17", "to_receive")],
+    ),
+    _l(
+        "care-insurance",
+        "health_insurance",
+        "AOK Rheinland/Hamburg - Pflegekasse",
+        "2026-03-02",
+        """
+        AOK Rheinland/Hamburg - Die Pflegekasse
+        Datum: 02.03.2026
+        Begutachtung zur Feststellung der Pflegebedürftigkeit
+        Der Medizinische Dienst besucht Sie am 17.03.2026 zwischen 9 und 12 Uhr.
+        Halten Sie bitte Arztberichte und den Medikamentenplan bereit.
+    """,
+        [DeadlineLabel("explicit_date", date="2026-03-17")],
+        [],
+    ),
+    _l(
+        "exit-request",
+        "immigration",
+        "Stadt Hagen - Ausländerbehörde",
+        "2026-04-08",
+        """
+        Stadt Hagen
