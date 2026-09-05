@@ -178,3 +178,29 @@ HANDWRITTEN: list[SyntheticLetter] = [
         "2026-04-08",
         """
         Stadt Hagen
+        Fachbereich Öffentliche Sicherheit - Ausländerbehörde
+        Hagen, den 08.04.2026
+        Ihre Aufenthaltsgestattung
+        Ihr Asylverfahren ist abgeschlossen. Bitte sprechen Sie am 21.04.2026 um 10:00 Uhr persönlich vor.
+        Bringen Sie Ihren Pass und alle Bescheide des BAMF mit.
+    """,
+        [DeadlineLabel("appointment", date="2026-04-21")],
+        [],
+    ),
+    _l(
+        "naturalisation",
+        "immigration",
+        "Kreis Wesel - Einbürgerungsbehörde",
+        "2026-07-15",
+        """
+        Kreis Wesel - Einbürgerungsbehörde
+        Datum: 15.07.2026
+        Ihr Antrag auf Einbürgerung
+        Die Gebühr für die Einbürgerung beträgt 255,00 €.
+        Bitte reichen Sie den Nachweis über den bestandenen Einbürgerungstest bis 31.08.2026 nach.
+    """,
+        [DeadlineLabel("explicit_date", date="2026-08-31")],
+        [AmountLabel("255.00", "to_pay")],
+    ),
+    _l(
+        "property-tax",
