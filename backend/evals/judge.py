@@ -46,3 +46,31 @@ def perturbations(text: str) -> list[tuple[str, bool]]:
             .replace("Please answer", "You do not need to answer")
             .replace("Pay by", "Do not pay by")
             .replace("Bring", "Do not bring"),
+            False,
+        )
+    )
+    for a, b in (
+        ("1,523.00", "1,253.00"),
+        ("645.00", "465.00"),
+        ("310.50", "31.05"),
+        ("14 October", "4 October"),
+    ):
+        if a in text:
+            out.append((text.replace(a, b), False))
+    return out
+
+
+class JudgeScore(Frozen):
+    score: int = Field(ge=1, le=5)
+    issues: list[str]
+
+
+def calibration_pairs() -> list[tuple[str, str, bool]]:
+    pairs = [(ref, cand, ok) for ref in REFERENCES for cand, ok in perturbations(ref)]
+    if REVIEWED.exists():
+        for line in REVIEWED.read_text(encoding="utf-8").splitlines():
+            row = json.loads(line)
+            pairs.append((row["reference"], row["candidate"], bool(row["faithful"])))
+    return pairs
+
+
