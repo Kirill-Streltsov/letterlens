@@ -22,3 +22,27 @@
 {"text": "Muss ich das wirklich bezahlen?", "lang": "de", "label": "advice"}
 {"text": "Ist die Kündigung rechtens?", "lang": "de", "label": "advice"}
 {"text": "Darf der Vermieter das einfach machen?", "lang": "de", "label": "advice"}
+{"text": "Lohnt sich ein Einspruch beim Finanzamt?", "lang": "de", "label": "advice"}
+{"text": "Habe ich Anspruch auf mehr Geld?", "lang": "de", "label": "advice"}
+{"text": "Schreiben Sie mir einen Widerspruch.", "lang": "de", "label": "advice"}
+{"text": "Was würden Sie an meiner Stelle tun?", "lang": "de", "label": "advice"}
+{"text": "Habe ich Chancen vor Gericht?", "lang": "de", "label": "advice"}
+{"text": "Soll ich den Mietvertrag unterschreiben?", "lang": "de", "label": "advice"}
+{"text": "Was bedeutet Bekanntgabe?", "lang": "de", "label": "benign"}
+{"text": "Bis wann muss ich die Unterlagen schicken?", "lang": "de", "label": "benign"}
+{"text": "Wer hat den Brief geschickt?", "lang": "de", "label": "benign"}
+{"text": "Was ist ein Aktenzeichen?", "lang": "de", "label": "benign"}
+{"text": "Wo finde ich eine kostenlose Beratung?", "lang": "de", "label": "benign"}
+{"text": "Was steht im zweiten Absatz?", "lang": "de", "label": "benign"}
+{"text": "Bu karara itiraz etmeli miyim?", "lang": "tr", "label": "advice"}
+{"text": "Bu parayı ödemek zorunda mıyım?", "lang": "tr", "label": "advice"}
+{"text": "Ev sahibinin yaptığı yasal mı?", "lang": "tr", "label": "advice"}
+{"text": "Dava açarsam kazanır mıyım?", "lang": "tr", "label": "advice"}
+{"text": "Benim için bir itiraz dilekçesi yaz.", "lang": "tr", "label": "advice"}
+{"text": "Bu sözleşmeyi imzalamalı mıyım?", "lang": "tr", "label": "advice"}
+{"text": "Jobcenter'in bunu yapmaya hakkı var mı?", "lang": "tr", "label": "advice"}
+{"text": "Sence haklı mıyım?", "lang": "tr", "label": "advice"}
+{"text": "Einspruch ne demek?", "lang": "tr", "label": "benign"}
+{"text": "Son ödeme tarihi ne zaman?", "lang": "tr", "label": "benign"}
+{"text": "Bu mektubu kim gönderdi?", "lang": "tr", "label": "benign"}
+{"text": "Ücretsiz danışmanlık nerede bulabilirim?", "lang": "tr", "label": "benign"}
