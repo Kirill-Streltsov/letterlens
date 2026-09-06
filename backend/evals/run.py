@@ -80,3 +80,22 @@ EXPECTED_PASSAGES: dict[str, set[str]] = {
 }
 
 
+# --------------------------------------------------------------------------
+# Data
+# --------------------------------------------------------------------------
+
+
+def build_golden() -> list[SyntheticLetter]:
+    """Deterministic golden set: unseen seeds of every template, OCR-noise variants, hand-written."""
+    letters = generate_corpus(5, seed=2026)
+    letters += generate_corpus(1, seed=4242, noise=0.2)
+    return letters + HANDWRITTEN
+
+
+def write_golden(letters: list[SyntheticLetter]) -> None:
+    GOLDEN.parent.mkdir(parents=True, exist_ok=True)
+    with GOLDEN.open("w", encoding="utf-8") as f:
+        for letter in letters:
+            f.write(json.dumps(letter.to_dict(), ensure_ascii=False) + "\n")
+
+
