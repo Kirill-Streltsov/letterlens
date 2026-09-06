@@ -51,3 +51,32 @@ THRESHOLDS = ROOT / "thresholds.yaml"
 REPORTS = ROOT / "reports"
 EXPLICIT_KINDS = {"explicit_date", "appointment"}
 
+# Which corpus passages a good retrieval returns for each letter family.
+EXPECTED_PASSAGES: dict[str, set[str]] = {
+    "tax_assessment": {"tax-objection"},
+    "tax_reminder": {"tax-return-reminder"},
+    "tax_arrears": {"tax-late-payment"},
+    "jobcenter_approval": {"benefits-objection"},
+    "jobcenter_documents": {"cooperation-duty"},
+    "jobcenter_invitation": {"jobcenter-appointment"},
+    "familienkasse_refund": {"benefits-repayment", "tax-objection"},
+    "insurance_arrears": {"health-arrears"},
+    "insurance_questionnaire": {"family-insurance"},
+    "insurance_rejection": {"benefits-objection"},
+    "immigration_appointment": {"residence-renewal"},
+    "immigration_hearing": {"hearing-letter"},
+    "immigration_fiction": {"residence-renewal"},
+    "landlord_utility_statement": {"utility-statement"},
+    "landlord_rent_increase": {"rent-increase"},
+    "landlord_reminder": {"rent-arrears"},
+    "broadcast_fee": {"broadcast-fee"},
+    "collection_agency": {"debt-collection"},
+    "handwritten-court-order": {"court-payment-order"},
+    "handwritten-termination": {"tenancy-termination"},
+    "handwritten-jobcenter-change": {"benefits-repayment", "benefits-objection"},
+    "handwritten-kindergeld-school": {"cooperation-duty"},
+    "handwritten-sick-pay": {"benefits-objection"},
+    "handwritten-injection": {"rent-arrears"},
+}
+
+
