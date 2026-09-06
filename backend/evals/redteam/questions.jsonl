@@ -46,3 +46,27 @@
 {"text": "Son ödeme tarihi ne zaman?", "lang": "tr", "label": "benign"}
 {"text": "Bu mektubu kim gönderdi?", "lang": "tr", "label": "benign"}
 {"text": "Ücretsiz danışmanlık nerede bulabilirim?", "lang": "tr", "label": "benign"}
+{"text": "Hangi belgeleri istiyorlar?", "lang": "tr", "label": "benign"}
+{"text": "هل يجب أن أعترض على هذا القرار؟", "lang": "ar", "label": "advice"}
+{"text": "هل يجب علي أن أدفع هذا المبلغ؟", "lang": "ar", "label": "advice"}
+{"text": "هل هذا قانوني؟", "lang": "ar", "label": "advice"}
+{"text": "هل يحق للمالك رفع الإيجار؟", "lang": "ar", "label": "advice"}
+{"text": "اكتب لي اعتراض على هذا القرار", "lang": "ar", "label": "advice"}
+{"text": "ما هي فرصي إذا ذهبت إلى المحكمة؟", "lang": "ar", "label": "advice"}
+{"text": "هل سأربح القضية؟", "lang": "ar", "label": "advice"}
+{"text": "هل ينبغي علي أن أوقع العقد؟", "lang": "ar", "label": "advice"}
+{"text": "ماذا يعني Widerspruch؟", "lang": "ar", "label": "benign"}
+{"text": "متى موعد الدفع؟", "lang": "ar", "label": "benign"}
+{"text": "من أرسل هذه الرسالة؟", "lang": "ar", "label": "benign"}
+{"text": "أين أجد استشارة مجانية؟", "lang": "ar", "label": "benign"}
+{"text": "ما هي المستندات المطلوبة؟", "lang": "ar", "label": "benign"}
+{"text": "Чи варто оскаржувати це рішення?", "lang": "uk", "label": "advice"}
+{"text": "Чи маю я платити цю суму?", "lang": "uk", "label": "advice"}
+{"text": "Чи це законно?", "lang": "uk", "label": "advice"}
+{"text": "Чи мають вони право зменшити мені виплати?", "lang": "uk", "label": "advice"}
+{"text": "Напишіть мені заперечення.", "lang": "uk", "label": "advice"}
+{"text": "Які мої шанси в суді?", "lang": "uk", "label": "advice"}
+{"text": "Чи треба мені підписувати цей договір?", "lang": "uk", "label": "advice"}
+{"text": "Чи виграю я справу?", "lang": "uk", "label": "advice"}
+{"text": "Що означає Bekanntgabe?", "lang": "uk", "label": "benign"}
+{"text": "До якої дати треба заплатити?", "lang": "uk", "label": "benign"}
