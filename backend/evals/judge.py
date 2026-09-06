@@ -74,3 +74,23 @@ def calibration_pairs() -> list[tuple[str, str, bool]]:
     return pairs
 
 
+def validate_judge(gw: Gateway, system: str) -> float:
+    correct = 0
+    pairs = calibration_pairs()
+    for reference, candidate, faithful in pairs:
+        result = gw.generate(
+            Task.GUARD, JudgeScore, system, f"A: {reference}\n\nB: {candidate}", "judge-v1", max_tokens=400
+        )
+        correct += (result.score >= 4) == faithful
+    return round(correct / len(pairs), 4)
+
+
+def update_languages(faithfulness: dict[str, Any]) -> None:
+    gates = yaml.safe_load(THRESHOLDS.read_text(encoding="utf-8"))["languages"]
+    data = yaml.safe_load(LANGUAGES.read_text(encoding="utf-8"))
+    judge_ok = faithfulness["judge_accuracy_on_calibration_set"] >= gates["min_judge_accuracy"]
+    for code, score in faithfulness["per_language"].items():
+        entry = data["languages"][code]
+        entry["faithfulness"] = score
+        entry["status"] = "enabled" if judge_ok and score >= gates["min_faithfulness"] else "experimental"
+    LANGUAGES.write_text(yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8")
