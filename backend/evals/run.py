@@ -283,3 +283,21 @@ def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, 
     return result
 
 
+def suite_retrieval(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, Any]:
+    hits, rr, n = 0, 0.0, 0
+    misses = []
+    for letter in letters:
+        expected = EXPECTED_PASSAGES.get(letter.template_id)
+        if not expected:
+            continue
+        state = run_letter(ctx, letter, ("classify", "extract", "verify", "retrieve"))
+        ids = [p.doc_id for p in state.passages or []]
+        n += 1
+        rank = next((i for i, d in enumerate(ids, 1) if d in expected), None)
+        hits += rank is not None
+        rr += 1 / rank if rank else 0.0
+        if rank is None:
+            misses.append({"id": letter.id, "got": ids, "expected": sorted(expected)})
+    return {"letters": n, "recall_at_4": round(hits / n, 4), "mrr": round(rr / n, 4), "misses": misses[:20]}
+
+
