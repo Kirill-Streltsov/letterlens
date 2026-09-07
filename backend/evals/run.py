@@ -154,3 +154,25 @@ class ChaosProvider(FakeProvider):
         )
 
 
+# --------------------------------------------------------------------------
+# Suites
+# --------------------------------------------------------------------------
+
+
+@dataclass
+class Context:
+    settings: Settings
+    deps: PipelineDeps
+    provider_name: str
+    ledger: InMemoryLedger
+
+
+def run_letter(ctx: Context, letter: SyntheticLetter, steps: tuple[str, ...]) -> PipelineState:
+    store = InMemoryStateStore()
+    state = PipelineState(letter_id=letter.id, owner_id="eval", document=to_document(letter))
+    for step in steps:
+        state = STEP_FUNCTIONS[step](state, ctx.deps)
+    store.save_state(state)
+    return state
+
+
