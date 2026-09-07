@@ -176,3 +176,33 @@ def run_letter(ctx: Context, letter: SyntheticLetter, steps: tuple[str, ...]) ->
     return state
 
 
+def suite_classification(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, Any]:
+    model = default_model()
+    per_class: dict[str, list[bool]] = defaultdict(list)
+    subsets: dict[str, list[bool]] = defaultdict(list)
+    confidences = []
+    for letter in letters:
+        result = model.classify("\n".join(letter.lines))
+        ok = result.letter_type.value == letter.letter_type
+        per_class[letter.letter_type].append(ok)
+        subset = "handwritten" if letter.template_id.startswith("handwritten") else "synthetic"
+        subsets[subset].append(ok)
+        confidences.append((result.confidence, ok))
+    bins: dict[int, list[tuple[float, bool]]] = defaultdict(list)
+    for conf, ok in confidences:
+        bins[min(int(conf * 10), 9)].append((conf, ok))
+    ece = sum(
+        len(b) / len(confidences) * abs(sum(o for _, o in b) / len(b) - sum(c for c, _ in b) / len(b))
+        for b in bins.values()
+    )
+    recalls = {k: sum(v) / len(v) for k, v in per_class.items()}
+    return {
+        "synthetic_accuracy": sum(subsets["synthetic"]) / len(subsets["synthetic"]),
+        "handwritten_accuracy": sum(subsets["handwritten"]) / max(len(subsets["handwritten"]), 1),
+        "macro_recall": sum(recalls.values()) / len(recalls),
+        "per_class_recall": recalls,
+        "ece": round(ece, 4),
+        "model_version": model.version,
+    }
+
+
