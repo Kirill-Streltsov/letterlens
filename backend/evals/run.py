@@ -99,3 +99,20 @@ def write_golden(letters: list[SyntheticLetter]) -> None:
             f.write(json.dumps(letter.to_dict(), ensure_ascii=False) + "\n")
 
 
+def load_golden() -> list[SyntheticLetter]:
+    if not GOLDEN.exists():
+        write_golden(build_golden())
+    out = []
+    for line in GOLDEN.read_text(encoding="utf-8").splitlines():
+        raw = json.loads(line)
+        raw["deadlines"] = [DeadlineLabel(**d) for d in raw["deadlines"]]
+        raw["amounts"] = [AmountLabel(**a) for a in raw["amounts"]]
+        out.append(SyntheticLetter(**raw))
+    return out
+
+
+# --------------------------------------------------------------------------
+# Fault injection
+# --------------------------------------------------------------------------
+
+
