@@ -116,3 +116,41 @@ def load_golden() -> list[SyntheticLetter]:
 # --------------------------------------------------------------------------
 
 
+class ChaosProvider(FakeProvider):
+    """Simulates a hallucinating model: shifts dates, changes amounts, cites wrong lines."""
+
+    name = "chaos"
+
+    def __init__(self, rate: float = 0.35, seed: int = 7) -> None:
+        super().__init__()
+        self.rate = rate
+        self.rng = random.Random(seed)
+        self.injected: list[tuple[str, str]] = []  # (kind, value)
+
+    def complete(self, request: LLMRequest, timeout: float) -> LLMResponse:
+        response = super().complete(request, timeout)
+        if request.task is not Task.EXTRACT:
+            return response
+        data = json.loads(response.text)
+        for d in data["deadlines"]:
+            if d["date"] and self.rng.random() < self.rate:
+                shifted = date.fromisoformat(d["date"]) + timedelta(days=self.rng.choice([1, 2, 7, -1]))
+                d["date"] = shifted.isoformat()
+                self.injected.append(("date", d["date"]))
+        for a in data["amounts"]:
+            if self.rng.random() < self.rate:
+                a["value"] = str((Decimal(a["value"]) * Decimal("1.1")).quantize(Decimal("0.01")))
+                self.injected.append(("amount", a["value"]))
+        if data["letter_date"]["value"] and self.rng.random() < self.rate:
+            data["letter_date"]["line_ids"] = ["p1-l1"]  # wrong citation
+        text = json.dumps(data)
+        return LLMResponse(
+            text,
+            response.model,
+            self.name,
+            response.input_tokens,
+            response.output_tokens,
+            response.latency_ms,
+        )
+
+
