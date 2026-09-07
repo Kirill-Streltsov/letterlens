@@ -219,3 +219,34 @@ def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, 
         shown = {d.due_date.isoformat(): d for d in facts.deadlines if d.due_date and not d.is_estimate}
         verified = {k for k, d in shown.items() if d.status is FactStatus.VERIFIED}
 
+        c["letters"] += 1
+        c["letter_date_ok"] += (
+            facts.letter_date is not None and facts.letter_date.isoformat() == letter.letter_date
+        )
+        c["expected_dates"] += len(expected_dates)
+        c["found_dates"] += len(expected_dates & set(shown))
+        c["shown_dates"] += len(shown)
+        c["correct_shown_dates"] += len(set(shown) & expected_dates)
+        c["verified_dates"] += len(verified)
+        c["unsafe_verified_dates"] += len(verified - expected_dates)
+        c["exact_letters"] += set(shown) == expected_dates
+
+        expected_rel = sum(1 for d in letter.deadlines if d.kind == "relative")
+        found_rel = sum(1 for d in facts.deadlines if d.is_estimate)
+        c["expected_relative"] += expected_rel
+        c["found_relative"] += min(expected_rel, found_rel)
+
+        expected_amounts = {Decimal(a.value): a.direction for a in letter.amounts}
+        shown_amounts = {a.value: a for a in facts.amounts}
+        c["expected_amounts"] += len(expected_amounts)
+        c["found_amounts"] += len(set(expected_amounts) & set(shown_amounts))
+        c["shown_amounts"] += len(shown_amounts)
+        c["verified_amounts"] += sum(a.status is FactStatus.VERIFIED for a in shown_amounts.values())
+        c["unsafe_verified_amounts"] += sum(
+            a.status is FactStatus.VERIFIED and v not in expected_amounts for v, a in shown_amounts.items()
+        )
+        for value, direction in expected_amounts.items():
+            if value in shown_amounts:
+                c["direction_checked"] += 1
+                c["direction_ok"] += shown_amounts[value].direction == direction
+        if set(shown) != expected_dates or set(expected_amounts) - set(shown_amounts):
