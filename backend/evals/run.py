@@ -250,3 +250,36 @@ def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, 
                 c["direction_checked"] += 1
                 c["direction_ok"] += shown_amounts[value].direction == direction
         if set(shown) != expected_dates or set(expected_amounts) - set(shown_amounts):
+            failures.append(
+                {
+                    "id": letter.id,
+                    "expected_dates": sorted(expected_dates),
+                    "shown_dates": sorted(shown),
+                    "missing_amounts": sorted(str(v) for v in set(expected_amounts) - set(shown_amounts)),
+                }
+            )
+
+    def ratio(a: str, b: str) -> float:
+        return round(c[a] / c[b], 4) if c[b] else 1.0
+
+    result = {
+        "letters": c["letters"],
+        "letter_date_accuracy": ratio("letter_date_ok", "letters"),
+        "explicit_deadline_recall": ratio("found_dates", "expected_dates"),
+        "explicit_deadline_precision": ratio("correct_shown_dates", "shown_dates"),
+        "deadline_exact_match_letters": ratio("exact_letters", "letters"),
+        "relative_deadline_recall": ratio("found_relative", "expected_relative"),
+        "amount_recall": ratio("found_amounts", "expected_amounts"),
+        "amount_direction_accuracy": ratio("direction_ok", "direction_checked"),
+        "unsafe_verified_dates": c["unsafe_verified_dates"],
+        "unsafe_verified_amounts": c["unsafe_verified_amounts"],
+        "verified_share_of_dates": ratio("verified_dates", "shown_dates"),
+        "mean_grounding_rate": round(sum(grounding) / len(grounding), 4),
+        "failures": failures[:25],
+    }
+    provider = ctx.deps.gateway.provider
+    if isinstance(provider, ChaosProvider):
+        result["injected_errors"] = len(provider.injected)
+    return result
+
+
