@@ -206,3 +206,16 @@ def suite_classification(ctx: Context, letters: list[SyntheticLetter]) -> dict[s
     }
 
 
+def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, Any]:
+    c: Counter[str] = Counter()
+    failures: list[dict[str, Any]] = []
+    grounding = []
+    for letter in letters:
+        state = run_letter(ctx, letter, ("classify", "extract", "verify"))
+        facts = state.facts
+        assert facts is not None
+        grounding.append(facts.grounding_rate)
+        expected_dates = {d.date for d in letter.deadlines if d.kind in EXPLICIT_KINDS}
+        shown = {d.due_date.isoformat(): d for d in facts.deadlines if d.due_date and not d.is_estimate}
+        verified = {k for k, d in shown.items() if d.status is FactStatus.VERIFIED}
+
