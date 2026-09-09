@@ -404,3 +404,30 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
     }
 
 
+# --------------------------------------------------------------------------
+# Gate
+# --------------------------------------------------------------------------
+
+
+def lookup(report: dict[str, Any], dotted: str) -> Any:
+    node: Any = report
+    for part in dotted.split("."):
+        node = node[part]
+    return node
+
+
+def check_gates(report: dict[str, Any], profile: str) -> list[str]:
+    config = yaml.safe_load(THRESHOLDS.read_text(encoding="utf-8"))
+    failures = []
+    for gate in config.get(profile, []):
+        try:
+            value = lookup(report, gate["metric"])
+        except KeyError:
+            continue  # suite not run in this invocation
+        if "min" in gate and value < gate["min"]:
+            failures.append(f"{gate['metric']} = {value} < {gate['min']}")
+        if "max" in gate and value > gate["max"]:
+            failures.append(f"{gate['metric']} = {value} > {gate['max']}")
+    return failures
+
+
