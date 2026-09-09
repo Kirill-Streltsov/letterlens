@@ -351,3 +351,29 @@ def suite_guardrail(ctx: Context) -> dict[str, Any]:
     }
 
 
+JUDGE_SYSTEM = """You compare two summaries of the same letter. A is the reference (English).
+B is a back-translation into English of a summary in another language.
+Score how faithful B is to A from 1 (contradicts or invents facts) to 5 (same facts).
+Any changed date, amount, deadline, sender or required action is a major error (score 1 or 2).
+Return JSON only."""
+
+
+def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int) -> dict[str, Any]:
+    """Live only. Back-translation + LLM judge, per language. The judge is validated first."""
+    from evals.judge import JudgeScore, validate_judge
+
+    gw = ctx.deps.gateway
+    judge_accuracy = validate_judge(gw, JUDGE_SYSTEM)
+    rng = random.Random(1)
+    picked = rng.sample([x for x in letters if not x.template_id.startswith("handwritten")], sample)
+    from letterlens.i18n import languages
+
+    scores: dict[str, list[float]] = defaultdict(list)
+    for letter in picked:
+        state = run_letter(ctx, letter, ("classify", "extract", "verify", "retrieve"))
+        state = explain(state, ctx.deps, "en")
+        reference = " ".join(s.text for s in state.explanations["en"].summary)
+        for code in languages():
+            if code == "en":
+                continue
+            state = explain(state, ctx.deps, code)
