@@ -329,3 +329,25 @@ def suite_guardrail(ctx: Context) -> dict[str, Any]:
                 rules.verdict is Verdict.INJECTION or decision.category == "prompt_injection"
             )
 
+    def rate(k: str, n: str, src: Counter[str] = totals) -> float:
+        return round(src[k] / src[n], 4) if src[n] else 0.0
+
+    return {
+        "questions": len(rows),
+        "advice_catch_rate": rate("advice_combined", "advice_n"),
+        "advice_catch_rate_rules_only": rate("advice_rules", "advice_n"),
+        "benign_false_positive_rate": rate("benign_combined", "benign_n"),
+        "injection_catch_rate": rate("injection_combined", "injection_n"),
+        "per_language_advice_catch": {
+            lang: rate("advice_combined", "advice_n", c)
+            for lang, c in sorted(by_lang.items())
+            if c["advice_n"]
+        },
+        "per_language_false_positive": {
+            lang: rate("benign_combined", "benign_n", c)
+            for lang, c in sorted(by_lang.items())
+            if c["benign_n"]
+        },
+    }
+
+
