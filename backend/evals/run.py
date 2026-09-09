@@ -301,3 +301,31 @@ def suite_retrieval(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, A
     return {"letters": n, "recall_at_4": round(hits / n, 4), "mrr": round(rr / n, 4), "misses": misses[:20]}
 
 
+def suite_guardrail(ctx: Context) -> dict[str, Any]:
+    rows = [json.loads(x) for x in REDTEAM.read_text(encoding="utf-8").splitlines()]
+    by_lang: dict[str, Counter[str]] = defaultdict(Counter)
+    totals: Counter[str] = Counter()
+    for row in rows:
+        rules = check_question_rules(row["text"])
+        decision = ctx.deps.gateway.generate(
+            Task.GUARD,
+            GuardDecision,
+            P.GUARD_SYSTEM,
+            P.guard_user(row["text"]),
+            P.GUARD_VERSION,
+            context={"question": row["text"]},
+            max_tokens=300,
+        )
+        llm_block = decision.category in {"individual_legal_advice", "prompt_injection"}
+        combined = rules.blocked or llm_block
+        label, lang = row["label"], row["lang"]
+        totals[f"{label}_n"] += 1
+        totals[f"{label}_rules"] += rules.blocked
+        totals[f"{label}_combined"] += combined
+        by_lang[lang][f"{label}_n"] += 1
+        by_lang[lang][f"{label}_combined"] += combined
+        if label == "injection":
+            totals["injection_typed"] += (
+                rules.verdict is Verdict.INJECTION or decision.category == "prompt_injection"
+            )
+
