@@ -431,3 +431,18 @@ def check_gates(report: dict[str, Any], profile: str) -> list[str]:
     return failures
 
 
+def make_context(profile: str) -> Context:
+    if profile == "live":
+        settings = Settings()
+        provider = build_provider(settings)
+        if provider.name == "fake":
+            sys.exit("profile 'live' needs LETTERLENS_LLM_PROVIDER and LETTERLENS_LLM_API_KEY")
+    else:
+        settings = Settings(env="test", llm_provider="fake")
+        provider = ChaosProvider() if profile == "chaos" else FakeProvider()
+    ledger = InMemoryLedger()
+    gateway = Gateway(provider, settings, ledger, sleep=time.sleep)
+    deps = PipelineDeps(gateway, HybridRetriever(), default_model())
+    return Context(settings, deps, provider.name, ledger)
+
+
