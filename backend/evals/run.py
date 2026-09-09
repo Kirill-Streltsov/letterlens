@@ -377,3 +377,30 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
             if code == "en":
                 continue
             state = explain(state, ctx.deps, code)
+            target = " ".join(s.text for s in state.explanations[code].summary)
+            back = gw.generate(
+                Task.BACKTRANSLATE,
+                _BackText,
+                P.BACKTRANSLATE_SYSTEM,
+                target,
+                P.BACKTRANSLATE_VERSION,
+                context={"text": target},
+                max_tokens=1500,
+            )
+            score = gw.generate(
+                Task.GUARD,
+                JudgeScore,
+                JUDGE_SYSTEM,
+                f"A: {reference}\n\nB: {back.text}",
+                "judge-v1",
+                max_tokens=400,
+            )
+            scores[code].append(score.score / 5)
+    return {
+        "judge_accuracy_on_calibration_set": judge_accuracy,
+        "letters": len(picked),
+        "per_language": {k: round(sum(v) / len(v), 4) for k, v in scores.items()},
+        "min_language_score": round(min((sum(v) / len(v) for v in scores.values()), default=0.0), 4),
+    }
+
+
