@@ -446,3 +446,35 @@ def make_context(profile: str) -> Context:
     return Context(settings, deps, provider.name, ledger)
 
 
+def summary_markdown(report: dict[str, Any], failures: list[str]) -> str:
+    lines = [
+        f"# Evaluation report: profile `{report['profile']}`",
+        "",
+        f"Provider: `{report['provider']}`. Prompts: `{report['prompt_versions']}`.",
+        "",
+    ]
+    for suite, metrics in report["suites"].items():
+        lines += [f"## {suite}", "", "| Metric | Value |", "|---|---|"]
+        for key, value in metrics.items():
+            if isinstance(value, (int, float, str)):
+                lines.append(f"| {key} | {value} |")
+        lines.append("")
+    lines += ["## Gate", ""] + ([f"- FAIL: {f}" for f in failures] or ["- PASS: all gates"])
+    return "\n".join(lines) + "\n"
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument("--profile", choices=["offline", "chaos", "live"], default="offline")
+    parser.add_argument(
+        "--suite",
+        action="append",
+        choices=["classification", "extraction", "retrieval", "guardrail", "faithfulness"],
+    )
+    parser.add_argument("--sample", type=int, default=8, help="letters for the faithfulness suite")
+    parser.add_argument("--rebuild-golden", action="store_true")
+    parser.add_argument("--update-languages", action="store_true")
+    args = parser.parse_args(argv)
+
