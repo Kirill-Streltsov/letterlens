@@ -503,3 +503,28 @@ def main(argv: list[str] | None = None) -> int:
             report["suites"][suite] = suite_extraction(ctx, letters)
         elif suite == "retrieval":
             report["suites"][suite] = suite_retrieval(ctx, letters)
+        elif suite == "guardrail":
+            report["suites"][suite] = suite_guardrail(ctx)
+        elif suite == "faithfulness":
+            report["suites"][suite] = suite_faithfulness(ctx, letters, args.sample)
+    report["seconds"] = round(time.time() - started, 1)
+    report["llm_calls"] = len(ctx.ledger.calls)
+    report["llm_list_price_usd"] = round(sum(c.list_price_usd for c in ctx.ledger.calls), 4)
+
+    failures = check_gates({k: v for k, v in report.items()} | {"suites": report["suites"]}, args.profile)
+    report["gate"] = {"passed": not failures, "failures": failures}
+    REPORTS.mkdir(exist_ok=True)
+    (REPORTS / f"{args.profile}.json").write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
+    (REPORTS / f"{args.profile}.md").write_text(summary_markdown(report, failures), encoding="utf-8")
+
+    if args.update_languages and args.profile == "live" and "faithfulness" in report["suites"]:
+        from evals.judge import update_languages
+
+        update_languages(report["suites"]["faithfulness"])
+
+    print(summary_markdown(report, failures))
+    return 1 if failures else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
