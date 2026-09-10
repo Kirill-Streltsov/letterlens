@@ -1,0 +1,295 @@
+{
+  "profile": "chaos",
+  "provider": "chaos",
+  "prompt_versions": [
+    "extract-v3",
+    "explain-v3",
+    "guard-v2"
+  ],
+  "golden_letters": 126,
+  "suites": {
+    "extraction": {
+      "letters": 126,
+      "letter_date_accuracy": 0.9683,
+      "explicit_deadline_recall": 0.551,
+      "explicit_deadline_precision": 0.5294,
+      "deadline_exact_match_letters": 0.6032,
+      "relative_deadline_recall": 1.0,
+      "amount_recall": 0.6569,
+      "amount_direction_accuracy": 0.9333,
+      "unsafe_verified_dates": 0,
+      "unsafe_verified_amounts": 0,
+      "verified_share_of_dates": 0.5294,
+      "mean_grounding_rate": 0.6235,
+      "failures": [
+        {
+          "id": "tax_assessment-2028643105",
+          "expected_dates": [],
+          "shown_dates": [],
+          "missing_amounts": [
+            "3262.50"
+          ]
+        },
+        {
+          "id": "tax_assessment-2028643408",
+          "expected_dates": [
+            "2026-09-04"
+          ],
+          "shown_dates": [
+            "2026-09-04"
+          ],
+          "missing_amounts": [
+            "1098.00"
+          ]
+        },
+        {
+          "id": "tax_assessment-2028643509",
+          "expected_dates": [
+            "2026-08-31"
+          ],
+          "shown_dates": [
+            "2026-09-01"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "tax_reminder-2028653314",
+          "expected_dates": [
+            "2026-02-03"
+          ],
+          "shown_dates": [
+            "2026-02-02"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "tax_reminder-2028653415",
+          "expected_dates": [
+            "2026-10-26"
+          ],
+          "shown_dates": [
+            "2026-10-28"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "tax_reminder-2028653516",
+          "expected_dates": [
+            "2026-04-14"
+          ],
+          "shown_dates": [
+            "2026-04-15"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "tax_arrears-2028663119",
+          "expected_dates": [
+            "2026-10-14"
+          ],
+          "shown_dates": [
+            "2026-10-14"
+          ],
+          "missing_amounts": [
+            "19"
+          ]
+        },
+        {
+          "id": "tax_arrears-2028663220",
+          "expected_dates": [
+            "2026-08-13"
+          ],
+          "shown_dates": [
+            "2026-08-14"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "tax_arrears-2028663422",
+          "expected_dates": [
+            "2026-01-20"
+          ],
+          "shown_dates": [
+            "2026-01-22"
+          ],
+          "missing_amounts": [
+            "2255.00",
+            "68"
+          ]
+        },
+        {
+          "id": "tax_arrears-2028663523",
+          "expected_dates": [
+            "2026-09-15"
+          ],
+          "shown_dates": [
+            "2026-09-15"
+          ],
+          "missing_amounts": [
+            "42"
+          ]
+        },
+        {
+          "id": "jobcenter_approval-2032721390",
+          "expected_dates": [],
+          "shown_dates": [],
+          "missing_amounts": [
+            "932.00"
+          ]
+        },
+        {
+          "id": "jobcenter_approval-2032721592",
+          "expected_dates": [],
+          "shown_dates": [],
+          "missing_amounts": [
+            "1092.50"
+          ]
+        },
+        {
+          "id": "jobcenter_approval-2032721794",
+          "expected_dates": [],
+          "shown_dates": [],
+          "missing_amounts": [
+            "759.50"
+          ]
+        },
+        {
+          "id": "jobcenter_documents-2032731498",
+          "expected_dates": [
+            "2026-07-06"
+          ],
+          "shown_dates": [
+            "2026-07-07"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "jobcenter_documents-2032731700",
+          "expected_dates": [
+            "2026-02-16"
+          ],
+          "shown_dates": [
+            "2026-02-23"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "jobcenter_invitation-2032741404",
+          "expected_dates": [
+            "2026-09-23"
+          ],
+          "shown_dates": [
+            "2026-09-22"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "jobcenter_invitation-2032741505",
+          "expected_dates": [
+            "2026-03-30"
+          ],
+          "shown_dates": [
+            "2026-03-29"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "jobcenter_invitation-2032741707",
+          "expected_dates": [
+            "2026-11-23"
+          ],
+          "shown_dates": [
+            "2026-11-30"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "jobcenter_invitation-2032741808",
+          "expected_dates": [
+            "2026-08-21"
+          ],
+          "shown_dates": [
+            "2026-08-20"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "familienkasse_refund-2032751411",
+          "expected_dates": [
+            "2026-02-20"
+          ],
+          "shown_dates": [
+            "2026-02-20"
+          ],
+          "missing_amounts": [
+            "527.00"
+          ]
+        },
+        {
+          "id": "familienkasse_refund-2032751512",
+          "expected_dates": [
+            "2026-03-23"
+          ],
+          "shown_dates": [
+            "2026-03-25"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "familienkasse_refund-2032751613",
+          "expected_dates": [
+            "2026-06-15"
+          ],
+          "shown_dates": [
+            "2026-06-14"
+          ],
+          "missing_amounts": []
+        },
+        {
+          "id": "familienkasse_refund-2032751714",
+          "expected_dates": [
+            "2026-04-10"
+          ],
+          "shown_dates": [
+            "2026-04-10"
+          ],
+          "missing_amounts": [
+            "400.64"
+          ]
+        },
+        {
+          "id": "familienkasse_refund-2032751815",
+          "expected_dates": [
+            "2026-10-26"
+          ],
+          "shown_dates": [
+            "2026-10-28"
+          ],
+          "missing_amounts": [
+            "872.82"
+          ]
+        },
+        {
+          "id": "insurance_arrears-2039412945",
+          "expected_dates": [
+            "2026-09-23"
+          ],
+          "shown_dates": [
+            "2026-09-30"
+          ],
+          "missing_amounts": [
+            "1062.50"
+          ]
+        }
+      ],
+      "injected_errors": 91
+    }
+  },
+  "seconds": 0.4,
+  "llm_calls": 126,
+  "llm_list_price_usd": 0.0138,
+  "gate": {
+    "passed": true,
+    "failures": []
+  }
+}
