@@ -478,3 +478,28 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--update-languages", action="store_true")
     args = parser.parse_args(argv)
 
+    if args.rebuild_golden:
+        write_golden(build_golden())
+    letters = load_golden()
+    ctx = make_context(args.profile)
+    suites = args.suite or (
+        ["extraction"]
+        if args.profile == "chaos"
+        else ["classification", "extraction", "retrieval", "guardrail"]
+        + (["faithfulness"] if args.profile == "live" else [])
+    )
+    started = time.time()
+    report: dict[str, Any] = {
+        "profile": args.profile,
+        "provider": ctx.provider_name,
+        "prompt_versions": [P.EXTRACT_VERSION, P.EXPLAIN_VERSION, P.GUARD_VERSION],
+        "golden_letters": len(letters),
+        "suites": {},
+    }
+    for suite in suites:
+        if suite == "classification":
+            report["suites"][suite] = suite_classification(ctx, letters)
+        elif suite == "extraction":
+            report["suites"][suite] = suite_extraction(ctx, letters)
+        elif suite == "retrieval":
+            report["suites"][suite] = suite_retrieval(ctx, letters)
