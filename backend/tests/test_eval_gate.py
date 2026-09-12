@@ -26,3 +26,23 @@ def trusting_verify(extraction: Any, doc: Any) -> Any:
     )
 
 
+ORIGINAL_VERIFY = verifier.verify
+
+
+def chaos_report() -> dict[str, Any]:
+    ctx = ev.make_context("chaos")
+    letters = ev.load_golden()[:40]
+    return {"suites": {"extraction": ev.suite_extraction(ctx, letters)}}
+
+
+def test_gate_passes_with_real_verifier() -> None:
+    assert ev.check_gates(chaos_report(), "chaos") == []
+
+
+def test_gate_blocks_trusting_verifier(monkeypatch: pytest.MonkeyPatch) -> None:
+    from letterlens.pipeline import steps
+
+    monkeypatch.setattr(steps, "verify", trusting_verify)
+    failures = ev.check_gates(chaos_report(), "chaos")
+    assert any("unsafe_verified_dates" in f for f in failures)
+    assert any("unsafe_verified_amounts" in f for f in failures)
