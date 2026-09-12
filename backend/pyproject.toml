@@ -52,6 +52,7 @@ default-groups = ["dev", "train"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 addopts = "-ra --strict-markers"
 markers = [
     "db: needs a PostgreSQL database (LETTERLENS_TEST_DATABASE_URL)",
@@ -78,6 +79,9 @@ ignore = [
     "E741",    # short loop names in comprehensions
     "E501",    # the formatter wraps code; long string literals stay readable
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["letterlens", "evals"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S", "PLR0915", "N802"]

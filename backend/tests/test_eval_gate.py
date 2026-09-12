@@ -10,8 +10,8 @@ from __future__ import annotations
 from typing import Any
 
 import pytest
-from evals import run as ev
 
+from evals import run as ev
 from letterlens.domain import FactStatus
 from letterlens.grounding import verifier
 
