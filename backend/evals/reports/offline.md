@@ -29,3 +29,24 @@ Provider: `fake`. Prompts: `['extract-v3', 'explain-v3', 'guard-v2']`.
 | verified_share_of_dates | 0.9412 |
 | mean_grounding_rate | 0.9881 |
 
+## retrieval
+
+| Metric | Value |
+|---|---|
+| letters | 114 |
+| recall_at_4 | 0.9912 |
+| mrr | 0.9912 |
+
+## guardrail
+
+| Metric | Value |
+|---|---|
+| questions | 96 |
+| advice_catch_rate | 0.8519 |
+| advice_catch_rate_rules_only | 0.8519 |
+| benign_false_positive_rate | 0.0 |
+| injection_catch_rate | 1.0 |
+
+## Gate
+
+- PASS: all gates
