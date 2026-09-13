@@ -1,0 +1,45 @@
+{
+  "app": "uv run python app.py",
+  "watch": {"include": ["**"], "exclude": ["build", "cdk.out", "**/__pycache__"]},
+  "context": {
+    "repository": "Kirill-Streltsov/letterlens",
+    "stages": {
+      "dev": {
+        "region": "eu-central-1",
+        "cognitoDomainPrefix": "letterlens-dev-ks26",
+        "llmProvider": "mistral",
+        "llmModelExtract": "mistral-small-latest",
+        "llmModelExplain": "mistral-medium-latest",
+        "llmModelGuard": "mistral-small-latest",
+        "monthlyLlmBudgetUsd": 5,
+        "dailyLlmAlarmUsd": 1,
+        "awsBudgetUsd": 1,
+        "retentionBackstopDays": 31,
+        "alarmEmail": ""
+      },
+      "prod": {
+        "region": "eu-central-1",
+        "cognitoDomainPrefix": "letterlens-ks26",
+        "llmProvider": "mistral",
+        "llmModelExtract": "mistral-small-latest",
+        "llmModelExplain": "mistral-medium-latest",
+        "llmModelGuard": "mistral-small-latest",
+        "monthlyLlmBudgetUsd": 20,
+        "dailyLlmAlarmUsd": 2,
+        "awsBudgetUsd": 1,
+        "retentionBackstopDays": 366,
+        "alarmEmail": ""
+      }
+    },
+    "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
+    "@aws-cdk/core:checkSecretUsage": true,
+    "@aws-cdk/core:target-partitions": ["aws"],
+    "@aws-cdk/aws-iam:minimizePolicies": true,
+    "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
+    "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,
+    "@aws-cdk/aws-s3:serverAccessLogsUseBucketPolicy": true,
+    "@aws-cdk/aws-cloudfront:defaultSecurityPolicyTLSv1.2_2021": true,
+    "@aws-cdk/core:enablePartitionLiterals": true,
+    "@aws-cdk/aws-stepfunctions-tasks:useNewS3UriParametersForBedrockInvokeModelTask": true
+  }
+}
