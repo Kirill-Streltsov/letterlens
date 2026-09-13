@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hmac
 import logging
 import time
 import uuid
@@ -55,6 +56,20 @@ def create_app(settings: Settings | None = None, container: Container | None = N
             allow_methods=["*"],
             allow_headers=["*"],
         )
+
+    origin_secret = (
+        settings.origin_verify_secret.get_secret_value() if settings.origin_verify_secret else None
+    )
+
+    @app.middleware("http")
+    async def origin_guard(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        if origin_secret is not None:
+            given = request.headers.get("x-origin-verify", "")
+            if not hmac.compare_digest(given.encode(), origin_secret.encode()):
+                return JSONResponse(
+                    status_code=403, content={"code": "forbidden", "message": "direct access"}
+                )
+        return await call_next(request)
 
     @app.middleware("http")
     async def context(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
