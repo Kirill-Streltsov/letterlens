@@ -73,7 +73,8 @@ class StepFunctionsRunner:
         self.arn = state_machine_arn
 
     def start(self, letter_id: str, steps: Sequence[str] = STEPS, language: str | None = None) -> None:
-        payload = {"letter_id": letter_id, "steps": list(steps), "language": language}
+        mode = "explain" if tuple(steps) == EXPLAIN_ONLY else "full"
+        payload = {"letter_id": letter_id, "mode": mode, "language": language}
         self.client.start_execution(
             stateMachineArn=self.arn,
             name=f"{letter_id}-{int(time.time() * 1000)}",
