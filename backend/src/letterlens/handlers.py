@@ -22,6 +22,9 @@ log = logging.getLogger("letterlens.handlers")
 
 @lru_cache(maxsize=1)
 def _container() -> Container:
+    from letterlens.secrets import load_ssm_into_env
+
+    load_ssm_into_env()
     settings = get_settings()
     configure_logging(settings.log_level)
     return Container(settings)
