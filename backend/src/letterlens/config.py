@@ -39,6 +39,10 @@ class Settings(BaseSettings):
     # Public base URL of the web app. Used for CORS in dev and for Stripe redirect URLs.
     public_web_url: str = "http://localhost:3000"
 
+    # CloudFront adds this header to every API request; the API rejects requests
+    # without it, so the Lambda function URL cannot be called directly.
+    origin_verify_secret: SecretStr | None = None
+
     # --- Database -------------------------------------------------------
     database_url: SecretStr = SecretStr(
         "postgresql://letterlens_app:letterlens_app@localhost:5433/letterlens"
