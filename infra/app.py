@@ -80,3 +80,30 @@ NagSuppressions.add_stack_suppressions(
         NagPackSuppression(
             id="AwsSolutions-CFR3",
             reason="CloudFront access logs cost storage; Lambda logs record every API request.",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-CFR4",
+            reason="Default CloudFront certificate; a custom domain with TLSv1.2_2021 is a launch task.",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-L1",
+            reason="Python 3.13 is the newest runtime supported by every dependency wheel.",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-SF1",
+            reason="Pipeline logs ERROR level only, to stay in the free log volume; X-Ray tracing is on.",
+        ),
+        NagPackSuppression(id="AwsSolutions-SNS3", reason="enforce_ssl is set on the topic."),
+    ],
+)
+NagSuppressions.add_stack_suppressions(
+    ci,
+    [
+        NagPackSuppression(
+            id="AwsSolutions-IAM5",
+            reason="The deploy role may only assume the CDK bootstrap roles of this account.",
+        ),
+    ],
+)
+
+app.synth()
