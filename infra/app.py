@@ -52,3 +52,31 @@ NagSuppressions.add_stack_suppressions(
             reason="Server access logs cost storage; CloudTrail data events are the paid upgrade path.",
         ),
         NagPackSuppression(
+            id="AwsSolutions-S10",
+            reason="enforce_ssl is set; the remaining finding is for the CDK auto-delete helper.",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-COG1",
+            reason="NIST SP 800-63B: minimum length 10 plus digits; no symbol or case rules, which hurt users with non-Latin keyboards.",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-COG2",
+            reason="MFA is optional (TOTP) for clients; counsellor accounts are asked to enable it (runbook).",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-COG3",
+            reason="Cognito threat protection needs the Plus plan (paid); rate limits run in the API.",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-COG8", reason="Lite plan keeps Cognito inside the free tier (ADR-0002)."
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-CFR1", reason="No geo restriction: users travel; data stays in the EU at rest."
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-CFR2",
+            reason="AWS WAF is paid; the API enforces rate limits and auth (ADR-0002, threat model T7).",
+        ),
+        NagPackSuppression(
+            id="AwsSolutions-CFR3",
+            reason="CloudFront access logs cost storage; Lambda logs record every API request.",
