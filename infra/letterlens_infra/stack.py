@@ -97,3 +97,23 @@ class LetterLensStack(Stack):
             user_pool_name=f"letterlens-{stage}",
             feature_plan=cognito.FeaturePlan.LITE,
             self_sign_up_enabled=True,
+            sign_in_aliases=cognito.SignInAliases(email=True),
+            auto_verify=cognito.AutoVerifiedAttrs(email=True),
+            # NIST SP 800-63B: length, not composition rules (see cdk-nag COG1 suppression).
+            password_policy=cognito.PasswordPolicy(
+                min_length=10, require_symbols=False, require_uppercase=False, require_digits=True
+            ),
+            mfa=cognito.Mfa.OPTIONAL,
+            mfa_second_factor=cognito.MfaSecondFactor(otp=True, sms=False),
+            account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
+            deletion_protection=prod,
+            removal_policy=removal,
+        )
+        domain = user_pool.add_domain(
+            "Domain", cognito_domain=cognito.CognitoDomainOptions(domain_prefix=config["cognitoDomainPrefix"])
+        )
+        for group in ("counsellor", "platform_admin"):
+            cognito.CfnUserPoolGroup(
+                self, f"Group{group}", user_pool_id=user_pool.user_pool_id, group_name=group
+            )
+
