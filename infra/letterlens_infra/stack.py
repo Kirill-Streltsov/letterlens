@@ -138,3 +138,36 @@ class LetterLensStack(Stack):
         }
         code = lambda_.Code.from_asset(str(LAMBDA_DIR))
 
+        def function(
+            name: str, handler: str, memory: int, timeout: Duration, env: dict[str, str]
+        ) -> lambda_.Function:
+            log_group = logs.LogGroup(
+                self,
+                f"{name}Logs",
+                retention=logs.RetentionDays.TWO_WEEKS,
+                removal_policy=RemovalPolicy.DESTROY,
+            )
+            fn = lambda_.Function(
+                self,
+                name,
+                runtime=lambda_.Runtime.PYTHON_3_13,
+                architecture=lambda_.Architecture.ARM_64,
+                handler=handler,
+                code=code,
+                memory_size=memory,
+                timeout=timeout,
+                environment={**common_env, **env},
+                tracing=lambda_.Tracing.ACTIVE,
+                log_group=log_group,
+            )
+            fn.add_to_role_policy(
+                iam.PolicyStatement(
+                    actions=["ssm:GetParametersByPath"],
+                    resources=[
+                        f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter{ssm_prefix.rstrip('/')}"
+                    ],
+                )
+            )
+            fn.add_to_role_policy(
+                iam.PolicyStatement(
+                    actions=["kms:Decrypt"],
