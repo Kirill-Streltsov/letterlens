@@ -72,3 +72,28 @@ class LetterLensStack(Stack):
             auto_delete_objects=not prod,
             lifecycle_rules=[
                 # Images are deleted together with their letter; this rule is the backstop.
+                s3.LifecycleRule(
+                    prefix="letters/", expiration=Duration.days(config["retentionBackstopDays"])
+                ),
+                s3.LifecycleRule(abort_incomplete_multipart_upload_after=Duration.days(1)),
+            ],
+        )
+        web_bucket = s3.Bucket(
+            self,
+            "WebBucket",
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True,
+            removal_policy=RemovalPolicy.DESTROY,
+            auto_delete_objects=True,
+        )
+
+        # ------------------------------------------------------------------
+        # Identity
+        # ------------------------------------------------------------------
+        user_pool = cognito.UserPool(
+            self,
+            "Users",
+            user_pool_name=f"letterlens-{stage}",
+            feature_plan=cognito.FeaturePlan.LITE,
+            self_sign_up_enabled=True,
