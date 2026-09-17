@@ -44,3 +44,31 @@ WEB_DIR = ROOT / "web" / "out"
 PIPELINE_STEPS = ("classify", "extract", "verify", "retrieve")
 
 
+class LetterLensStack(Stack):
+    def __init__(
+        self, scope: Construct, construct_id: str, *, stage: str, config: dict[str, Any], **kwargs: Any
+    ) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+        prod = stage == "prod"
+        removal = RemovalPolicy.RETAIN if prod else RemovalPolicy.DESTROY
+        ssm_prefix = f"/letterlens/{stage}/"
+        origin_secret: str = config["originVerifySecret"]
+
+        # ------------------------------------------------------------------
+        # Storage
+        # ------------------------------------------------------------------
+        # A deterministic name lets functions and policies refer to the bucket without a
+        # CloudFormation reference; that breaks the cycle bucket CORS -> CloudFront -> API -> bucket.
+        letters_bucket_name = f"letterlens-{stage}-letters-{Aws.ACCOUNT_ID}-{Aws.REGION}"
+        letters_bucket_arn = f"arn:aws:s3:::{letters_bucket_name}"
+        letters_bucket = s3.Bucket(
+            self,
+            "LettersBucket",
+            bucket_name=letters_bucket_name,
+            encryption=s3.BucketEncryption.S3_MANAGED,
+            block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+            enforce_ssl=True,
+            removal_policy=removal,
+            auto_delete_objects=not prod,
+            lifecycle_rules=[
+                # Images are deleted together with their letter; this rule is the backstop.
