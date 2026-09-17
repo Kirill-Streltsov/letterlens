@@ -117,3 +117,24 @@ class LetterLensStack(Stack):
                 self, f"Group{group}", user_pool_id=user_pool.user_pool_id, group_name=group
             )
 
+        # ------------------------------------------------------------------
+        # Compute
+        # ------------------------------------------------------------------
+        common_env = {
+            "LETTERLENS_ENV": "prod" if prod else "dev",
+            "LETTERLENS_AUTH_MODE": "cognito",
+            "LETTERLENS_COGNITO_REGION": Aws.REGION,
+            "LETTERLENS_COGNITO_USER_POOL_ID": user_pool.user_pool_id,
+            "LETTERLENS_LETTERS_BUCKET": letters_bucket_name,
+            "LETTERLENS_AWS_REGION": Aws.REGION,
+            "LETTERLENS_SSM_PREFIX": ssm_prefix,
+            "LETTERLENS_LLM_PROVIDER": config["llmProvider"],
+            "LETTERLENS_LLM_MODEL_EXTRACT": config["llmModelExtract"],
+            "LETTERLENS_LLM_MODEL_EXPLAIN": config["llmModelExplain"],
+            "LETTERLENS_LLM_MODEL_GUARD": config["llmModelGuard"],
+            "LETTERLENS_MONTHLY_LLM_BUDGET_USD": str(config["monthlyLlmBudgetUsd"]),
+            "LETTERLENS_DEFAULT_RETENTION_DAYS": "30",
+            "POWERTOOLS_SERVICE_NAME": "letterlens",
+        }
+        code = lambda_.Code.from_asset(str(LAMBDA_DIR))
+
