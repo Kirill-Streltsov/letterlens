@@ -319,3 +319,28 @@ class LetterLensStack(Stack):
             ),
         )
         security_headers = cloudfront.ResponseHeadersPolicy(
+            self,
+            "SecurityHeaders",
+            security_headers_behavior=cloudfront.ResponseSecurityHeadersBehavior(
+                strict_transport_security=cloudfront.ResponseHeadersStrictTransportSecurity(
+                    access_control_max_age=Duration.days(730), include_subdomains=True, override=True
+                ),
+                content_type_options=cloudfront.ResponseHeadersContentTypeOptions(override=True),
+                frame_options=cloudfront.ResponseHeadersFrameOptions(
+                    frame_option=cloudfront.HeadersFrameOption.DENY, override=True
+                ),
+                referrer_policy=cloudfront.ResponseHeadersReferrerPolicy(
+                    referrer_policy=cloudfront.HeadersReferrerPolicy.NO_REFERRER, override=True
+                ),
+                content_security_policy=cloudfront.ResponseHeadersContentSecurityPolicy(
+                    content_security_policy=(
+                        "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob: "
+                        "https://cdn.jsdelivr.net; worker-src 'self' blob:; "
+                        "connect-src 'self' https://*.amazoncognito.com https://cognito-idp.*.amazonaws.com "
+                        "https://*.s3.amazonaws.com https://*.s3.*.amazonaws.com https://cdn.jsdelivr.net "
+                        "https://tessdata.projectnaptha.com; "
+                        "img-src 'self' data: blob: https://*.amazonaws.com; style-src 'self' 'unsafe-inline'; "
+                        "font-src 'self' data:; frame-ancestors 'none'"
+                    ),
+                    override=True,
+                ),
