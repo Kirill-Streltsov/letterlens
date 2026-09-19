@@ -245,3 +245,34 @@ class LetterLensStack(Stack):
         )
         full = [step(s) for s in PIPELINE_STEPS]
         explain_task = step("explain", "$.result")
+        for task in [*full, explain_task]:
+            task.add_catch(mark_failed, result_path="$.error")
+        chain: sfn.IChainable = full[0]
+        for task in full[1:]:
+            chain = chain.next(task)  # type: ignore[attr-defined]
+        chain.next(explain_task)  # type: ignore[attr-defined]
+        explain_task.next(mark_ready)
+        definition = (
+            sfn.Choice(self, "Mode")
+            .when(sfn.Condition.string_equals("$.mode", "explain"), explain_task)
+            .otherwise(full[0])
+        )
+
+        state_machine = sfn.StateMachine(
+            self,
+            "Pipeline",
+            definition_body=sfn.DefinitionBody.from_chainable(definition),
+            state_machine_type=sfn.StateMachineType.STANDARD,
+            timeout=Duration.minutes(15),
+            tracing_enabled=True,
+            logs=sfn.LogOptions(
+                destination=logs.LogGroup(
+                    self,
+                    "PipelineLogs",
+                    retention=logs.RetentionDays.TWO_WEEKS,
+                    removal_policy=RemovalPolicy.DESTROY,
+                ),
+                level=sfn.LogLevel.ERROR,
+            ),
+        )
+
