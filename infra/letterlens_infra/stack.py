@@ -296,3 +296,26 @@ class LetterLensStack(Stack):
         )
         api_url = api.add_function_url(auth_type=lambda_.FunctionUrlAuthType.NONE)
 
+        events.Rule(
+            self,
+            "DailyRetention",
+            schedule=events.Schedule.cron(hour="3", minute="15"),
+            targets=[targets.LambdaFunction(retention)],
+        )
+
+        # ------------------------------------------------------------------
+        # Edge: one origin for web and API, so no CORS in production
+        # ------------------------------------------------------------------
+        rewrite = cloudfront.Function(
+            self,
+            "IndexRewrite",
+            runtime=cloudfront.FunctionRuntime.JS_2_0,
+            code=cloudfront.FunctionCode.from_inline(
+                "function handler(event) {"
+                "  var r = event.request;"
+                "  if (r.uri.endsWith('/')) { r.uri += 'index.html'; }"
+                "  else if (!r.uri.includes('.')) { r.uri += '/index.html'; }"
+                "  return r; }"
+            ),
+        )
+        security_headers = cloudfront.ResponseHeadersPolicy(
