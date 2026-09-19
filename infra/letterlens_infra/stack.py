@@ -191,3 +191,30 @@ class LetterLensStack(Stack):
             iam.PolicyStatement(actions=["s3:DeleteObject"], resources=[f"{letters_bucket_arn}/letters/*"])
         )
 
+        # ------------------------------------------------------------------
+        # Pipeline (Step Functions, Standard: 4,000 free state transitions per month)
+        # ------------------------------------------------------------------
+        def step(name: str, result_path: str | None = None) -> tasks.LambdaInvoke:
+            task = tasks.LambdaInvoke(
+                self,
+                name.capitalize(),
+                lambda_function=worker,
+                payload=sfn.TaskInput.from_object(
+                    {
+                        "step": name,
+                        "letter_id": sfn.JsonPath.string_at("$.letter_id"),
+                        "language": sfn.JsonPath.string_at("$.language"),
+                    }
+                ),
+                payload_response_only=True,
+                result_path=result_path or sfn.JsonPath.DISCARD,
+                retry_on_service_exceptions=True,
+            )
+            task.add_retry(
+                errors=["States.TaskFailed", "States.Timeout"],
+                max_attempts=2,
+                interval=Duration.seconds(3),
+                backoff_rate=2.0,
+            )
+            return task
+
