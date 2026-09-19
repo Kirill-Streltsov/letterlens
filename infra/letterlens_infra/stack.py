@@ -344,3 +344,28 @@ class LetterLensStack(Stack):
                     ),
                     override=True,
                 ),
+            ),
+        )
+        distribution = cloudfront.Distribution(
+            self,
+            "Edge",
+            comment=f"LetterLens {stage}",
+            price_class=cloudfront.PriceClass.PRICE_CLASS_100,
+            http_version=cloudfront.HttpVersion.HTTP2_AND_3,
+            default_root_object="index.html",
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origins.S3BucketOrigin.with_origin_access_control(web_bucket),
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                response_headers_policy=security_headers,
+                function_associations=[
+                    cloudfront.FunctionAssociation(
+                        function=rewrite, event_type=cloudfront.FunctionEventType.VIEWER_REQUEST
+                    )
+                ],
+            ),
+            additional_behaviors={
+                path: cloudfront.BehaviorOptions(
+                    origin=origins.FunctionUrlOrigin(
+                        api_url, custom_headers={"X-Origin-Verify": origin_secret}
+                    ),
+                    allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
