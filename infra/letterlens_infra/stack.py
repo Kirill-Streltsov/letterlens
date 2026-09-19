@@ -276,3 +276,23 @@ class LetterLensStack(Stack):
             ),
         )
 
+        api = function(
+            "Api",
+            "letterlens.handlers.api",
+            512,
+            Duration.seconds(29),
+            {
+                "LETTERLENS_PIPELINE_RUNNER": "stepfunctions",
+                "LETTERLENS_STATE_MACHINE_ARN": state_machine.state_machine_arn,
+                "LETTERLENS_ORIGIN_VERIFY_SECRET": origin_secret,
+            },
+        )
+        state_machine.grant_start_execution(api)
+        api.add_to_role_policy(
+            iam.PolicyStatement(
+                actions=["s3:PutObject", "s3:GetObject", "s3:DeleteObject"],
+                resources=[f"{letters_bucket_arn}/letters/*"],
+            )
+        )
+        api_url = api.add_function_url(auth_type=lambda_.FunctionUrlAuthType.NONE)
+
