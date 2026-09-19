@@ -171,3 +171,23 @@ class LetterLensStack(Stack):
             fn.add_to_role_policy(
                 iam.PolicyStatement(
                     actions=["kms:Decrypt"],
+                    resources=[f"arn:aws:kms:{Aws.REGION}:{Aws.ACCOUNT_ID}:alias/aws/ssm"],
+                    conditions={"StringEquals": {"kms:ViaService": f"ssm.{Aws.REGION}.amazonaws.com"}},
+                )
+            )
+            if config["llmProvider"] == "bedrock":
+                fn.add_to_role_policy(
+                    iam.PolicyStatement(
+                        actions=["bedrock:InvokeModel", "bedrock:InvokeModelWithResponseStream"],
+                        resources=["*"],
+                    )
+                )
+            return fn
+
+        worker = function("Worker", "letterlens.handlers.worker", 512, Duration.seconds(120), {})
+        status = function("Status", "letterlens.handlers.status", 256, Duration.seconds(30), {})
+        retention = function("Retention", "letterlens.handlers.retention", 256, Duration.minutes(5), {})
+        retention.add_to_role_policy(
+            iam.PolicyStatement(actions=["s3:DeleteObject"], resources=[f"{letters_bucket_arn}/letters/*"])
+        )
+
