@@ -218,3 +218,30 @@ class LetterLensStack(Stack):
             )
             return task
 
+        mark_failed = tasks.LambdaInvoke(
+            self,
+            "MarkFailed",
+            lambda_function=status,
+            payload=sfn.TaskInput.from_object(
+                {
+                    "letter_id": sfn.JsonPath.string_at("$.letter_id"),
+                    "failed": True,
+                    "error": sfn.JsonPath.string_at("$.error.Error"),
+                }
+            ),
+            payload_response_only=True,
+        ).next(sfn.Fail(self, "PipelineFailed"))
+        mark_ready = tasks.LambdaInvoke(
+            self,
+            "MarkReady",
+            lambda_function=status,
+            payload=sfn.TaskInput.from_object(
+                {
+                    "letter_id": sfn.JsonPath.string_at("$.letter_id"),
+                    "degraded": sfn.JsonPath.string_at("$.result.degraded"),
+                }
+            ),
+            payload_response_only=True,
+        )
+        full = [step(s) for s in PIPELINE_STEPS]
+        explain_task = step("explain", "$.result")
