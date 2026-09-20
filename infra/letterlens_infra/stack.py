@@ -465,3 +465,31 @@ class LetterLensStack(Stack):
             topic.add_subscription(subs.EmailSubscription(config["alarmEmail"]))
         action = cw_actions.SnsAction(topic)
 
+        def alarm(name: str, metric: cw.IMetric, threshold: float, periods: int = 1) -> None:
+            a = cw.Alarm(
+                self,
+                name,
+                metric=metric,
+                threshold=threshold,
+                evaluation_periods=periods,
+                treat_missing_data=cw.TreatMissingData.NOT_BREACHING,
+                comparison_operator=cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            )
+            a.add_alarm_action(action)
+
+        alarm("ApiErrors", api.metric_errors(period=Duration.minutes(5)), 5)
+        alarm("ApiLatencyP95", api.metric_duration(period=Duration.minutes(5), statistic="p95"), 10_000, 3)
+        alarm("WorkerErrors", worker.metric_errors(period=Duration.minutes(5)), 3)
+        alarm("PipelineFailures", state_machine.metric_failed(period=Duration.minutes(15)), 1)
+        alarm(
+            "LlmSpendDaily",
+            cw.Metric(
+                namespace="LetterLens",
+                metric_name="LLMListPriceUSD",
+                dimensions_map={"Service": "letterlens"},
+                statistic="Sum",
+                period=Duration.days(1),
+            ),
+            config["dailyLlmAlarmUsd"],
+        )
+        alarm(
