@@ -517,3 +517,28 @@ class LetterLensStack(Stack):
                 ),
                 notifications_with_subscribers=[
                     budgets.CfnBudget.NotificationWithSubscribersProperty(
+                        notification=budgets.CfnBudget.NotificationProperty(
+                            notification_type=kind,
+                            comparison_operator="GREATER_THAN",
+                            threshold=pct,
+                            threshold_type="PERCENTAGE",
+                        ),
+                        subscribers=[
+                            budgets.CfnBudget.SubscriberProperty(
+                                subscription_type="EMAIL", address=config["alarmEmail"]
+                            )
+                        ],
+                    )
+                    for kind, pct in (("ACTUAL", 50), ("ACTUAL", 100), ("FORECASTED", 100))
+                ],
+            )
+
+        CfnOutput(self, "SiteUrl", value=site_url)
+        CfnOutput(self, "ApiFunctionName", value=api.function_name)
+        CfnOutput(self, "UserPoolId", value=user_pool.user_pool_id)
+        CfnOutput(self, "WebClientId", value=web_client.user_pool_client_id)
+        CfnOutput(self, "IosClientId", value=ios_client.user_pool_client_id)
+        CfnOutput(self, "AuthDomain", value=f"{domain.domain_name}.auth.{Aws.REGION}.amazoncognito.com")
+        CfnOutput(self, "StateMachineArn", value=state_machine.state_machine_arn)
+        CfnOutput(self, "SsmPrefix", value=ssm_prefix)
+        self.distribution = distribution
