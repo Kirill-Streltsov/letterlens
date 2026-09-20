@@ -443,3 +443,25 @@ class LetterLensStack(Stack):
                     "authDomain": f"{domain.domain_name}.auth.{Aws.REGION}.amazoncognito.com",
                     "stage": stage,
                 },
+            )
+        ]
+        if WEB_DIR.is_dir():
+            sources.insert(0, s3deploy.Source.asset(str(WEB_DIR)))
+        s3deploy.BucketDeployment(
+            self,
+            "DeployWeb",
+            destination_bucket=web_bucket,
+            sources=sources,
+            distribution=distribution,
+            distribution_paths=["/*"],
+            memory_limit=512,
+        )
+
+        # ------------------------------------------------------------------
+        # Operations: alarms and budget (CloudWatch free tier: 10 alarms)
+        # ------------------------------------------------------------------
+        topic = sns.Topic(self, "Alarms", enforce_ssl=True)
+        if config.get("alarmEmail"):
+            topic.add_subscription(subs.EmailSubscription(config["alarmEmail"]))
+        action = cw_actions.SnsAction(topic)
+
