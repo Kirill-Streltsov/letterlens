@@ -369,3 +369,23 @@ class LetterLensStack(Stack):
                         api_url, custom_headers={"X-Origin-Verify": origin_secret}
                     ),
                     allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                    cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                    origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.HTTPS_ONLY,
+                )
+                for path in ("/v1/*", "/health")
+            },
+            error_responses=[
+                cloudfront.ErrorResponse(
+                    http_status=404, response_http_status=404, response_page_path="/404.html"
+                )
+            ],
+        )
+        site_url = f"https://{distribution.distribution_domain_name}"
+        letters_bucket.add_cors_rule(
+            allowed_methods=[s3.HttpMethods.POST, s3.HttpMethods.GET],
+            allowed_origins=[site_url, "http://localhost:3000"],
+            allowed_headers=["*"],
+            max_age=3000,
+        )
+
