@@ -418,3 +418,28 @@ class LetterLensStack(Stack):
             ),
         )
 
+        # Values the Lambda functions read at runtime. They live in SSM (not in
+        # environment variables) because the clients depend on the distribution,
+        # which depends on the API function: a direct reference would be a cycle.
+        ssm.StringParameter(
+            self,
+            "ClientIdsParam",
+            parameter_name=f"{ssm_prefix}cognito_client_ids",
+            string_value=f'["{web_client.user_pool_client_id}","{ios_client.user_pool_client_id}"]',
+        )
+        ssm.StringParameter(
+            self, "WebUrlParam", parameter_name=f"{ssm_prefix}public_web_url", string_value=site_url
+        )
+
+        # Web app: static export + runtime config.
+        sources = [
+            s3deploy.Source.json_data(
+                "config.json",
+                {
+                    "apiBase": "",
+                    "region": Aws.REGION,
+                    "userPoolId": user_pool.user_pool_id,
+                    "clientId": web_client.user_pool_client_id,
+                    "authDomain": f"{domain.domain_name}.auth.{Aws.REGION}.amazoncognito.com",
+                    "stage": stage,
+                },
