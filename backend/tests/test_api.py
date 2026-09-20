@@ -261,3 +261,11 @@ def test_security_headers(client: TestClient) -> None:
     assert r.headers["X-Content-Type-Options"] == "nosniff"
     assert r.headers["Cache-Control"] == "no-store"
     assert r.headers["X-Request-Id"]
+
+
+def test_origin_guard(database_urls: tuple[str, str]) -> None:
+    settings = Settings(env="test", database_url=database_urls[1], origin_verify_secret="s3cret")
+    with TestClient(create_app(settings)) as c:
+        assert c.get("/health").status_code == 403
+        assert c.get("/health", headers={"X-Origin-Verify": "wrong"}).status_code == 403
+        assert c.get("/health", headers={"X-Origin-Verify": "s3cret"}).status_code == 200
