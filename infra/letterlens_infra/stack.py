@@ -493,3 +493,27 @@ class LetterLensStack(Stack):
             config["dailyLlmAlarmUsd"],
         )
         alarm(
+            "GuardrailSpike",
+            cw.Metric(
+                namespace="LetterLens",
+                metric_name="GuardrailBlocked",
+                dimensions_map={"Service": "letterlens"},
+                statistic="Sum",
+                period=Duration.hours(1),
+            ),
+            50,
+        )
+
+        if config.get("alarmEmail"):
+            budgets.CfnBudget(
+                self,
+                "MonthlyBudget",
+                budget=budgets.CfnBudget.BudgetDataProperty(
+                    budget_type="COST",
+                    time_unit="MONTHLY",
+                    budget_limit=budgets.CfnBudget.SpendProperty(
+                        amount=float(config["awsBudgetUsd"]), unit="USD"
+                    ),
+                ),
+                notifications_with_subscribers=[
+                    budgets.CfnBudget.NotificationWithSubscribersProperty(
