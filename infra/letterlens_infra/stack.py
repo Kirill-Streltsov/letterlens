@@ -389,3 +389,32 @@ class LetterLensStack(Stack):
             max_age=3000,
         )
 
+        oauth_scopes = [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL, cognito.OAuthScope.PROFILE]
+        web_client = user_pool.add_client(
+            "WebClient",
+            generate_secret=False,
+            prevent_user_existence_errors=True,
+            access_token_validity=Duration.hours(1),
+            id_token_validity=Duration.hours(1),
+            refresh_token_validity=Duration.days(30),
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(authorization_code_grant=True),
+                scopes=oauth_scopes,
+                callback_urls=[f"{site_url}/auth/callback/", "http://localhost:3000/auth/callback/"],
+                logout_urls=[f"{site_url}/", "http://localhost:3000/"],
+            ),
+        )
+        ios_client = user_pool.add_client(
+            "IosClient",
+            generate_secret=False,
+            prevent_user_existence_errors=True,
+            access_token_validity=Duration.hours(1),
+            refresh_token_validity=Duration.days(60),
+            o_auth=cognito.OAuthSettings(
+                flows=cognito.OAuthFlows(authorization_code_grant=True),
+                scopes=oauth_scopes,
+                callback_urls=["letterlens://auth/callback"],
+                logout_urls=["letterlens://auth/logout"],
+            ),
+        )
+
