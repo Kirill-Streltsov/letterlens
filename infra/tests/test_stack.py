@@ -46,3 +46,37 @@ def test_buckets_block_public_access_and_encrypt(template: Template) -> None:
         assert "BucketEncryption" in props
 
 
+def test_letter_images_expire(template: Template) -> None:
+    template.has_resource_properties(
+        "AWS::S3::Bucket",
+        {
+            "LifecycleConfiguration": {
+                "Rules": Match.array_with([Match.object_like({"Prefix": "letters/", "Status": "Enabled"})])
+            }
+        },
+    )
+
+
+def test_api_is_only_reachable_through_cloudfront_with_secret_header(template: Template) -> None:
+    template.has_resource_properties(
+        "AWS::CloudFront::Distribution",
+        {
+            "DistributionConfig": Match.object_like(
+                {
+                    "Origins": Match.array_with(
+                        [
+                            Match.object_like(
+                                {
+                                    "OriginCustomHeaders": [
+                                        {"HeaderName": "X-Origin-Verify", "HeaderValue": "x"}
+                                    ]
+                                }
+                            )
+                        ]
+                    )
+                }
+            )
+        },
+    )
+
+
