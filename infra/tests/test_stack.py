@@ -80,3 +80,22 @@ def test_api_is_only_reachable_through_cloudfront_with_secret_header(template: T
     )
 
 
+def test_pipeline_is_standard_workflow_with_tracing(template: Template) -> None:
+    template.has_resource_properties(
+        "AWS::StepFunctions::StateMachine",
+        {"StateMachineType": "STANDARD", "TracingConfiguration": {"Enabled": True}},
+    )
+
+
+def test_log_retention_is_bounded(template: Template) -> None:
+    for group in template.find_resources("AWS::Logs::LogGroup").values():
+        assert group["Properties"]["RetentionInDays"] <= 14
+
+
+def test_budget_and_alarms_exist(template: Template) -> None:
+    template.resource_count_is("AWS::Budgets::Budget", 1)
+    assert len(template.find_resources("AWS::CloudWatch::Alarm")) <= 10  # free tier
+
+
+def test_cognito_lite_plan(template: Template) -> None:
+    template.has_resource_properties("AWS::Cognito::UserPool", {"UserPoolTier": "LITE"})
