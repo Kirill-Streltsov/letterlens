@@ -26,3 +26,23 @@ def template() -> Template:
     return Template.from_stack(stack)
 
 
+def test_functions_are_arm64_python313_with_tracing(template: Template) -> None:
+    functions = {
+        k: v
+        for k, v in template.find_resources("AWS::Lambda::Function").items()
+        if str(v["Properties"].get("Handler", "")).startswith("letterlens.")
+    }
+    assert len(functions) == 4
+    for fn in functions.values():
+        assert fn["Properties"]["Runtime"] == "python3.13"
+        assert fn["Properties"]["Architectures"] == ["arm64"]
+        assert fn["Properties"]["TracingConfig"] == {"Mode": "Active"}
+
+
+def test_buckets_block_public_access_and_encrypt(template: Template) -> None:
+    for bucket in template.find_resources("AWS::S3::Bucket").values():
+        props = bucket["Properties"]
+        assert props["PublicAccessBlockConfiguration"]["BlockPublicPolicy"] is True
+        assert "BucketEncryption" in props
+
+
