@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      live_eval:
+        description: "Also run the live evaluation (uses the LLM API quota)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: letterlens
+          POSTGRES_USER: letterlens_owner
+          POSTGRES_PASSWORD: letterlens_owner
+        ports: ["5433:5432"]
+        options: >-
+          --health-cmd "pg_isready -U letterlens_owner -d letterlens"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Lint
+        run: uv run ruff check . && uv run ruff format --check .
+      - name: Type check (strict)
+        run: uv run mypy src
+      - name: Tests (unit, RLS isolation, API integration)
+        env:
+          LETTERLENS_TEST_ADMIN_URL: postgresql://letterlens_owner:letterlens_owner@localhost:5433/letterlens
+        run: uv run pytest --cov=letterlens --cov-report=term-missing:skip-covered --cov-report=xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: backend/coverage.xml
+
+  eval-gate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen
+      - name: Offline gate (rules baseline, classifier, retrieval, guardrail)
+        run: uv run python -m evals.run --profile offline
+      - name: Fault-injection gate (hallucinated dates and amounts never shown as verified)
+        run: uv run python -m evals.run --profile chaos
+      - name: Live gate (real model)
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_eval }}
+        env:
+          LETTERLENS_LLM_PROVIDER: mistral
+          LETTERLENS_LLM_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: uv run python -m evals.run --profile live
+      - name: Job summary
+        if: always()
+        run: cat evals/reports/*.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-reports
+          path: backend/evals/reports/
+
+  infra:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build Lambda bundle
+        run: infra/scripts/build_lambda.sh
+      - name: Infra tests
+        working-directory: infra
+        run: uv sync --frozen && uv run pytest -q
+      - name: Synthesize with cdk-nag
+        working-directory: infra
+        env:
+          CDK_DISABLE_VERSION_CHECK: "1"
+        run: npx --yes aws-cdk@2 synth -c stage=prod --quiet
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build

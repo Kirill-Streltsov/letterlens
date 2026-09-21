@@ -1,0 +1,71 @@
+name: Deploy
+
+on:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # GitHub OIDC -> AWS role, no stored AWS keys
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: eu-central-1
+      CDK_DISABLE_VERSION_CHECK: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Database migrations (Neon, owner role)
+        working-directory: backend
+        env:
+          LETTERLENS_DATABASE_ADMIN_URL: ${{ secrets.NEON_ADMIN_URL }}
+          LETTERLENS_DB_APP_PASSWORD: ${{ secrets.NEON_APP_PASSWORD }}
+        run: uv sync --frozen --no-default-groups && uv run python -m letterlens.db.migrate
+
+      - name: Build web app
+        working-directory: web
+        run: npm ci && npm run build
+
+      - name: Build Lambda bundle
+        run: infra/scripts/build_lambda.sh
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy
+        working-directory: infra
+        env:
+          LETTERLENS_ORIGIN_VERIFY_SECRET: ${{ secrets.ORIGIN_VERIFY_SECRET }}
+        run: |
+          uv sync --frozen
+          npx --yes aws-cdk@2 deploy LetterLens-prod -c stage=prod --require-approval never \
+            --outputs-file cdk-outputs.json
+
+      - name: Smoke test
+        working-directory: infra
+        run: |
+          URL=$(python3 -c "import json;print(json.load(open('cdk-outputs.json'))['LetterLens-prod']['SiteUrl'])")
+          curl --fail --silent --retry 5 --retry-delay 5 "$URL/health"
+          curl --fail --silent --output /dev/null "$URL/"
+          test "$(curl -s -o /dev/null -w '%{http_code}' "$URL/v1/me")" = "401"
