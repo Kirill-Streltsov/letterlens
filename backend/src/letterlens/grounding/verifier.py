@@ -6,6 +6,7 @@ as a fact. It gets the state NEEDS_CHECK and a note for the reader.
 
 from __future__ import annotations
 
+import re
 from datetime import date
 from decimal import Decimal
 
@@ -35,6 +36,7 @@ NOTE_BEFORE_LETTER = "This date is before the letter date. Please check."
 
 _LETTER_DATE_HINTS = ("datum", "den ", "vom ")
 _HEADER_LINES = 20
+_PLACE_DATE = re.compile(r"^[A-ZÄÖÜ][\wäöüß .-]{1,40},\s*\d{1,2}\.")
 
 
 def _valid_ids(ids: list[str], lines: dict[str, OcrLine]) -> list[str]:
@@ -56,7 +58,7 @@ def _verify_letter_date(
     for line in doc.lines[:_HEADER_LINES]:
         lowered = line.text.lower()
         dates = find_dates(line.text)
-        if dates and any(hint in lowered for hint in _LETTER_DATE_HINTS):
+        if dates and (any(hint in lowered for hint in _LETTER_DATE_HINTS) or _PLACE_DATE.match(line.text)):
             return dates[0], FactStatus.NEEDS_CHECK
     return proposed, FactStatus.NEEDS_CHECK
 
