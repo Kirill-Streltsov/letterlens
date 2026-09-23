@@ -18,3 +18,31 @@ from letterlens.synthetic import generate_corpus, to_document
 CLIENT = {"X-Dev-User": "demo-client"}
 
 
+def main() -> None:
+    settings = Settings(free_letters_per_month=1000)
+    app = create_app(settings)
+    services = app.state.services
+    with services.container.db.session(DbContext.as_system()) as conn:
+        existing = [s for s in R.counselling_services(conn) if s["name"].endswith("(Demo)")]
+        tenant = (
+            existing[0]["id"]
+            if existing
+            else R.create_tenant(
+                conn,
+                "Migrationsberatung Bochum (Demo)",
+                "counselling",
+                "Bochum",
+                ["de", "tr", "ar", "uk"],
+                True,
+            )
+        )
+        if not existing:
+            R.create_tenant(
+                conn, "Jugendmigrationsdienst Essen (Demo)", "counselling", "Essen", ["de", "ru"], True
+            )
+        anna = R.resolve_user(conn, "dev:counsellor-anna")
+        R.add_member(conn, tenant, str(anna["id"]), "admin")
+        R.update_user(conn, str(anna["id"]), display_name="Anna (Beraterin)")
+        client_user = R.resolve_user(conn, "dev:demo-client")
+        R.update_user(conn, str(client_user["id"]), display_name="Olena K.", preferred_language="uk")
+
