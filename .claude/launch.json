@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd backend && LETTERLENS_DATABASE_URL=postgresql://letterlens_app:letterlens_app@localhost:5433/letterlens uv run uvicorn letterlens.api.app:create_app --factory --port 8000"],
+      "port": 8000
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-c", "cd web && npm run dev"],
+      "port": 3000
+    }
+  ]
+}
