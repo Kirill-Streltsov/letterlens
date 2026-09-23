@@ -33,7 +33,8 @@ _REF_LABELS = re.compile(
 _DUE = re.compile(r"\bbis\s+(zum|spätestens|zu)?\b|\bspätestens\b|\bfrist\b", re.IGNORECASE)
 _APPOINTMENT = re.compile(r"\b(termin|am\s.+\bum\s+\d{1,2}[:.]\d{2})", re.IGNORECASE)
 _VALID_FROM = re.compile(r"\b(ab dem|ab|vom|gültig bis|für die zeit)\b", re.IGNORECASE)
-_LETTER_DATE = re.compile(r"^(datum|.*,\s*den)\b", re.IGNORECASE)
+# "Datum: 03.11.2026", "Bochum, den 03.11.2026", "Hagen, 12.10.2026", "Bochum, 30. Juni 2026"
+_LETTER_DATE = re.compile(r"^(datum\b|.*,\s*den\b|[A-ZÄÖÜ][\wäöüß .-]{1,40},\s*\d{1,2}\.)", re.IGNORECASE)
 _TO_RECEIVE = re.compile(r"erstattung|guthaben|bewilligt|gesamtbetrag:?\s*$|monatlicher", re.IGNORECASE)
 _TO_PAY = re.compile(
     r"zahlen|überweisen|rückstand|nachzahlung|forderung|säumnis|gebühr|kosten|"
