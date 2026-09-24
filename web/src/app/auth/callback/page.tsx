@@ -24,3 +24,23 @@ function Callback() {
       .catch((e: Error) => setError(e.message));
   }, [params, router]);
 
+  return (
+    <main className="container" style={{ paddingTop: 80 }}>
+      {error ? (
+        <p className="notice" role="alert">
+          {error} <a href="/">Try again</a>
+        </p>
+      ) : (
+        <p className="muted">Signing you in…</p>
+      )}
+    </main>
+  );
+}
+
+export default function CallbackPage() {
+  return (
+    <Suspense>
+      <Callback />
+    </Suspense>
+  );
+}
