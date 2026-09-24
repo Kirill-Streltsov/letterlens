@@ -21,3 +21,26 @@ function CaseView() {
     api.messages(id).then(setMessages).catch(() => undefined);
   }, [id]);
 
+  useEffect(load, [load]);
+
+  if (error) return <p className="notice" style={{ marginTop: 32 }}>{error}</p>;
+  if (!detail) return <div className="skeleton" style={{ height: 240, marginTop: 32 }} />;
+
+  const explanation = view === "de" ? (detail.explanation_de ?? detail.letter.explanation) : detail.letter.explanation;
+
+  const side = (
+    <section className="card stack">
+      <h2>Messages with {detail.client_name ?? "the client"}</h2>
+      <div className="thread" aria-live="polite">
+        {messages.length === 0 && <p className="faint">No messages yet.</p>}
+        {messages.map((m) => (
+          <div key={m.id} className={`bubble${m.author_role === "counsellor" ? " mine" : ""}`}>
+            {m.text}
+            {m.original_text && <div className="orig">Original ({detail.client_language}): {m.original_text}</div>}
+          </div>
+        ))}
+      </div>
+      <label htmlFor="reply">Reply in German. The client receives it in {detail.client_language}.</label>
+      <textarea id="reply" value={text} onChange={(e) => setText(e.target.value)} style={{ minHeight: 90 }} lang="de" />
+      {preview && (
+        <p className="notice info" lang={detail.client_language}>
