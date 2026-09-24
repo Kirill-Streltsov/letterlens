@@ -44,3 +44,31 @@ function CaseView() {
       <textarea id="reply" value={text} onChange={(e) => setText(e.target.value)} style={{ minHeight: 90 }} lang="de" />
       {preview && (
         <p className="notice info" lang={detail.client_language}>
+          Translation preview: {preview}
+        </p>
+      )}
+      <div className="row">
+        <button
+          className="btn ghost small"
+          disabled={!text.trim()}
+          onClick={() => api.translate(text, detail.client_language).then((r) => setPreview(r.translation))}
+        >
+          Preview translation
+        </button>
+        <button
+          className="btn small"
+          disabled={!text.trim()}
+          onClick={() =>
+            api.sendMessage(id, text).then((m) => {
+              setMessages((old) => [...old, m]);
+              setText("");
+              setPreview(null);
+            })
+          }
+        >
+          Send
+        </button>
+      </div>
+    </section>
+  );
+
