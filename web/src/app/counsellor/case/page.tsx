@@ -72,3 +72,22 @@ function CaseView() {
     </section>
   );
 
+  return (
+    <>
+      <div className="row" style={{ paddingTop: 24 }}>
+        <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Case: {detail.client_name ?? "client"}</h1>
+        <span className="spacer" />
+        <div className="row" role="tablist" aria-label="Summary language">
+          <button className={`btn small ${view === "de" ? "" : "ghost"}`} onClick={() => setView("de")} role="tab" aria-selected={view === "de"}>
+            Deutsch
+          </button>
+          <button className={`btn small ${view === "client" ? "" : "ghost"}`} onClick={() => setView("client")} role="tab" aria-selected={view === "client"}>
+            Client view ({detail.client_language})
+          </button>
+        </div>
+        <select
+          aria-label="Case status"
+          value={detail.case_status}
+          style={{ width: "auto" }}
+          onChange={(e) =>
+            api.updateCase(id, { case_status: e.target.value as "new" | "in_progress" | "closed" }).then(load)
