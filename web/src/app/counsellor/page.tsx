@@ -97,3 +97,28 @@ function Inbox({ me }: { me: Me }) {
                     <td>
                       <Link href={`/counsellor/case/?id=${c.share_id}`}>
                         <strong>{c.headline ?? "Letter"}</strong>
+                      </Link>
+                      <div className="faint">{LETTER_TYPES[c.letter_type ?? "other"]}</div>
+                    </td>
+                    <td>
+                      {c.client_name ?? "Client"}
+                      <div className="faint">language: {c.client_language}</div>
+                    </td>
+                    <td>
+                      <span className="pill">{c.case_status.replace("_", " ")}</span>
+                    </td>
+                    <td className="faint">{formatDate(c.created_at)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function CounsellorPage() {
+  return <AppPage>{(me) => <Inbox me={me} />}</AppPage>;
+}
