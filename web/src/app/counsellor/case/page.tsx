@@ -91,3 +91,26 @@ function CaseView() {
           style={{ width: "auto" }}
           onChange={(e) =>
             api.updateCase(id, { case_status: e.target.value as "new" | "in_progress" | "closed" }).then(load)
+          }
+        >
+          <option value="new">New</option>
+          <option value="in_progress">In progress</option>
+          <option value="closed">Closed</option>
+        </select>
+      </div>
+      <LetterWorkspace letter={detail.letter} explanation={explanation ?? null} side={side} />
+    </>
+  );
+}
+
+export default function CasePage() {
+  return (
+    <AppPage>
+      {() => (
+        <Suspense>
+          <CaseView />
+        </Suspense>
+      )}
+    </AppPage>
+  );
+}
