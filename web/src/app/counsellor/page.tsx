@@ -48,3 +48,27 @@ function Inbox({ me }: { me: Me }) {
           <button
             key={f.value}
             role="tab"
+            aria-selected={status === f.value}
+            className={`btn small ${status === f.value ? "" : "ghost"}`}
+            onClick={() => setStatus(f.value)}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+      {cases === null && <div className="skeleton" style={{ height: 120 }} />}
+      {cases?.length === 0 && (
+        <div className="card empty">
+          <InboxArt />
+          <h2>No cases here</h2>
+          <p className="muted">Clients share letters from the LetterLens app. Shared letters appear here with a summary.</p>
+        </div>
+      )}
+      {sorted.length > 0 && (
+        <div className="card" style={{ padding: 0, overflowX: "auto" }}>
+          <table>
+            <thead>
+              <tr>
+                <th>Next deadline</th>
+                <th>Letter</th>
+                <th>Client</th>
