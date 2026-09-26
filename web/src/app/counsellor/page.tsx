@@ -72,3 +72,28 @@ function Inbox({ me }: { me: Me }) {
                 <th>Next deadline</th>
                 <th>Letter</th>
                 <th>Client</th>
+                <th>Status</th>
+                <th>Shared</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((c) => {
+                const due = c.next_deadline?.due_date;
+                const days = due ? daysUntil(due) : null;
+                return (
+                  <tr key={c.share_id}>
+                    <td>
+                      {due && days !== null ? (
+                        <>
+                          <span className={deadlinePill(days, c.next_deadline?.status ?? "")}>
+                            {relativeLabel(days)}
+                          </span>
+                          <div className="faint">{formatDate(due)}</div>
+                        </>
+                      ) : (
+                        <span className="faint">none found</span>
+                      )}
+                    </td>
+                    <td>
+                      <Link href={`/counsellor/case/?id=${c.share_id}`}>
+                        <strong>{c.headline ?? "Letter"}</strong>
