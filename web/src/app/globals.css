@@ -25,3 +25,25 @@
   color-scheme: light;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #14192b;
+    --paper-deep: #10142a;
+    --card: #1c2238;
+    --ink: #ece6d8;
+    --ink-soft: #b9b7c4;
+    --ink-faint: #8a8fa3;
+    --line: #2d3550;
+    --marker: #6b5a12;
+    --marker-soft: #3a3417;
+    --ok: #7fd1ad;
+    --ok-bg: #173329;
+    --check: #f0a66d;
+    --check-bg: #3b2616;
+    --link: #9db5ff;
+    --focus: #9db5ff;
+    --shadow: 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+    color-scheme: dark;
+  }
+}
+
