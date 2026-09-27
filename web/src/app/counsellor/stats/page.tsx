@@ -65,3 +65,25 @@ function Stats() {
         </table>
       </div>
       <section className="card stack" style={{ maxWidth: 520 }}>
+        <h2>Invite a colleague</h2>
+        <p className="muted">Admins create a one-time code. It is valid for 14 days.</p>
+        <button className="btn ghost small" onClick={() => api.invite(tenant).then((r) => setInvite(r.code)).catch((e: Error) => setInvite(e.message))}>
+          Create invite code
+        </button>
+        {invite && <p className="mono">{invite}</p>}
+      </section>
+    </div>
+  );
+}
+
+export default function StatsPage() {
+  return (
+    <AppPage>
+      {() => (
+        <Suspense>
+          <Stats />
+        </Suspense>
+      )}
+    </AppPage>
+  );
+}
