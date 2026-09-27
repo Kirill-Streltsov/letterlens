@@ -42,3 +42,26 @@ function Stats() {
       <p className="muted">Counts only. No names, no letter content. {total} cases in the last 12 months.</p>
       <div className="card" style={{ padding: 0, overflowX: "auto" }}>
         <table>
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>Letter type</th>
+              <th>Client language</th>
+              <th>Cases</th>
+              <th>Closed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows?.map((r) => (
+              <tr key={`${r.month}-${r.letter_type}-${r.language}`}>
+                <td>{r.month.slice(0, 7)}</td>
+                <td>{LETTER_TYPES[r.letter_type] ?? r.letter_type}</td>
+                <td>{r.language}</td>
+                <td>{r.cases}</td>
+                <td>{r.closed}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <section className="card stack" style={{ maxWidth: 520 }}>
