@@ -19,3 +19,26 @@ function Stats() {
 
   const total = rows?.reduce((s, r) => s + r.cases, 0) ?? 0;
 
+  return (
+    <div className="stack" style={{ padding: "32px 0 64px" }}>
+      <div className="row">
+        <h1 style={{ margin: 0 }}>Statistics for funding reports</h1>
+        <span className="spacer" />
+        <button
+          className="btn ghost small"
+          disabled={!rows?.length}
+          onClick={() => {
+            const url = URL.createObjectURL(new Blob([toCsv(rows ?? [])], { type: "text/csv" }));
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "letterlens-cases.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          Download CSV
+        </button>
+      </div>
+      <p className="muted">Counts only. No names, no letter content. {total} cases in the last 12 months.</p>
+      <div className="card" style={{ padding: 0, overflowX: "auto" }}>
+        <table>
