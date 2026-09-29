@@ -83,3 +83,30 @@ a { color: var(--link); text-underline-offset: 3px; }
 .nav a { padding: 8px 12px; border-radius: 999px; text-decoration: none; color: var(--ink-soft); font-weight: 500; }
 .nav a[aria-current="page"], .nav a:hover { background: var(--card); color: var(--ink); box-shadow: var(--shadow); }
 
+/* Cards and buttons */
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.card.tight { padding: 14px 16px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 18px; border-radius: 999px; border: 1px solid var(--ink); background: var(--ink); color: var(--card); font: 600 0.95rem var(--sans); cursor: pointer; text-decoration: none; transition: transform 0.06s ease, opacity 0.2s; }
+.btn:hover { opacity: 0.92; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.danger { background: transparent; color: var(--danger); border-color: var(--danger); }
+.btn.small { padding: 6px 12px; font-size: 0.85rem; }
+input, select, textarea { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; }
+textarea { min-height: 160px; resize: vertical; }
+label { display: block; font-weight: 600; margin-bottom: 6px; }
+
+/* Pills */
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 0.78rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: var(--paper-deep); color: var(--ink-soft); white-space: nowrap; }
+.pill.ok { background: var(--ok-bg); color: var(--ok); }
+.pill.check { background: var(--check-bg); color: var(--check); }
+.pill.urgent { background: var(--danger); color: #fff; }
+
+/* Landing */
+.hero { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: center; padding: 64px 0 40px; }
+.hero h1 { font-size: clamp(2.2rem, 5vw, 3.6rem); }
+.hero .lead { font-size: 1.2rem; color: var(--ink-soft); max-width: 36ch; }
+.features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 24px 0 64px; }
+@media (max-width: 860px) { .hero, .features { grid-template-columns: 1fr; } }
+
