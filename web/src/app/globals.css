@@ -133,3 +133,31 @@ label { display: block; font-weight: 600; margin-bottom: 6px; }
 .notice.info { background: var(--paper-deep); color: var(--ink-soft); }
 .citation { font-size: 0.85rem; }
 
+/* Lists */
+.list { display: grid; gap: 12px; }
+.list-item { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; text-decoration: none; color: inherit; }
+.list-item:hover { border-color: var(--ink-faint); }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); }
+
+/* Empty states */
+.empty { display: grid; justify-items: center; text-align: center; gap: 12px; padding: 48px 20px; }
+.empty svg { width: 180px; height: auto; }
+
+/* Chat */
+.thread { display: grid; gap: 10px; max-height: 420px; overflow: auto; padding-right: 4px; }
+.bubble { max-width: 80%; padding: 10px 14px; border-radius: 14px; background: var(--paper-deep); }
+.bubble.mine { justify-self: end; background: var(--ink); color: var(--card); }
+.bubble .orig { font-size: 0.8rem; opacity: 0.75; margin-top: 6px; border-top: 1px solid currentColor; padding-top: 6px; }
+
+.progress { height: 6px; border-radius: 999px; background: var(--paper-deep); overflow: hidden; }
+.progress > span { display: block; height: 100%; background: var(--ink); transition: width 0.3s ease; }
+.dropzone { border: 2px dashed var(--line); border-radius: var(--radius); padding: 36px; text-align: center; background: var(--card); cursor: pointer; }
+.dropzone.active { border-color: var(--ink); background: var(--marker-soft); }
+.skeleton { background: linear-gradient(90deg, var(--paper-deep), var(--card), var(--paper-deep)); background-size: 200% 100%; animation: shimmer 1.2s infinite; border-radius: 8px; min-height: 18px; }
+@keyframes shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+dialog { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--ink); max-width: 560px; width: calc(100% - 32px); box-shadow: var(--shadow); }
+dialog::backdrop { background: rgba(20, 25, 43, 0.45); }
