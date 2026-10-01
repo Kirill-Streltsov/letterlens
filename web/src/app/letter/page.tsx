@@ -48,3 +48,28 @@ function QuestionBox({ letterId, language }: { letterId: string; language: strin
         <button className="btn" disabled={busy}>
           {busy ? "…" : "Ask"}
         </button>
+      </form>
+      {answer && (
+        <div className={answer.refused ? "notice" : "notice info"} aria-live="polite">
+          {answer.answer ?? "I could not check this answer against the letter. Please ask a counsellor."}
+          {answer.citations.length > 0 && (
+            <div className="faint" style={{ marginTop: 6 }}>
+              Sources: {answer.citations.map((c) => c.title).join("; ")}
+            </div>
+          )}
+        </div>
+      )}
+      <p className="faint">LetterLens gives general information. It does not tell you what to decide in your case.</p>
+    </section>
+  );
+}
+
+function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [services, setServices] = useState<CounsellingService[]>([]);
+  const [tenant, setTenant] = useState("");
+  const [agree, setAgree] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [text, setText] = useState("");
+  const active = letter.shares.find((s) => !s.revoked);
+
