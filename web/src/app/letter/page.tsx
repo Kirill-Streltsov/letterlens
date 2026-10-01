@@ -73,3 +73,28 @@ function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => 
   const [text, setText] = useState("");
   const active = letter.shares.find((s) => !s.revoked);
 
+  useEffect(() => {
+    if (active) api.messages(active.id).then(setMessages).catch(() => undefined);
+  }, [active]);
+
+  return (
+    <section className="card stack">
+      <h2>Talk to a counsellor</h2>
+      {active ? (
+        <>
+          <p>
+            Shared with <strong>{active.tenant_name}</strong> until {active.expires_at.slice(0, 10)}. Case status:{" "}
+            <span className="pill">{active.case_status.replace("_", " ")}</span>
+          </p>
+          <div className="thread" aria-live="polite">
+            {messages.length === 0 && <p className="faint">No messages yet. The counsellor will answer here.</p>}
+            {messages.map((m) => (
+              <div key={m.id} className={`bubble${m.author_role === "client" ? " mine" : ""}`}>
+                {m.text}
+                {m.original_text && <div className="orig">Original: {m.original_text}</div>}
+              </div>
+            ))}
+          </div>
+          <form
+            className="row"
+            onSubmit={(e) => {
