@@ -123,3 +123,28 @@ function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => 
             className="btn ghost"
             onClick={() => {
               api.services().then(setServices);
+              dialog.current?.showModal();
+            }}
+          >
+            Share with a counselling service
+          </button>
+        </>
+      )}
+      <dialog ref={dialog} aria-labelledby="share-title">
+        <form
+          method="dialog"
+          className="stack"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!tenant || !agree) return;
+            api.share(letter.id, tenant).then(() => {
+              dialog.current?.close();
+              onChange();
+            });
+          }}
+        >
+          <h2 id="share-title">Share this letter</h2>
+          <label htmlFor="service">Counselling service</label>
+          <select id="service" value={tenant} onChange={(e) => setTenant(e.target.value)} required>
+            <option value="">Choose…</option>
+            {services.map((s) => (
