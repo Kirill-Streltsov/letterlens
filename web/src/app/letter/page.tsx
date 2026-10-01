@@ -148,3 +148,30 @@ function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => 
           <select id="service" value={tenant} onChange={(e) => setTenant(e.target.value)} required>
             <option value="">Choose…</option>
             {services.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+                {s.city ? ` (${s.city})` : ""}
+              </option>
+            ))}
+          </select>
+          <label style={{ display: "flex", gap: 10, fontWeight: 400 }}>
+            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} style={{ width: "auto" }} />
+            <span>
+              I agree that this counselling service can see the text of this letter, the summary and my messages for 30
+              days. I can stop sharing at any time. (Consent version share-consent-v1)
+            </span>
+          </label>
+          <div className="row">
+            <button className="btn" disabled={!tenant || !agree}>
+              Share
+            </button>
+            <button type="button" className="btn ghost" onClick={() => dialog.current?.close()}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </dialog>
+    </section>
+  );
+}
+
