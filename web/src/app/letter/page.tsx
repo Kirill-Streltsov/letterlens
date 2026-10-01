@@ -175,3 +175,26 @@ function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => 
   );
 }
 
+function Letter({ me }: { me: Me }) {
+  const id = useSearchParams().get("id") ?? "";
+  const router = useRouter();
+  const [language, setLanguage] = useState(me.preferred_language);
+  const [letter, setLetter] = useState<LetterView | null>(null);
+  const [languages, setLanguages] = useState<Language[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(() => {
+    api.letter(id, language).then(setLetter).catch((e: Error) => setError(e.message));
+  }, [id, language]);
+
+  useEffect(() => {
+    load();
+    api.languages().then(setLanguages).catch(() => undefined);
+  }, [load]);
+
+  useEffect(() => {
+    if (!letter || letter.status === "ready" || letter.status === "failed") return;
+    const timer = setTimeout(load, 1500);
+    return () => clearTimeout(timer);
+  }, [letter, load]);
+
