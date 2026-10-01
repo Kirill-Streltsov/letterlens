@@ -98,3 +98,28 @@ function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => 
           <form
             className="row"
             onSubmit={(e) => {
+              e.preventDefault();
+              if (!text.trim()) return;
+              api.sendMessage(active.id, text).then((m) => {
+                setMessages((old) => [...old, m]);
+                setText("");
+              });
+            }}
+          >
+            <input aria-label="Message" value={text} onChange={(e) => setText(e.target.value)} style={{ flex: 1, width: "auto" }} />
+            <button className="btn small">Send</button>
+          </form>
+          <button className="btn danger small" onClick={() => api.revokeShare(active.id).then(onChange)}>
+            Stop sharing
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="muted">
+            A free counselling service can look at your letter and help with your case. You decide if and with whom to
+            share it.
+          </p>
+          <button
+            className="btn ghost"
+            onClick={() => {
+              api.services().then(setServices);
