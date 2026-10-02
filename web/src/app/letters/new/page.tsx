@@ -53,3 +53,30 @@ function NewLetter({ me }: { me: Me }) {
     }
   }
 
+  return (
+    <div className="stack" style={{ padding: "32px 0 64px", maxWidth: 760 }}>
+      <h1>New letter</h1>
+      <p className="muted">
+        The photo is read on this device. Only the recognized text is sent, processed in the EU, and deleted after 30
+        days.
+      </p>
+      <div
+        className={`dropzone${drag ? " active" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={() => input.current?.click()}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && input.current?.click()}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDrag(true);
+        }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDrag(false);
+          void handleFiles(e.dataTransfer.files);
+        }}
+      >
+        <strong>Drop photos or a PDF here</strong>
+        <div className="faint">or click to choose files (JPG, PNG, PDF, up to 6 pages)</div>
+        <input
