@@ -198,3 +198,28 @@ function Letter({ me }: { me: Me }) {
     return () => clearTimeout(timer);
   }, [letter, load]);
 
+  if (error) return <p className="notice" style={{ marginTop: 32 }}>{error}</p>;
+  if (!letter) return <div className="skeleton" style={{ height: 240, marginTop: 32 }} />;
+
+  const switchLanguage = (code: string) => {
+    setLanguage(code);
+    if (!letter.explanation_languages.includes(code)) {
+      api.explain(letter.id, code).then(() => setLetter({ ...letter, status: "processing" }));
+    }
+  };
+
+  const explanation = letter.explanation;
+  const processing = letter.status === "received" || letter.status === "processing";
+  const missing = letter.status === "ready" && !letter.explanation_languages.includes(language);
+  const languageName = languages.find((l) => l.code === language)?.native_name ?? language;
+
+  return (
+    <>
+      <div className="row" style={{ paddingTop: 24 }}>
+        <label htmlFor="lang" className="sr-only">
+          Language
+        </label>
+        <select id="lang" value={language} onChange={(e) => switchLanguage(e.target.value)} style={{ width: "auto" }}>
+          {languages.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.native_name}
