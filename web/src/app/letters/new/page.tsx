@@ -80,3 +80,31 @@ function NewLetter({ me }: { me: Me }) {
         <strong>Drop photos or a PDF here</strong>
         <div className="faint">or click to choose files (JPG, PNG, PDF, up to 6 pages)</div>
         <input
+          ref={input}
+          type="file"
+          accept="image/jpeg,image/png,application/pdf"
+          multiple
+          hidden
+          onChange={(e) => void handleFiles(e.target.files)}
+        />
+      </div>
+      {progress && (
+        <div aria-live="polite">
+          <div className="faint">{progress.message}</div>
+          <div className="progress">
+            <span style={{ width: `${Math.round(progress.fraction * 100)}%` }} />
+          </div>
+        </div>
+      )}
+      {doc && (
+        <details className="card tight" open>
+          <summary>
+            Recognized text: {doc.lines.length} lines. Check that nothing important is missing.
+          </summary>
+          <pre className="mono" style={{ whiteSpace: "pre-wrap", maxHeight: 260, overflow: "auto" }} lang="de">
+            {doc.lines.map((l) => l.text).join("\n")}
+          </pre>
+        </details>
+      )}
+      {!doc && (
+        <div>
