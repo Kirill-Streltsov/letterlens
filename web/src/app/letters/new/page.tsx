@@ -108,3 +108,30 @@ function NewLetter({ me }: { me: Me }) {
       )}
       {!doc && (
         <div>
+          <label htmlFor="paste">Or paste the text of the letter</label>
+          <textarea id="paste" lang="de" value={paste} onChange={(e) => setPaste(e.target.value)} />
+        </div>
+      )}
+      <div>
+        <label htmlFor="lang">Explain it in</label>
+        <select id="lang" value={language} onChange={(e) => setLanguage(e.target.value)}>
+          {languages.map((l) => (
+            <option key={l.code} value={l.code}>
+              {l.native_name} ({l.name}){l.status === "experimental" ? " · beta" : ""}
+            </option>
+          ))}
+        </select>
+      </div>
+      {error && <p className="notice" role="alert">{error}</p>}
+      <div className="row">
+        <button className="btn" disabled={submitting || (!doc && !paste.trim())} onClick={() => void submit()}>
+          {submitting ? "Sending…" : "Explain this letter"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function NewLetterPage() {
+  return <AppPage>{(me) => <NewLetter me={me} />}</AppPage>;
+}
