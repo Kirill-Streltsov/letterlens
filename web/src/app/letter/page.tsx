@@ -248,3 +248,28 @@ function Letter({ me }: { me: Me }) {
       </div>
       <LetterWorkspace
         letter={letter}
+        explanation={explanation ?? null}
+        side={
+          letter.status === "ready" ? (
+            <>
+              <QuestionBox letterId={letter.id} language={language} />
+              <SharePanel letter={letter} onChange={load} />
+            </>
+          ) : null
+        }
+      />
+    </>
+  );
+}
+
+export default function LetterPage() {
+  return (
+    <AppPage>
+      {(me) => (
+        <Suspense>
+          <Letter me={me} />
+        </Suspense>
+      )}
+    </AppPage>
+  );
+}
