@@ -24,3 +24,32 @@ function NewLetter({ me }: { me: Me }) {
     api.languages().then(setLanguages).catch(() => undefined);
   }, []);
 
+  async function handleFiles(files: FileList | null) {
+    if (!files?.length) return;
+    setError(null);
+    setDoc(null);
+    try {
+      const result = await recognizeFiles([...files], (message, fraction) => setProgress({ message, fraction }));
+      setDoc(result);
+      if (!result.lines.length) setError("No text was found. Try a sharper photo with more light.");
+    } catch {
+      setError("Text recognition failed. Try another photo, or paste the text below.");
+    } finally {
+      setProgress(null);
+    }
+  }
+
+  async function submit() {
+    const document = doc ?? (paste.trim() ? documentFromText(paste) : null);
+    if (!document?.lines.length) return;
+    setSubmitting(true);
+    setError(null);
+    try {
+      const created = await api.createLetter(document, language, idempotencyKey.current);
+      router.push(`/letter/?id=${created.id}`);
+    } catch (e) {
+      setError(e instanceof ApiError && e.code === "quota_exceeded" ? `${e.message}. Upgrade in Settings.` : (e as Error).message);
+      setSubmitting(false);
+    }
+  }
+
