@@ -223,3 +223,28 @@ function Letter({ me }: { me: Me }) {
           {languages.map((l) => (
             <option key={l.code} value={l.code}>
               {l.native_name}
+              {l.status === "experimental" ? " · beta" : ""}
+            </option>
+          ))}
+        </select>
+        {processing && <span className="pill check" aria-live="polite">Reading the letter…</span>}
+        {letter.status === "failed" && <span className="pill urgent">Processing failed</span>}
+        {missing && (
+          <button className="btn small" onClick={() => switchLanguage(language)}>
+            Explain in {languageName}
+          </button>
+        )}
+        <span className="spacer" />
+        <button
+          className="btn danger small"
+          onClick={() => {
+            if (confirm("Delete this letter and its results? This cannot be undone.")) {
+              api.deleteLetter(letter.id).then(() => router.push("/letters/"));
+            }
+          }}
+        >
+          Delete letter
+        </button>
+      </div>
+      <LetterWorkspace
+        letter={letter}
