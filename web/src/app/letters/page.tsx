@@ -48,3 +48,28 @@ function Letters({ me }: { me: Me }) {
                   <span className="pill">{LETTER_TYPES[l.letter_type ?? "other"] ?? "Letter"}</span>
                   {l.status !== "ready" && <span className="pill check">{l.status}</span>}
                   {l.shared && <span className="pill ok">shared with counselling</span>}
+                </div>
+                <h3 style={{ margin: "8px 0 2px" }}>{l.headline ?? l.sender ?? "Processing…"}</h3>
+                <span className="faint">
+                  Added {formatDate(l.created_at)} · deleted automatically {formatDate(l.expires_at)}
+                </span>
+              </div>
+              {l.next_deadline?.due_date && days !== null && (
+                <div style={{ textAlign: "right" }}>
+                  <div className={deadlinePill(days, l.next_deadline.status)}>
+                    {relativeLabel(days)}
+                  </div>
+                  <div className="faint">{formatDate(l.next_deadline.due_date)}</div>
+                </div>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function LettersPage() {
+  return <AppPage>{(me) => <Letters me={me} />}</AppPage>;
+}
