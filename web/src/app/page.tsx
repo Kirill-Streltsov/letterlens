@@ -66,3 +66,25 @@ export default function Landing() {
             ) : (
               <div className="row">
                 <button className="btn" onClick={() => void signIn()} disabled={!config}>
+                  Sign in or create an account
+                </button>
+              </div>
+            )}
+            <p className="faint" style={{ marginTop: 16 }}>
+              General information, not legal advice. Images stay on your device; only the text is processed, in the EU.
+            </p>
+          </div>
+          <EnvelopeArt />
+        </section>
+        <section className="features">
+          {FEATURES.map((f) => (
+            <article className="card" key={f.title}>
+              <h3>{f.title}</h3>
+              <p className="muted">{f.text}</p>
+            </article>
+          ))}
+        </section>
+      </main>
+    </>
+  );
+}
