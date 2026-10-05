@@ -95,3 +95,27 @@ function Settings({ me }: { me: Me }) {
                 a.download = "letterlens-export.json";
                 a.click();
                 URL.revokeObjectURL(url);
+              })
+            }
+          >
+            Download my data
+          </button>
+          <button
+            className="btn danger small"
+            onClick={() => {
+              if (confirm("Delete your account and all letters? This cannot be undone.")) {
+                api.deleteMe().then(() => void signOut());
+              }
+            }}
+          >
+            Delete account
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  return <AppPage>{(me) => <Settings me={me} />}</AppPage>;
+}
