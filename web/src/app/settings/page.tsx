@@ -46,3 +46,21 @@ function Settings({ me }: { me: Me }) {
         </div>
       </section>
 
+      <section className="card stack">
+        <h2>Plan</h2>
+        <p>
+          You use <strong>LetterLens {me.plan === "plus" ? "Plus" : "Free"}</strong>
+          {me.letters_limit !== null && ` (${me.letters_this_month} of ${me.letters_limit} letters this month)`}.
+        </p>
+        {me.plan === "free" && (
+          <div>
+            <button
+              className="btn small"
+              onClick={() => api.checkout("plus").then((r) => window.location.assign(r.url)).catch((e: Error) => flash(e.message))}
+            >
+              Upgrade to Plus: unlimited letters
+            </button>
+          </div>
+        )}
+      </section>
+
