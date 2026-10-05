@@ -64,3 +64,34 @@ function Settings({ me }: { me: Me }) {
         )}
       </section>
 
+      <section className="card stack">
+        <h2>Counselling service</h2>
+        <p className="muted">Counsellors join their service with an invite code from their admin.</p>
+        <div className="row">
+          <input aria-label="Invite code" placeholder="ABCD-EFGH-JKLM" value={code} onChange={(e) => setCode(e.target.value)} style={{ flex: 1, width: "auto" }} />
+          <button
+            className="btn small"
+            disabled={code.length < 6}
+            onClick={() => api.redeemInvite(code).then(() => window.location.assign("/counsellor/")).catch(() => flash("This code is not valid."))}
+          >
+            Join
+          </button>
+        </div>
+      </section>
+
+      <section className="card stack">
+        <h2>Your data</h2>
+        <p className="muted">
+          Letters are deleted automatically after 30 days. You can download everything or delete your account now.
+        </p>
+        <div className="row">
+          <button
+            className="btn ghost small"
+            onClick={() =>
+              api.exportMe().then((data) => {
+                const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }));
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = "letterlens-export.json";
+                a.click();
+                URL.revokeObjectURL(url);
