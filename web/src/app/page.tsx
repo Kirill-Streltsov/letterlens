@@ -43,3 +43,26 @@ export default function Landing() {
             <p className="lead">
               Tax office, Jobcenter, health insurer, immigration office, landlord: LetterLens tells you what the letter
               says, what it wants from you, and by when.
+            </p>
+            {local ? (
+              <form
+                className="card stack"
+                style={{ maxWidth: 420 }}
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (devUser.startsWith("counsellor")) setDevGroups("counsellor");
+                  void signIn(devUser);
+                }}
+              >
+                <label htmlFor="dev-user">Local demo: sign in as</label>
+                <input id="dev-user" value={devUser} onChange={(e) => setDevUser(e.target.value)} />
+                <p className="faint">
+                  Use <code>counsellor-anna</code> for the counsellor inbox (after <code>make seed</code>).
+                </p>
+                <button className="btn" type="submit">
+                  Continue
+                </button>
+              </form>
+            ) : (
+              <div className="row">
+                <button className="btn" onClick={() => void signIn()} disabled={!config}>
