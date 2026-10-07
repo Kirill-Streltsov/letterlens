@@ -74,3 +74,23 @@ function DeadlineCard({ d, label, letterId }: { d: Schemas["VerifiedDeadline"]; 
   );
 }
 
+export function LetterWorkspace({
+  letter,
+  explanation,
+  side,
+}: {
+  letter: LetterView;
+  explanation: Explanation | null;
+  side?: React.ReactNode;
+}) {
+  const [hover, setHover] = useState<string[]>([]);
+  const highlight = useMemo(() => new Set(hover), [hover]);
+  const facts = letter.facts;
+  const rtl = explanation?.language === "ar";
+
+  const focus = (ids: string[]) => {
+    setHover(ids);
+    const first = ids[0];
+    if (first) document.getElementById(first)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  };
+
