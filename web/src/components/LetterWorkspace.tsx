@@ -94,3 +94,36 @@ export function LetterWorkspace({
     if (first) document.getElementById(first)?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   };
 
+  return (
+    <div className="workspace">
+      <OriginalPanel lines={letter.lines} highlight={highlight} />
+      <div className="stack">
+        {letter.degraded && (
+          <p className="notice" role="status">
+            The assistant was not fully available. This result uses simple rules; please check everything carefully.
+          </p>
+        )}
+        {explanation && (
+          <section className="card" dir={rtl ? "rtl" : "ltr"} lang={explanation.language}>
+            <div className="row">
+              <span className="pill">{LETTER_TYPES[letter.classification?.letter_type ?? "other"]}</span>
+              {facts?.sender.value && <span className="faint">{facts.sender.value}</span>}
+            </div>
+            <h1 style={{ fontSize: "1.6rem", marginTop: 12 }}>{explanation.headline}</h1>
+            <p className="muted">{explanation.letter_kind}</p>
+            <ul className="summary">
+              {explanation.summary.map((s, i) => (
+                <li
+                  key={i}
+                  tabIndex={0}
+                  onMouseEnter={() => focus(s.line_ids)}
+                  onFocus={() => focus(s.line_ids)}
+                  onMouseLeave={() => setHover([])}
+                >
+                  {s.text}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
