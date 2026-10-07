@@ -49,3 +49,28 @@ function DeadlineCard({ d, label, letterId }: { d: Schemas["VerifiedDeadline"]; 
       {days !== null && level !== "urgent" && <div className="faint">{relativeLabel(days)}</div>}
       <p style={{ marginTop: 8 }}>{label}</p>
       {d.note && <p className="faint">{d.note}</p>}
+      {d.rule && (
+        <details className="faint">
+          <summary>How this date was estimated</summary>
+          {d.rule}
+        </details>
+      )}
+      {d.due_date && (
+        <button
+          className="btn ghost small"
+          onClick={() =>
+            downloadIcs({
+              uid: `${letterId}-${d.id}`,
+              date: d.due_date!,
+              title: `Deadline: ${label}`,
+              description: `${d.status === "verified" ? "" : "PLEASE CHECK THIS DATE IN THE LETTER. "}${d.source_text ?? ""}`,
+            })
+          }
+        >
+          Add to calendar
+        </button>
+      )}
+    </article>
+  );
+}
+
