@@ -30,3 +30,22 @@ export function OriginalPanel({ lines, highlight }: { lines: LetterView["lines"]
   );
 }
 
+function DeadlineCard({ d, label, letterId }: { d: Schemas["VerifiedDeadline"]; label: string; letterId: string }) {
+  const days = d.due_date ? daysUntil(d.due_date) : null;
+  const level = days === null ? null : urgency(days);
+  return (
+    <article className={`card tight deadline ${d.status}`}>
+      <div className="row">
+        {d.status === "verified" ? (
+          <span className="pill ok">Found in the letter</span>
+        ) : (
+          <span className="pill check">Please check</span>
+        )}
+        {level === "urgent" && <span className="pill urgent">{relativeLabel(days!)}</span>}
+      </div>
+      <div className="date" style={{ marginTop: 8 }}>
+        {d.due_date ? formatDate(d.due_date) : "Date unknown"}
+      </div>
+      {days !== null && level !== "urgent" && <div className="faint">{relativeLabel(days)}</div>}
+      <p style={{ marginTop: 8 }}>{label}</p>
+      {d.note && <p className="faint">{d.note}</p>}
