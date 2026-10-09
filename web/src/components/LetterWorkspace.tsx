@@ -169,3 +169,37 @@ export function LetterWorkspace({
           </section>
         )}
 
+        {explanation && explanation.next_steps.length > 0 && (
+          <section className="card" dir={rtl ? "rtl" : "ltr"} lang={explanation.language}>
+            <h2>What people usually do next</h2>
+            <ul>
+              {explanation.next_steps.map((s, i) => (
+                <li key={i}>
+                  {s.text}{" "}
+                  {s.citation_ids.map((c) => (
+                    <sup key={c}>
+                      <a href={`#${c}`}>[{c.slice(1)}]</a>
+                    </sup>
+                  ))}
+                </li>
+              ))}
+            </ul>
+            <ol className="citation faint">
+              {explanation.citations.map((c) => (
+                <li key={c.id} id={c.id}>
+                  <a href={c.source_url} target="_blank" rel="noreferrer noopener">
+                    {c.title}
+                  </a>{" "}
+                  ({c.source_name}, checked {c.checked_on})
+                </li>
+              ))}
+            </ol>
+            <p className="notice info">{explanation.counselling_hint}</p>
+          </section>
+        )}
+        {side}
+        {explanation && <p className="faint">{explanation.disclaimer}</p>}
+      </div>
+    </div>
+  );
+}
