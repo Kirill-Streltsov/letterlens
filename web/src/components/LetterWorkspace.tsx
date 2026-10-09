@@ -158,3 +158,14 @@ export function LetterWorkspace({
           </section>
         )}
 
+        {facts && facts.reference_numbers.length > 0 && (
+          <section className="card tight">
+            <h3>Reference numbers</h3>
+            {facts.reference_numbers.map((r) => (
+              <div key={r.label + r.value} className="row">
+                <span className="faint">{r.label}</span> <span className="mono">{r.value}</span>
+              </div>
+            ))}
+          </section>
+        )}
+
