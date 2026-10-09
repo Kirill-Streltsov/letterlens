@@ -21,3 +21,25 @@ export function Header({ me }: { me?: Me | null }) {
     <header className="header">
       <div className="container">
         <Link href={me ? "/letters/" : "/"} className="brand">
+          <Logo /> LetterLens
+        </Link>
+        {me && (
+          <nav className="nav" aria-label="Main">
+            {links.map((l) => (
+              <Link key={l.href} href={l.href} aria-current={path.startsWith(l.href) ? "page" : undefined}>
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        )}
+        <span className="spacer" />
+        {me && (
+          <button className="btn ghost small" onClick={() => void signOut()}>
+            Sign out
+          </button>
+        )}
+      </div>
+    </header>
+  );
+}
+
