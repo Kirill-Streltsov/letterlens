@@ -127,3 +127,34 @@ export function LetterWorkspace({
           </section>
         )}
 
+        {facts && facts.deadlines.length > 0 && (
+          <section aria-label="Deadlines">
+            <h2>Deadlines</h2>
+            <div className="deadlines">
+              {facts.deadlines.map((d) => (
+                <div key={d.id} onMouseEnter={() => focus(d.line_ids)} onMouseLeave={() => setHover([])}>
+                  <DeadlineCard d={d} letterId={letter.id} label={explanation?.deadline_labels[d.id] ?? d.description} />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {facts && facts.amounts.length > 0 && (
+          <section className="card" aria-label="Amounts">
+            <h2>Amounts</h2>
+            {facts.amounts.map((a) => (
+              <div className="amount" key={a.id} onMouseEnter={() => focus(a.line_ids)} onMouseLeave={() => setHover([])}>
+                <div>
+                  <div>{explanation?.amount_labels[a.id] ?? a.description}</div>
+                  <div className="faint">
+                    {DIRECTION[a.direction]} ·{" "}
+                    {a.status === "verified" ? "found in the letter" : <span style={{ color: "var(--check)" }}>please check</span>}
+                  </div>
+                </div>
+                <div className="value">{money(a.value, a.currency)}</div>
+              </div>
+            ))}
+          </section>
+        )}
+
