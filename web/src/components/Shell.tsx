@@ -43,3 +43,28 @@ export function Header({ me }: { me?: Me | null }) {
   );
 }
 
+/** Page frame for signed-in pages. Loads the profile once and redirects to the start page when signed out. */
+export function AppPage({ children }: { children: (me: Me) => ReactNode }) {
+  const router = useRouter();
+  const [me, setMe] = useState<Me | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isSignedIn()) {
+      router.replace("/");
+      return;
+    }
+    api.me().then(setMe).catch((e: Error) => setError(e.message));
+  }, [router]);
+
+  return (
+    <>
+      <Header me={me} />
+      <main className="container">
+        {error && <p className="notice" role="alert">{error}</p>}
+        {!me && !error && <div className="skeleton" style={{ height: 160, marginTop: 32 }} aria-label="Loading" />}
+        {me && children(me)}
+      </main>
+    </>
+  );
+}
