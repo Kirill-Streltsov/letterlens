@@ -22,3 +22,31 @@ export function base64Url(bytes: Uint8Array): string {
   return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
 
+export function randomVerifier(): string {
+  const bytes = new Uint8Array(48);
+  crypto.getRandomValues(bytes);
+  return base64Url(bytes);
+}
+
+export async function challengeFor(verifier: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
+  return base64Url(new Uint8Array(digest));
+}
+
+function redirectUri(): string {
+  return `${window.location.origin}/auth/callback/`;
+}
+
+export function isLocal(config: AppConfig): boolean {
+  return config.stage === "local";
+}
+
+export async function signIn(devUser?: string): Promise<void> {
+  const config = await loadConfig();
+  if (isLocal(config)) {
+    sessionStorage.setItem(DEV_USER, devUser || "demo-client");
+    window.location.assign("/letters/");
+    return;
+  }
+  const verifier = randomVerifier();
+  sessionStorage.setItem(VERIFIER, verifier);
