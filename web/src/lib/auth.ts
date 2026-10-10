@@ -50,3 +50,31 @@ export async function signIn(devUser?: string): Promise<void> {
   }
   const verifier = randomVerifier();
   sessionStorage.setItem(VERIFIER, verifier);
+  const params = new URLSearchParams({
+    response_type: "code",
+    client_id: config.clientId,
+    redirect_uri: redirectUri(),
+    scope: "openid email profile",
+    code_challenge_method: "S256",
+    code_challenge: await challengeFor(verifier),
+  });
+  window.location.assign(`https://${config.authDomain}/oauth2/authorize?${params}`);
+}
+
+async function tokenRequest(config: AppConfig, body: Record<string, string>): Promise<Tokens> {
+  const response = await fetch(`https://${config.authDomain}/oauth2/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({ client_id: config.clientId, ...body }),
+  });
+  if (!response.ok) throw new Error("sign-in failed");
+  const json = (await response.json()) as { access_token: string; refresh_token?: string; expires_in: number };
+  const tokens: Tokens = {
+    accessToken: json.access_token,
+    refreshToken: json.refresh_token ?? body.refresh_token,
+    expiresAt: Date.now() + json.expires_in * 1000,
+  };
+  sessionStorage.setItem(STORE, JSON.stringify(tokens));
+  return tokens;
+}
+
