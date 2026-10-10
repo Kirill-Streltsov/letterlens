@@ -109,3 +109,21 @@ export async function authHeaders(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${tokens.accessToken}` };
 }
 
+export function isSignedIn(): boolean {
+  return Boolean(sessionStorage.getItem(STORE) || sessionStorage.getItem(DEV_USER));
+}
+
+export function setDevGroups(groups: string): void {
+  sessionStorage.setItem(`${DEV_USER}.groups`, groups);
+}
+
+export async function signOut(): Promise<void> {
+  const config = await loadConfig();
+  sessionStorage.clear();
+  if (isLocal(config)) {
+    window.location.assign("/");
+    return;
+  }
+  const params = new URLSearchParams({ client_id: config.clientId, logout_uri: `${window.location.origin}/` });
+  window.location.assign(`https://${config.authDomain}/logout?${params}`);
+}
