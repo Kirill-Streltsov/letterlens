@@ -78,3 +78,34 @@ async function tokenRequest(config: AppConfig, body: Record<string, string>): Pr
   return tokens;
 }
 
+export async function completeSignIn(code: string): Promise<void> {
+  const config = await loadConfig();
+  const verifier = sessionStorage.getItem(VERIFIER);
+  if (!verifier) throw new Error("sign-in session expired");
+  sessionStorage.removeItem(VERIFIER);
+  await tokenRequest(config, {
+    grant_type: "authorization_code",
+    code,
+    code_verifier: verifier,
+    redirect_uri: redirectUri(),
+  });
+}
+
+/** Headers that authenticate an API call, refreshing the access token when it is about to expire. */
+export async function authHeaders(): Promise<Record<string, string>> {
+  const config = await loadConfig();
+  if (isLocal(config)) {
+    const user = sessionStorage.getItem(DEV_USER);
+    if (!user) return {};
+    const groups = sessionStorage.getItem(`${DEV_USER}.groups`) ?? "";
+    return { "X-Dev-User": user, ...(groups ? { "X-Dev-Groups": groups } : {}) };
+  }
+  const raw = sessionStorage.getItem(STORE);
+  if (!raw) return {};
+  let tokens = JSON.parse(raw) as Tokens;
+  if (tokens.expiresAt - Date.now() < 60_000 && tokens.refreshToken) {
+    tokens = await tokenRequest(config, { grant_type: "refresh_token", refresh_token: tokens.refreshToken });
+  }
+  return { Authorization: `Bearer ${tokens.accessToken}` };
+}
+
