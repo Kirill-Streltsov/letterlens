@@ -26,3 +26,29 @@ export function relativeLabel(days: number): string {
   return `in ${days} days`;
 }
 
+/** CSS class of a deadline pill: urgent red, verified green, unverified amber, past neutral. */
+export function deadlinePill(days: number, status: string): string {
+  const level = urgency(days);
+  if (level === "past") return "pill";
+  if (level === "urgent") return "pill urgent";
+  return status === "verified" ? "pill ok" : "pill check";
+}
+
+export function money(value: string, currency = "EUR"): string {
+  return new Intl.NumberFormat("de-DE", { style: "currency", currency }).format(Number(value));
+}
+
+export const LETTER_TYPES: Record<string, string> = {
+  tax: "Tax office",
+  benefits: "Social benefits",
+  health_insurance: "Health insurance",
+  immigration: "Immigration office",
+  landlord: "Landlord",
+  other: "Other",
+};
+
+export const DIRECTION: Record<string, string> = {
+  to_pay: "to pay",
+  to_receive: "you receive",
+  info: "for information",
+};
