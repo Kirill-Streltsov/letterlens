@@ -45,3 +45,26 @@ export function documentFromText(text: string): LetterDocument {
   );
 }
 
+async function recognizeCanvasOrImage(
+  source: HTMLCanvasElement | File,
+  page: number,
+  width: number,
+  height: number,
+  progress: Progress,
+): Promise<RawLine[]> {
+  const { createWorker } = await import("tesseract.js");
+  const worker = await createWorker("deu", 1, {
+    logger: (m: { status: string; progress: number }) => progress(`Reading page ${page}: ${m.status}`, m.progress),
+  });
+  try {
+    const { data } = await worker.recognize(source, {}, { blocks: true });
+    const lines: RawLine[] = [];
+    for (const block of data.blocks ?? []) {
+      for (const paragraph of block.paragraphs) {
+        for (const line of paragraph.lines) {
+          lines.push({
+            text: line.text,
+            page,
+            confidence: line.confidence / 100,
+            bbox: width && height
+              ? {
