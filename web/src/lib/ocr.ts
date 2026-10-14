@@ -68,3 +68,26 @@ async function recognizeCanvasOrImage(
             confidence: line.confidence / 100,
             bbox: width && height
               ? {
+                  x: line.bbox.x0 / width,
+                  y: line.bbox.y0 / height,
+                  w: (line.bbox.x1 - line.bbox.x0) / width,
+                  h: (line.bbox.y1 - line.bbox.y0) / height,
+                }
+              : undefined,
+          });
+        }
+      }
+    }
+    return lines;
+  } finally {
+    await worker.terminate();
+  }
+}
+
+async function imageSize(file: File): Promise<[number, number]> {
+  const bitmap = await createImageBitmap(file);
+  const size: [number, number] = [bitmap.width, bitmap.height];
+  bitmap.close();
+  return size;
+}
+
