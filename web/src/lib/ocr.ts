@@ -120,3 +120,21 @@ async function readPdf(file: File, progress: Progress): Promise<RawLine[]> {
   return lines;
 }
 
+export async function recognizeFiles(files: File[], progress: Progress): Promise<LetterDocument> {
+  const lines: RawLine[] = [];
+  let page = 0;
+  for (const file of files) {
+    if (file.type === "application/pdf") {
+      const pdfLines = await readPdf(file, progress);
+      const offset = page;
+      pdfLines.forEach((l) => lines.push({ ...l, page: l.page + offset }));
+      page += Math.max(...pdfLines.map((l) => l.page), 0);
+    } else {
+      page += 1;
+      const [w, h] = await imageSize(file);
+      lines.push(...(await recognizeCanvasOrImage(file, page, w, h, progress)));
+    }
+  }
+  progress("Done", 1);
+  return toDocument(lines, "tesseract.js");
+}
