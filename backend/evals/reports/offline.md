@@ -17,7 +17,7 @@ Provider: `fake`. Prompts: `['extract-v3', 'explain-v3', 'guard-v2']`.
 | Metric | Value |
 |---|---|
 | letters | 126 |
-| letter_date_accuracy | 0.9683 |
+| letter_date_accuracy | 1.0 |
 | explicit_deadline_recall | 0.9796 |
 | explicit_deadline_precision | 0.9412 |
 | deadline_exact_match_letters | 0.9365 |
