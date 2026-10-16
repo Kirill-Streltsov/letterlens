@@ -40,3 +40,31 @@ describe("formatting", () => {
   });
 });
 
+describe("OCR normalization", () => {
+  it("numbers lines per page and drops empty lines", () => {
+    const doc = toDocument(
+      [
+        { text: " Finanzamt  Bochum ", page: 1 },
+        { text: "   ", page: 1 },
+        { text: "Seite 2", page: 2 },
+      ],
+      "test",
+    );
+    expect(doc.lines.map((l) => [l.page, l.index, l.text])).toEqual([
+      [1, 1, "Finanzamt Bochum"],
+      [2, 1, "Seite 2"],
+    ]);
+  });
+
+  it("splits pasted text into lines", () => {
+    expect(documentFromText("a\n\nb").lines).toHaveLength(2);
+  });
+});
+
+describe("CSV", () => {
+  it("has a header and one row per entry", () => {
+    expect(toCsv([{ month: "2026-11-01", letter_type: "tax", language: "tr", cases: 2, closed: 1 }])).toBe(
+      "month,letter_type,language,cases,closed\n2026-11-01,tax,tr,2,1\n",
+    );
+  });
+});
