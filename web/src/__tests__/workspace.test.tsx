@@ -22,3 +22,33 @@ const letter = {
     letter_date_status: "needs_check",
     reference_numbers: [],
     deadlines: [
+      { id: "d1", due_date: "2027-02-12", status: "verified", is_estimate: false, description: "Pay", source_text: null, line_ids: ["p1-l2"], rule: null, note: null },
+      { id: "d2", due_date: "2027-03-01", status: "needs_check", is_estimate: true, description: "Objection", source_text: null, line_ids: [], rule: "1 months", note: "Estimated" },
+    ],
+    amounts: [],
+    required_actions: [],
+    grounding_rate: 1,
+  },
+  explanation: null,
+  explanation_languages: [],
+  degraded: true,
+  degraded_reasons: ["extract:BudgetExceededError"],
+  image_urls: [],
+  shares: [],
+} as unknown as LetterView;
+
+const explanation = {
+  language: "ar",
+  headline: "رسالة من مكتب الضرائب",
+  letter_kind: "tax",
+  summary: [{ text: "يجب الدفع.", line_ids: ["p1-l2"] }],
+  next_steps: [],
+  deadline_labels: { d1: "الدفع" },
+  amount_labels: {},
+  citations: [],
+  counselling_hint: "hint",
+  disclaimer: "General information, not legal advice.",
+  faithfulness: null,
+  model: "m",
+};
+
