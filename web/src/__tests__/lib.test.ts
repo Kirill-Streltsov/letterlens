@@ -26,3 +26,17 @@ describe("calendar export", () => {
   });
 });
 
+describe("formatting", () => {
+  it("counts days and urgency", () => {
+    const today = new Date(2026, 10, 26);
+    expect(daysUntil("2026-11-29", today)).toBe(3);
+    expect(urgency(3)).toBe("urgent");
+    expect(urgency(-1)).toBe("past");
+    expect(relativeLabel(1)).toBe("tomorrow");
+  });
+
+  it("formats euro amounts the German way", () => {
+    expect(money("1523.5").replace(/\s/g, " ")).toBe("1.523,50 €");
+  });
+});
+
