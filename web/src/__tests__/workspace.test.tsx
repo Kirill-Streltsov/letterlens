@@ -52,3 +52,20 @@ const explanation = {
   model: "m",
 };
 
+describe("LetterWorkspace", () => {
+  it("marks verified and unverified deadlines differently", () => {
+    render(<LetterWorkspace letter={letter} explanation={null} />);
+    expect(screen.getByText("Found in the letter")).toBeInTheDocument();
+    expect(screen.getByText("Please check")).toBeInTheDocument();
+    expect(screen.getByText(/simple rules/)).toBeInTheDocument();
+  });
+
+  it("highlights the source line of a summary sentence and renders RTL", () => {
+    Element.prototype.scrollIntoView = () => undefined;
+    const { container } = render(<LetterWorkspace letter={letter} explanation={explanation as never} />);
+    fireEvent.mouseEnter(screen.getByText("يجب الدفع."));
+    expect(container.querySelector("#p1-l2")).toHaveClass("hl");
+    expect(container.querySelector("[dir='rtl']")).not.toBeNull();
+    expect(screen.getByText("الدفع")).toBeInTheDocument();
+  });
+});
