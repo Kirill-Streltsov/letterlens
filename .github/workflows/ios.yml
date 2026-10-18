@@ -1,0 +1,33 @@
+name: iOS
+
+# macOS runners cost 10x Linux minutes on private repositories, so this runs only
+# when iOS code or the API contract changes.
+on:
+  pull_request:
+    paths: ["ios/**", "contracts/**"]
+  push:
+    branches: [main]
+    paths: ["ios/**", "contracts/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  core-and-app:
+    runs-on: macos-15
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core package tests (models, API contract fixtures, PKCE, OCR ordering, deadlines)
+        working-directory: ios/Packages/LetterLensCore
+        run: swift test
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+      - name: Build app for the simulator
+        run: |
+          xcodebuild -project LetterLens.xcodeproj -scheme LetterLens \
+            -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build \
+          || ./scripts/typecheck.sh
