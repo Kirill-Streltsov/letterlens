@@ -1,0 +1,5 @@
+// Production values come from the CDK outputs (docs/operations/deployment.md, step "iOS").
+LL_API_BASE_URL = https:/$()/REPLACE_WITH_CLOUDFRONT_DOMAIN
+LL_AUTH_DOMAIN = REPLACE_WITH_AUTH_DOMAIN
+LL_CLIENT_ID = REPLACE_WITH_IOS_CLIENT_ID
+LL_DEV_USER =
