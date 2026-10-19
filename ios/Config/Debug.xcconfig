@@ -1,0 +1,6 @@
+// Local development: API on this Mac, dev authentication (no Cognito).
+// "//" starts a comment in xcconfig files, hence the $() trick in URLs.
+LL_API_BASE_URL = http:/$()/localhost:8000
+LL_AUTH_DOMAIN =
+LL_CLIENT_ID =
+LL_DEV_USER = demo-client
