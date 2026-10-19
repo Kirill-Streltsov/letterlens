@@ -41,3 +41,24 @@ def main() -> None:
         save("question_refused", c.post(f"/v1/letters/{lid}/questions",
                                         json={"question": "Should I object?", "language": "en"},
                                         headers=USER).json())
+        save("question_answered", c.post(f"/v1/letters/{lid}/questions",
+                                         json={"question": "What is an Einspruch?", "language": "en"},
+                                         headers=USER).json())
+        services = c.get("/v1/counselling-services", headers=USER).json()
+        save("counselling_services", services)
+        if services:
+            share = c.post(f"/v1/letters/{lid}/shares", json={"tenant_id": services[0]["id"], "consent": True,
+                                                              "consent_text_version": "share-consent-v1"},
+                           headers=USER).json()
+            save("share", share)
+            c.post(f"/v1/shares/{share['id']}/messages", json={"text": "Hallo"}, headers=USER)
+            save("messages", c.get(f"/v1/shares/{share['id']}/messages", headers=USER).json())
+        save("error", c.get("/v1/letters/00000000-0000-0000-0000-000000000000", headers=USER).json())
+        with app.state.services.container.db.session(DbContext.as_system()) as conn:
+            user = R.resolve_user(conn, "dev:fixture-client")
+            R.delete_user(conn, str(user["id"]))
+    print(f"fixtures written to {OUT}")
+
+
+if __name__ == "__main__":
+    main()
