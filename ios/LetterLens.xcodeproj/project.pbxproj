@@ -1,0 +1,424 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0FF3C9AD55E196568BFFF449 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A858ADA69DC347092245AD0 /* Theme.swift */; };
+		342FDCC9DE09BEFED4A8E091 /* LetterLensCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3861C37D078A05F56F70AF49 /* LetterLensCore */; };
+		39A5EFEEA89FAA2E8A73BAF6 /* DeviceServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94F48A1AE1FEBDCC4D894DFB /* DeviceServices.swift */; };
+		550F2E27C993146B8ED256CF /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64805763CDAC9EC329EF9F9A /* AppModel.swift */; };
+		55F34A191E84AF4442EA1C4B /* LetterLensApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F79B60AB04D1490A02F3B02 /* LetterLensApp.swift */; };
+		5C5B3177FFE11339A99C722C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4AD1AAFA2468B079AEC827A /* SettingsView.swift */; };
+		6437D627DC38826773E8A43B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F909FC77F12F165290294A1B /* Assets.xcassets */; };
+		79667A9DB14FB0E1190B2308 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAC6F10F8683AC20633D15A /* AuthService.swift */; };
+		90747DC069508774617A383F /* NewLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31441BD66908DAF7F872FF79 /* NewLetterView.swift */; };
+		A1C8AE8361301EA10069AE47 /* LetterLens.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 1404D13E13736180C1117517 /* LetterLens.storekit */; };
+		C8395A83F0635943C0B543CB /* LetterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FED439E87EFDDF27B57E5C /* LetterDetailView.swift */; };
+		EEC133BEE71A1CEC8758EA6A /* LettersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39084761FA5CCA9820D3B7C4 /* LettersView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		1404D13E13736180C1117517 /* LetterLens.storekit */ = {isa = PBXFileReference; path = LetterLens.storekit; sourceTree = "<group>"; };
+		2AAC6F10F8683AC20633D15A /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		2B3EB48C4514B15311FD2F1D /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		31441BD66908DAF7F872FF79 /* NewLetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewLetterView.swift; sourceTree = "<group>"; };
+		39084761FA5CCA9820D3B7C4 /* LettersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LettersView.swift; sourceTree = "<group>"; };
+		3D05288ED1082706C1B89FE0 /* LetterLens.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LetterLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		40DD0C9D3A465E445B6F83DF /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		5A858ADA69DC347092245AD0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		64805763CDAC9EC329EF9F9A /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		7F79B60AB04D1490A02F3B02 /* LetterLensApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterLensApp.swift; sourceTree = "<group>"; };
+		7FAF15545DC7216F18D2C102 /* LetterLensCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LetterLensCore; path = Packages/LetterLensCore; sourceTree = SOURCE_ROOT; };
+		94F48A1AE1FEBDCC4D894DFB /* DeviceServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceServices.swift; sourceTree = "<group>"; };
+		BE06B20FB1A35F173C14E4D0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		C8FED439E87EFDDF27B57E5C /* LetterDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterDetailView.swift; sourceTree = "<group>"; };
+		D4AD1AAFA2468B079AEC827A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		F909FC77F12F165290294A1B /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		B5E9846A72E5BA54E04D024F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				342FDCC9DE09BEFED4A8E091 /* LetterLensCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		14B84090A92FA7DBEB71282A = {
+			isa = PBXGroup;
+			children = (
+				B1403C0708C0A222E91C59DA /* Config */,
+				BF0F5FCDF57DB900B06A2205 /* LetterLens */,
+				82DFE20168B4A4530FE716F8 /* Packages */,
+				7B5AF43D350195E763249A8E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		35C92188176441F209054D9F /* App */ = {
+			isa = PBXGroup;
+			children = (
+				64805763CDAC9EC329EF9F9A /* AppModel.swift */,
+				7F79B60AB04D1490A02F3B02 /* LetterLensApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		51B42C1413F3896452136756 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				C8FED439E87EFDDF27B57E5C /* LetterDetailView.swift */,
+				39084761FA5CCA9820D3B7C4 /* LettersView.swift */,
+				31441BD66908DAF7F872FF79 /* NewLetterView.swift */,
+				D4AD1AAFA2468B079AEC827A /* SettingsView.swift */,
+				5A858ADA69DC347092245AD0 /* Theme.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		7B5AF43D350195E763249A8E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3D05288ED1082706C1B89FE0 /* LetterLens.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		82DFE20168B4A4530FE716F8 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				7FAF15545DC7216F18D2C102 /* LetterLensCore */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
+		9C03393051CD24222CE27A67 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				2AAC6F10F8683AC20633D15A /* AuthService.swift */,
+				94F48A1AE1FEBDCC4D894DFB /* DeviceServices.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		B1403C0708C0A222E91C59DA /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				40DD0C9D3A465E445B6F83DF /* Debug.xcconfig */,
+				2B3EB48C4514B15311FD2F1D /* Release.xcconfig */,
+			);
+			path = Config;
+			sourceTree = "<group>";
+		};
+		BF0F5FCDF57DB900B06A2205 /* LetterLens */ = {
+			isa = PBXGroup;
+			children = (
+				BE06B20FB1A35F173C14E4D0 /* Info.plist */,
+				35C92188176441F209054D9F /* App */,
+				D5D351E03F5C1EEB3713FF85 /* Resources */,
+				9C03393051CD24222CE27A67 /* Services */,
+				51B42C1413F3896452136756 /* Views */,
+			);
+			path = LetterLens;
+			sourceTree = "<group>";
+		};
+		D5D351E03F5C1EEB3713FF85 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				F909FC77F12F165290294A1B /* Assets.xcassets */,
+				1404D13E13736180C1117517 /* LetterLens.storekit */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A1DD050D2819212627B33CB4 /* LetterLens */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7A7583EBBE92905E801D56DB /* Build configuration list for PBXNativeTarget "LetterLens" */;
+			buildPhases = (
+				9A444CCCC62D9A5C991F6C7D /* Sources */,
+				413BEB7038BDB6704A545A3D /* Resources */,
+				B5E9846A72E5BA54E04D024F /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LetterLens;
+			packageProductDependencies = (
+				3861C37D078A05F56F70AF49 /* LetterLensCore */,
+			);
+			productName = LetterLens;
+			productReference = 3D05288ED1082706C1B89FE0 /* LetterLens.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		E1D094137F067FE60B5222A2 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 83B4AB13AC1DD11C079E8D79 /* Build configuration list for PBXProject "LetterLens" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 14B84090A92FA7DBEB71282A;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				2B625A8A57C6EEC8AC6F5176 /* XCLocalSwiftPackageReference "Packages/LetterLensCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 7B5AF43D350195E763249A8E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A1DD050D2819212627B33CB4 /* LetterLens */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		413BEB7038BDB6704A545A3D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				6437D627DC38826773E8A43B /* Assets.xcassets in Resources */,
+				A1C8AE8361301EA10069AE47 /* LetterLens.storekit in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9A444CCCC62D9A5C991F6C7D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				550F2E27C993146B8ED256CF /* AppModel.swift in Sources */,
+				79667A9DB14FB0E1190B2308 /* AuthService.swift in Sources */,
+				39A5EFEEA89FAA2E8A73BAF6 /* DeviceServices.swift in Sources */,
+				C8395A83F0635943C0B543CB /* LetterDetailView.swift in Sources */,
+				55F34A191E84AF4442EA1C4B /* LetterLensApp.swift in Sources */,
+				EEC133BEE71A1CEC8758EA6A /* LettersView.swift in Sources */,
+				90747DC069508774617A383F /* NewLetterView.swift in Sources */,
+				5C5B3177FFE11339A99C722C /* SettingsView.swift in Sources */,
+				0FF3C9AD55E196568BFFF449 /* Theme.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		20B3A7AAF0660C06B83704A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = LetterLens/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.letterlens.ios;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		560D24FAE347113E07594B8F /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 2B3EB48C4514B15311FD2F1D /* Release.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		57512C6F0E822504D9034D48 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				INFOPLIST_FILE = LetterLens/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.letterlens.ios;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+		AC247B81FB45DC21F675168E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 40DD0C9D3A465E445B6F83DF /* Debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7A7583EBBE92905E801D56DB /* Build configuration list for PBXNativeTarget "LetterLens" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				20B3A7AAF0660C06B83704A8 /* Debug */,
+				57512C6F0E822504D9034D48 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		83B4AB13AC1DD11C079E8D79 /* Build configuration list for PBXProject "LetterLens" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AC247B81FB45DC21F675168E /* Debug */,
+				560D24FAE347113E07594B8F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		2B625A8A57C6EEC8AC6F5176 /* XCLocalSwiftPackageReference "Packages/LetterLensCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LetterLensCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		3861C37D078A05F56F70AF49 /* LetterLensCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LetterLensCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = E1D094137F067FE60B5222A2 /* Project object */;
+}
