@@ -43,3 +43,33 @@ final class AppModel {
         api = APIClient(baseURL: AppConfig.current.apiBaseURL, auth: auth)
     }
 
+    func start() async {
+        store.onVerifiedTransaction = { [weak self] jws in
+            guard let self else { return }
+            Task { await self.submitTransaction(jws) }
+        }
+        store.listenForTransactions()
+        if await auth.isSignedIn() {
+            await loadProfile()
+        } else {
+            phase = .signedOut
+        }
+    }
+
+    func signIn() async {
+        do {
+            try await auth.signIn()
+            await loadProfile()
+        } catch AuthError.cancelled {
+            return
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func signOut() async {
+        await auth.signOut()
+        me = nil
+        phase = .signedOut
+    }
+
