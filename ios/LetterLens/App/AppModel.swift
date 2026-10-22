@@ -23,3 +23,23 @@ struct AppConfig {
     var usesDevAuth: Bool { !devUser.isEmpty }
 }
 
+@MainActor
+@Observable
+final class AppModel {
+    enum Phase { case loading, signedOut, signedIn }
+
+    var phase: Phase = .loading
+    var me: Me?
+    var languages: [LanguageInfo] = []
+    var error: String?
+
+    let config = AppConfig.current
+    let auth: AuthService
+    let api: APIClient
+    let store = StoreService()
+
+    init() {
+        auth = AuthService(config: AppConfig.current)
+        api = APIClient(baseURL: AppConfig.current.apiBaseURL, auth: auth)
+    }
+
