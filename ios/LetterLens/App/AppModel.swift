@@ -73,3 +73,30 @@ final class AppModel {
         phase = .signedOut
     }
 
+    func loadProfile() async {
+        do {
+            async let profile = api.me()
+            async let langs = api.languages()
+            (me, languages) = try await (profile, langs)
+            phase = .signedIn
+        } catch let apiError as APIError where apiError.status == 401 {
+            await signOut()
+        } catch {
+            self.error = error.localizedDescription
+            phase = .signedOut
+        }
+    }
+
+    func submitTransaction(_ jws: String) async {
+        do {
+            _ = try await api.submitAppStoreTransaction(jws: jws)
+            await loadProfile()
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    func languageName(_ code: String) -> String {
+        languages.first { $0.code == code }?.nativeName ?? code
+    }
+}
