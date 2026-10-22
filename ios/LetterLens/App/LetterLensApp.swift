@@ -15,3 +15,29 @@ struct LetterLensApp: App {
     }
 }
 
+struct RootView: View {
+    @Environment(AppModel.self) private var model
+
+    var body: some View {
+        Group {
+            switch model.phase {
+            case .loading:
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).paperBackground()
+            case .signedOut:
+                SignInView()
+            case .signedIn:
+                TabView {
+                    NavigationStack { LettersView() }
+                        .tabItem { Label("Letters", systemImage: "envelope.open") }
+                    NavigationStack { SettingsView() }
+                        .tabItem { Label("Settings", systemImage: "gearshape") }
+                }
+            }
+        }
+        .alert("Something went wrong", isPresented: Binding(get: { model.error != nil }, set: { if !$0 { model.error = nil } })) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.error ?? "")
+        }
+    }
+}
