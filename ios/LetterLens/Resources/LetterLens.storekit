@@ -1,0 +1,23 @@
+{
+  "identifier" : "4F7A2C1E",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : { "_applicationInternalID" : "0", "_developerTeamID" : "", "_lastSynchronizedDate" : 0 },
+  "subscriptionGroups" : [
+    {
+      "id" : "21000001",
+      "localizations" : [],
+      "name" : "LetterLens Plus",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [], "codeOffers" : [], "displayPrice" : "4.99", "familyShareable" : true,
+          "groupNumber" : 1, "internalID" : "21000002", "introductoryOffer" : null,
+          "localizations" : [ { "description" : "Unlimited letters, all languages, archive", "displayName" : "LetterLens Plus", "locale" : "en_US" } ],
+          "productID" : "app.letterlens.plus.monthly", "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Plus monthly", "subscriptionGroupID" : "21000001", "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : { "major" : 4, "minor" : 0 }
+}
