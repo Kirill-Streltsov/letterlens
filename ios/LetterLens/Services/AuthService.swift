@@ -79,3 +79,25 @@ actor AuthService: AuthHeaderProvider {
         keychain.delete("dev")
     }
 
+    private func exchange(_ params: [String: String]) async throws -> StoredTokens {
+        var request = URLRequest(url: URL(string: "https://\(config.authDomain)/oauth2/token")!)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+        var form = URLComponents()
+        form.queryItems = (params.merging(["client_id": config.clientId]) { $1 }).map { URLQueryItem(name: $0.key, value: $0.value) }
+        request.httpBody = form.percentEncodedQuery?.data(using: .utf8)
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw AuthError.tokenExchangeFailed }
+        struct TokenResponse: Decodable { let access_token: String; let refresh_token: String?; let expires_in: Double }
+        let body = try JSONDecoder().decode(TokenResponse.self, from: data)
+        let stored = StoredTokens(
+            accessToken: body.access_token,
+            refreshToken: body.refresh_token ?? params["refresh_token"],
+            expiresAt: Date().addingTimeInterval(body.expires_in)
+        )
+        tokens = stored
+        keychain.write("tokens", try JSONEncoder().encode(stored))
+        return stored
+    }
+}
+
