@@ -48,3 +48,34 @@ actor AuthService: AuthHeaderProvider {
         return ["Authorization": "Bearer \(current.accessToken)"]
     }
 
+    func signIn() async throws {
+        if config.usesDevAuth {
+            keychain.write("dev", Data(config.devUser.utf8))
+            return
+        }
+        guard !config.authDomain.isEmpty, !config.clientId.isEmpty else { throw AuthError.misconfigured }
+        let verifier = PKCE.makeVerifier()
+        var components = URLComponents(string: "https://\(config.authDomain)/oauth2/authorize")!
+        components.queryItems = [
+            .init(name: "response_type", value: "code"),
+            .init(name: "client_id", value: config.clientId),
+            .init(name: "redirect_uri", value: redirectURI),
+            .init(name: "scope", value: "openid email profile"),
+            .init(name: "code_challenge_method", value: "S256"),
+            .init(name: "code_challenge", value: PKCE.challenge(for: verifier)),
+        ]
+        let callback = try await WebAuthenticator.authenticate(url: components.url!, scheme: "letterlens")
+        guard let code = URLComponents(url: callback, resolvingAgainstBaseURL: false)?
+            .queryItems?.first(where: { $0.name == "code" })?.value else { throw AuthError.cancelled }
+        _ = try await exchange([
+            "grant_type": "authorization_code", "code": code,
+            "code_verifier": verifier, "redirect_uri": redirectURI,
+        ])
+    }
+
+    func signOut() {
+        tokens = nil
+        keychain.delete("tokens")
+        keychain.delete("dev")
+    }
+
