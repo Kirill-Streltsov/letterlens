@@ -101,3 +101,32 @@ actor AuthService: AuthHeaderProvider {
     }
 }
 
+/// Bridges ASWebAuthenticationSession to async/await.
+@MainActor
+final class WebAuthenticator: NSObject, ASWebAuthenticationPresentationContextProviding {
+    private static var current: WebAuthenticator?
+    private var session: ASWebAuthenticationSession?
+
+    static func authenticate(url: URL, scheme: String) async throws -> URL {
+        let authenticator = WebAuthenticator()
+        current = authenticator
+        defer { current = nil }
+        return try await withCheckedThrowingContinuation { continuation in
+            let session = ASWebAuthenticationSession(url: url, callbackURLScheme: scheme) { callback, error in
+                if let callback { continuation.resume(returning: callback) } else {
+                    continuation.resume(throwing: (error as? ASWebAuthenticationSessionError)?.code == .canceledLogin
+                        ? AuthError.cancelled : (error ?? AuthError.cancelled))
+                }
+            }
+            session.presentationContextProvider = authenticator
+            session.prefersEphemeralWebBrowserSession = true
+            authenticator.session = session
+            session.start()
+        }
+    }
+
+    func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first ?? ASPresentationAnchor()
+    }
+}
+
