@@ -77,3 +77,24 @@ struct DocumentScanner: UIViewControllerRepresentable {
     }
 }
 
+// MARK: - Calendar and reminders
+
+enum ReminderService {
+    /// Adds an all-day event with an alarm three days before. Needs write-only calendar access.
+    static func addToCalendar(title: String, iso: String, notes: String) async throws {
+        let store = EKEventStore()
+        guard try await store.requestWriteOnlyAccessToEvents() else {
+            throw NSError(domain: "LetterLens", code: 1, userInfo: [NSLocalizedDescriptionKey: "Calendar access was not allowed."])
+        }
+        guard let date = Deadlines.date(fromISO: iso) else { return }
+        let event = EKEvent(eventStore: store)
+        event.title = title
+        event.notes = notes
+        event.isAllDay = true
+        event.startDate = Calendar.current.startOfDay(for: date)
+        event.endDate = event.startDate
+        event.calendar = store.defaultCalendarForNewEvents
+        event.addAlarm(EKAlarm(relativeOffset: -3 * 86_400 + 9 * 3_600))
+        try store.save(event, span: .thisEvent)
+    }
+
