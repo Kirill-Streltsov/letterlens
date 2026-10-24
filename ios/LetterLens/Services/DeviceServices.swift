@@ -98,3 +98,37 @@ enum ReminderService {
         try store.save(event, span: .thisEvent)
     }
 
+    /// Local notification on the morning three days before the deadline.
+    static func scheduleReminder(id: String, title: String, iso: String) async throws -> Date? {
+        let center = UNUserNotificationCenter.current()
+        guard try await center.requestAuthorization(options: [.alert, .sound]) else { return nil }
+        guard let when = Deadlines.reminderDate(for: iso) else { return nil }
+        let content = UNMutableNotificationContent()
+        content.title = "Deadline soon"
+        content.body = title
+        content.sound = .default
+        let parts = Calendar.current.dateComponents([.year, .month, .day, .hour, .minute], from: when)
+        let request = UNNotificationRequest(identifier: id, content: content,
+                                            trigger: UNCalendarNotificationTrigger(dateMatching: parts, repeats: false))
+        try await center.add(request)
+        return when
+    }
+}
+
+// MARK: - StoreKit 2
+
+@MainActor
+final class StoreService {
+    static let plusProductID = "app.letterlens.plus.monthly"
+    var onVerifiedTransaction: ((String) -> Void)?
+    private var updates: Task<Void, Never>?
+
+    func listenForTransactions() {
+        updates?.cancel()
+        updates = Task { [weak self] in
+            for await result in StoreKit.Transaction.updates {
+                await self?.handle(result)
+            }
+        }
+    }
+
