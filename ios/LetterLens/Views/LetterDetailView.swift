@@ -176,3 +176,32 @@ struct DeadlineCard: View {
     let letterId: String
     let notify: (String) -> Void
 
+    var body: some View {
+        HStack(spacing: 0) {
+            Rectangle().fill(deadline.status == .verified ? Theme.ok : Theme.check).frame(width: 5)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Pill(text: deadline.status == .verified ? "Found in the letter" : "Please check",
+                         kind: deadline.status == .verified ? .ok : .check)
+                    if let pill = Pill.deadline(iso: deadline.dueDate, status: deadline.status.rawValue) { pill }
+                }
+                Text(formatDate(deadline.dueDate)).font(Theme.title(22))
+                Text(label)
+                if let note = deadline.note { Text(note).font(.caption).foregroundStyle(Theme.inkSoft) }
+                if let rule = deadline.rule {
+                    DisclosureGroup("How this date was estimated") { Text(rule).font(.caption) }.font(.caption)
+                }
+                if let iso = deadline.dueDate {
+                    HStack {
+                        Button("Add to calendar") {
+                            Task {
+                                do {
+                                    let prefix = deadline.status == .verified ? "" : "PLEASE CHECK THIS DATE. "
+                                    try await ReminderService.addToCalendar(title: label, iso: iso,
+                                                                            notes: prefix + (deadline.sourceText ?? ""))
+                                    notify("Added to your calendar")
+                                } catch { notify(error.localizedDescription) }
+                            }
+                        }
+                        Button("Remind me") {
+                            Task {
