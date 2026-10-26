@@ -102,3 +102,28 @@ struct LetterDetailView: View {
                                 Text(amount.status == .verified ? "found in the letter" : "please check")
                                     .font(.caption).foregroundStyle(amount.status == .verified ? Theme.inkSoft : Theme.check)
                             }
+                            Spacer()
+                            Text(formatMoney(amount.value, amount.currency)).font(.system(.headline, design: .serif))
+                        }
+                    }
+                }
+                .card()
+            }
+        }
+        if let explanation = letter.explanation, !explanation.nextSteps.isEmpty {
+            NextStepsCard(explanation: explanation)
+        }
+        if letter.status == .ready {
+            QuestionCard(letterId: letter.id, language: language)
+            Button { showShare = true } label: {
+                Label(letter.activeShare == nil ? "Talk to a counsellor" : "Messages with \(letter.activeShare!.tenantName)",
+                      systemImage: "person.2.wave.2")
+                    .frame(maxWidth: .infinity).padding(.vertical, 6)
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        if let disclaimer = letter.explanation?.disclaimer {
+            Text(disclaimer).font(.footnote).foregroundStyle(Theme.inkSoft)
+        }
+    }
+
