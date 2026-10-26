@@ -24,3 +24,29 @@ struct LetterDetailView: View {
             }
             .padding()
         }
+        .paperBackground()
+        .navigationTitle(LetterTypes.names[letter?.classification?.letterType ?? "other"] ?? "Letter")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Picker("Language", selection: $language) {
+                        ForEach(model.languages) { Text($0.nativeName).tag($0.code) }
+                    }
+                    Button { showOriginal = true } label: { Label("Original letter", systemImage: "doc.text") }
+                    Button(role: .destructive) { confirmDelete = true } label: { Label("Delete letter", systemImage: "trash") }
+                } label: { Image(systemName: "ellipsis.circle") }
+            }
+        }
+        .sheet(isPresented: $showOriginal) { OriginalSheet(lines: letter?.lines ?? [], highlighted: highlighted) }
+        .sheet(isPresented: $showShare, onDismiss: { Task { await load() } }) {
+            if let letter { ShareSheet(letter: letter) }
+        }
+        .confirmationDialog("Delete this letter and its results?", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                Task {
+                    try? await model.api.deleteLetter(id: letterId)
+                    dismiss()
+                }
+            }
+        }
