@@ -205,3 +205,22 @@ struct DeadlineCard: View {
                         }
                         Button("Remind me") {
                             Task {
+                                let when = try? await ReminderService.scheduleReminder(id: "\(letterId)-\(deadline.id)",
+                                                                                     title: label, iso: iso)
+                                notify(when.map { "Reminder on \($0.formatted(date: .abbreviated, time: .shortened))" }
+                                       ?? "Reminders are turned off for LetterLens")
+                            }
+                        }
+                    }
+                    .buttonStyle(.bordered).font(.callout)
+                }
+            }
+            .padding(14)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.card, in: RoundedRectangle(cornerRadius: 14))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Theme.line))
+    }
+}
+
