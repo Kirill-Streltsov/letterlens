@@ -132,3 +132,27 @@ final class StoreService {
         }
     }
 
+    func plusProduct() async throws -> Product? {
+        try await Product.products(for: [Self.plusProductID]).first
+    }
+
+    /// The app account token binds the purchase to the LetterLens user id; the server checks it.
+    func purchase(_ product: Product, userId: String) async throws {
+        var options: Set<Product.PurchaseOption> = []
+        if let token = UUID(uuidString: userId) { options.insert(.appAccountToken(token)) }
+        if case .success(let result) = try await product.purchase(options: options) {
+            await handle(result)
+        }
+    }
+
+    func restore() async throws {
+        try await AppStore.sync()
+        for await result in StoreKit.Transaction.currentEntitlements { await handle(result) }
+    }
+
+    private func handle(_ result: VerificationResult<StoreKit.Transaction>) async {
+        guard case .verified(let transaction) = result else { return }
+        onVerifiedTransaction?(result.jwsRepresentation)
+        await transaction.finish()
+    }
+}
