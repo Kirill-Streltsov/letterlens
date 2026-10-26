@@ -50,3 +50,29 @@ struct LetterDetailView: View {
                 }
             }
         }
+        .overlay(alignment: .bottom) {
+            if let toast {
+                Text(toast).padding(12).background(.thinMaterial, in: Capsule()).padding(.bottom, 20)
+                    .task { try? await Task.sleep(for: .seconds(2.5)); self.toast = nil }
+            }
+        }
+        .onChange(of: language) { _, code in Task { await switchLanguage(code) } }
+        .task {
+            language = model.me?.preferredLanguage ?? "en"
+            await load()
+        }
+    }
+
+    @ViewBuilder
+    private func content(_ letter: LetterView) -> some View {
+        if letter.status != .ready {
+            HStack { ProgressView(); Text(letter.status == .failed ? "Processing failed." : "Reading the letter…") }
+                .card()
+                .task(id: letter.status) {
+                    guard letter.status != .failed else { return }
+                    try? await Task.sleep(for: .seconds(1.5))
+                    await load()
+                }
+        }
+        if letter.degraded {
+            Text("The assistant was not fully available. This result uses simple rules; please check everything carefully.")
