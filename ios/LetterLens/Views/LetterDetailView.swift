@@ -76,3 +76,29 @@ struct LetterDetailView: View {
         }
         if letter.degraded {
             Text("The assistant was not fully available. This result uses simple rules; please check everything carefully.")
+                .font(.callout).foregroundStyle(Theme.check).card()
+        }
+        if let explanation = letter.explanation {
+            SummaryCard(explanation: explanation, sender: letter.facts?.sender.value) { ids in
+                highlighted = Set(ids)
+                showOriginal = true
+            }
+        }
+        if let facts = letter.facts {
+            if !facts.deadlines.isEmpty {
+                Text("Deadlines").font(Theme.title(22))
+                ForEach(facts.deadlines) { deadline in
+                    DeadlineCard(deadline: deadline, label: letter.explanation?.deadlineLabels[deadline.id] ?? deadline.description,
+                                 letterId: letter.id) { toast = $0 }
+                }
+            }
+            if !facts.amounts.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Amounts").font(Theme.title(20))
+                    ForEach(facts.amounts) { amount in
+                        HStack(alignment: .top) {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(letter.explanation?.amountLabels[amount.id] ?? amount.description)
+                                Text(amount.status == .verified ? "found in the letter" : "please check")
+                                    .font(.caption).foregroundStyle(amount.status == .verified ? Theme.inkSoft : Theme.check)
+                            }
