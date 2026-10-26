@@ -149,3 +149,30 @@ struct SummaryCard: View {
     let sender: String?
     let showSource: ([String]) -> Void
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if let sender { Text(sender).font(.caption).foregroundStyle(Theme.inkSoft) }
+            Text(explanation.headline).font(Theme.title(24)).foregroundStyle(Theme.ink)
+            Text(explanation.letterKind).foregroundStyle(Theme.inkSoft)
+            ForEach(Array(explanation.summary.enumerated()), id: \.offset) { _, sentence in
+                Button { showSource(sentence.lineIds) } label: {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Circle().fill(Theme.marker).frame(width: 8, height: 8)
+                        Text(sentence.text).multilineTextAlignment(.leading).foregroundStyle(Theme.ink)
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityHint("Shows this sentence in the original letter")
+            }
+        }
+        .environment(\.layoutDirection, explanation.language == "ar" ? .rightToLeft : .leftToRight)
+        .card()
+    }
+}
+
+struct DeadlineCard: View {
+    let deadline: VerifiedDeadline
+    let label: String
+    let letterId: String
+    let notify: (String) -> Void
+
