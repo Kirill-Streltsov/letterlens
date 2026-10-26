@@ -127,3 +127,25 @@ struct LetterDetailView: View {
         }
     }
 
+    private func load() async {
+        do { letter = try await model.api.letter(id: letterId, language: language) } catch {
+            model.error = error.localizedDescription
+        }
+    }
+
+    private func switchLanguage(_ code: String) async {
+        guard let letter, !letter.explanationLanguages.contains(code) else { await load(); return }
+        do {
+            try await model.api.requestExplanation(id: letterId, language: code)
+            self.letter?.status = .processing
+        } catch {
+            model.error = error.localizedDescription
+        }
+    }
+}
+
+struct SummaryCard: View {
+    let explanation: Explanation
+    let sender: String?
+    let showSource: ([String]) -> Void
+
