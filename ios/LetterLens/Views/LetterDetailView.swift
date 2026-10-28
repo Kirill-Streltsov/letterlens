@@ -316,3 +316,20 @@ struct OriginalSheet: View {
     }
 }
 
+struct MessageBubble: View {
+    let message: Message
+    private var mine: Bool { message.authorRole == "client" }
+
+    var body: some View {
+        VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
+            Text(message.text)
+                .padding(10)
+                .background(mine ? Theme.ink.opacity(0.12) : Theme.paperDeep, in: RoundedRectangle(cornerRadius: 12))
+            if let original = message.originalText {
+                Text(original).font(.caption2).foregroundStyle(Theme.inkSoft)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
+    }
+}
+
