@@ -360,3 +360,29 @@ struct ShareSheet: View {
                                 Task {
                                     if let sent = try? await model.api.sendMessage(shareId: share.id, text: text) {
                                         messages.append(sent); text = ""
+                                    }
+                                }
+                            }.disabled(text.isEmpty)
+                        }
+                    }
+                    Section {
+                        Button("Stop sharing", role: .destructive) {
+                            Task { try? await model.api.revokeShare(id: share.id); dismiss() }
+                        }
+                    }
+                } else {
+                    Section {
+                        Picker("Counselling service", selection: $selected) {
+                            Text("Choose…").tag(String?.none)
+                            ForEach(services) { service in
+                                Text(Self.label(for: service)).tag(Optional(service.id))
+                            }
+                        }
+                        Toggle(isOn: $consent) {
+                            Text("I agree that this counselling service can see the text of this letter, the summary and my messages for 30 days. I can stop sharing at any time.")
+                                .font(.callout)
+                        }
+                    } footer: {
+                        Text("Free counselling services can check your individual case. Consent version share-consent-v1.")
+                    }
+                    Section {
