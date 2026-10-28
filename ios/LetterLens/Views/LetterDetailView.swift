@@ -255,3 +255,31 @@ struct QuestionCard: View {
     @State private var answer: QuestionResponse?
     @State private var busy = false
 
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Ask about this letter").font(Theme.title(20))
+            HStack {
+                TextField("What does “Bekanntgabe” mean?", text: $question).textFieldStyle(.roundedBorder)
+                Button("Ask") {
+                    busy = true
+                    Task {
+                        defer { busy = false }
+                        do { answer = try await model.api.ask(id: letterId, question: question, language: language) } catch {
+                            model.error = error.localizedDescription
+                        }
+                    }
+                }
+                .disabled(busy || question.count < 3)
+            }
+            if let answer {
+                Text(answer.answer ?? "I could not check this answer against the letter. Please ask a counsellor.")
+                    .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+                    .background(answer.refused ? Theme.check.opacity(0.15) : Theme.paperDeep, in: RoundedRectangle(cornerRadius: 10))
+            }
+            Text("General information only. LetterLens does not tell you what to decide in your case.")
+                .font(.caption).foregroundStyle(Theme.inkSoft)
+        }
+        .card()
+    }
+}
+
