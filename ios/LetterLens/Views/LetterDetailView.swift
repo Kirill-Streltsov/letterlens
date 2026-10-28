@@ -283,3 +283,36 @@ struct QuestionCard: View {
     }
 }
 
+struct OriginalSheet: View {
+    let lines: [OcrLine]
+    let highlighted: Set<String>
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(lines) { line in
+                            Text(line.text)
+                                .font(.system(.body, design: .serif))
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(highlighted.contains(line.id) ? Theme.marker : .clear, in: RoundedRectangle(cornerRadius: 4))
+                                .id(line.id)
+                        }
+                    }
+                    .padding()
+                    .card()
+                    .padding()
+                }
+                .onAppear { if let first = lines.first(where: { highlighted.contains($0.id) }) { proxy.scrollTo(first.id, anchor: .center) } }
+            }
+            .paperBackground()
+            .navigationTitle("Original letter")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { Button("Done") { dismiss() } }
+        }
+    }
+}
+
