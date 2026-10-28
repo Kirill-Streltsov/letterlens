@@ -386,3 +386,29 @@ struct ShareSheet: View {
                         Text("Free counselling services can check your individual case. Consent version share-consent-v1.")
                     }
                     Section {
+                        Button("Share") {
+                            Task {
+                                guard let selected else { return }
+                                do { _ = try await model.api.share(letterId: letter.id, tenantId: selected); dismiss() } catch {
+                                    model.error = error.localizedDescription
+                                }
+                            }
+                        }
+                        .disabled(selected == nil || !consent)
+                    }
+                }
+            }
+            .paperBackground()
+            .navigationTitle("Counselling")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar { Button("Close") { dismiss() } }
+            .task {
+                if let share = letter.activeShare {
+                    messages = (try? await model.api.messages(shareId: share.id)) ?? []
+                } else {
+                    services = (try? await model.api.counsellingServices()) ?? []
+                }
+            }
+        }
+    }
+}
