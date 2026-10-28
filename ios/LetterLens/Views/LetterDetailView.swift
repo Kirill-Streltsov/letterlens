@@ -333,3 +333,30 @@ struct MessageBubble: View {
     }
 }
 
+struct ShareSheet: View {
+    static func label(for service: CounsellingService) -> String {
+        guard let city = service.city else { return service.name }
+        return "\(service.name) (\(city))"
+    }
+
+    let letter: LetterView
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var services: [CounsellingService] = []
+    @State private var selected: String?
+    @State private var consent = false
+    @State private var messages: [Message] = []
+    @State private var text = ""
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                if let share = letter.activeShare {
+                    Section("Shared with \(share.tenantName)") {
+                        ForEach(messages) { MessageBubble(message: $0) }
+                        HStack {
+                            TextField("Message", text: $text)
+                            Button("Send") {
+                                Task {
+                                    if let sent = try? await model.api.sendMessage(shareId: share.id, text: text) {
+                                        messages.append(sent); text = ""
