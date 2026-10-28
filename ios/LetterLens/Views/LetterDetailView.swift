@@ -224,3 +224,34 @@ struct DeadlineCard: View {
     }
 }
 
+struct NextStepsCard: View {
+    let explanation: Explanation
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("What people usually do next").font(Theme.title(20))
+            ForEach(Array(explanation.nextSteps.enumerated()), id: \.offset) { _, step in
+                Text("• \(step.text) " + step.citationIds.map { "[\($0.dropFirst())]" }.joined())
+            }
+            ForEach(explanation.citations) { citation in
+                if let url = URL(string: citation.sourceUrl) {
+                    Link("[\(citation.id.dropFirst())] \(citation.title) (\(citation.sourceName))", destination: url)
+                        .font(.caption)
+                }
+            }
+            Text(explanation.counsellingHint).font(.callout).padding(10)
+                .background(Theme.paperDeep, in: RoundedRectangle(cornerRadius: 10))
+        }
+        .environment(\.layoutDirection, explanation.language == "ar" ? .rightToLeft : .leftToRight)
+        .card()
+    }
+}
+
+struct QuestionCard: View {
+    let letterId: String
+    let language: String
+    @Environment(AppModel.self) private var model
+    @State private var question = ""
+    @State private var answer: QuestionResponse?
+    @State private var busy = false
+
