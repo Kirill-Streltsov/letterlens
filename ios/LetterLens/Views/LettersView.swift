@@ -82,3 +82,32 @@ struct LettersView: View {
     }
 }
 
+struct LetterRow: View {
+    let letter: LetterListItem
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: LetterTypes.symbols[letter.letterType ?? "other"] ?? "envelope")
+                .font(.title3).foregroundStyle(Theme.ink).frame(width: 40, height: 40)
+                .background(Theme.marker.opacity(0.5), in: Circle())
+            VStack(alignment: .leading, spacing: 4) {
+                Text(letter.headline ?? letter.sender ?? "Reading the letter…")
+                    .font(.system(.headline, design: .serif)).foregroundStyle(Theme.ink).lineLimit(2)
+                Text(LetterTypes.names[letter.letterType ?? "other"] ?? "Letter").font(.caption).foregroundStyle(Theme.inkSoft)
+                HStack {
+                    if letter.status != .ready { Pill(text: letter.status.rawValue, kind: .check) }
+                    if letter.shared { Pill(text: "shared", kind: .ok) }
+                }
+            }
+            Spacer()
+            if let next = letter.nextDeadline, let pill = Pill.deadline(iso: next.dueDate, status: next.status) {
+                VStack(alignment: .trailing, spacing: 4) {
+                    pill
+                    Text(formatDate(next.dueDate)).font(.caption2).foregroundStyle(Theme.inkSoft)
+                }
+            }
+        }
+        .card()
+        .accessibilityElement(children: .combine)
+    }
+}
