@@ -54,3 +54,31 @@ struct LettersView: View {
                             .multilineTextAlignment(.center).foregroundStyle(Theme.inkSoft)
                         Button("Scan a letter") { showNew = true }.buttonStyle(.borderedProminent)
                     }
+                    .card().padding(.top, 24)
+                }
+                ForEach(letters ?? []) { letter in
+                    NavigationLink(value: letter.id) { LetterRow(letter: letter) }.buttonStyle(.plain)
+                }
+            }
+            .padding()
+        }
+        .paperBackground()
+        .navigationTitle("My letters")
+        .navigationDestination(for: String.self) { LetterDetailView(letterId: $0) }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showNew = true } label: { Label("New letter", systemImage: "doc.viewfinder") }
+            }
+        }
+        .sheet(isPresented: $showNew, onDismiss: { Task { await load() } }) {
+            NavigationStack { NewLetterView() }
+        }
+        .refreshable { await load() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        do { letters = try await model.api.letters() } catch { model.error = error.localizedDescription; letters = letters ?? [] }
+    }
+}
+
