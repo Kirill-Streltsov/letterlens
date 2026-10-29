@@ -47,3 +47,28 @@ struct NewLetterView: View {
                 }
             }
 
+            if let working {
+                Section { HStack { ProgressView(); Text(working) } }
+            }
+        }
+        .paperBackground()
+        .navigationTitle("New letter")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+            ToolbarItem(placement: .confirmationAction) {
+                Button("Explain") { Task { await submit() } }
+                    .disabled(working != nil || (document == nil && pasted.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty))
+            }
+        }
+        .fullScreenCover(isPresented: $showScanner) {
+            DocumentScanner(onFinish: { images in
+                showScanner = false
+                Task { await recognize(images) }
+            }, onCancel: { showScanner = false })
+            .ignoresSafeArea()
+        }
+        .onChange(of: photos) { _, items in Task { await loadPhotos(items) } }
+        .onAppear { language = model.me?.preferredLanguage ?? "en" }
+    }
+
