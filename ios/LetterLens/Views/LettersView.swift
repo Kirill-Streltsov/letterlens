@@ -32,3 +32,25 @@ struct SignInView: View {
     }
 }
 
+struct LettersView: View {
+    @Environment(AppModel.self) private var model
+    @State private var letters: [LetterListItem]?
+    @State private var showNew = false
+
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                if let me = model.me, let limit = me.lettersLimit {
+                    Text("\(max(limit - me.lettersThisMonth, 0)) of \(limit) free letters left this month")
+                        .font(.footnote).foregroundStyle(Theme.inkSoft).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if letters == nil {
+                    ProgressView().padding(.top, 60)
+                } else if letters?.isEmpty == true {
+                    VStack(spacing: 16) {
+                        EnvelopeArt()
+                        Text("No letters yet").font(Theme.title(22))
+                        Text("Scan your first letter. It is deleted automatically after 30 days.")
+                            .multilineTextAlignment(.center).foregroundStyle(Theme.inkSoft)
+                        Button("Scan a letter") { showNew = true }.buttonStyle(.borderedProminent)
+                    }
