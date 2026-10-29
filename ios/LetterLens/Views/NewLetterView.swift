@@ -26,3 +26,24 @@ struct NewLetterView: View {
                 Text("Text recognition runs on this iPhone. Only the text is sent, processed in the EU and deleted after 30 days.")
             }
 
+            if let document {
+                Section("Recognized text (\(document.lines.count) lines)") {
+                    Text(document.lines.map(\.text).joined(separator: "\n"))
+                        .font(.system(.footnote, design: .serif)).textSelection(.enabled)
+                        .environment(\.locale, Locale(identifier: "de"))
+                    Button("Discard", role: .destructive) { self.document = nil }
+                }
+            } else {
+                Section("Or paste the text") {
+                    TextEditor(text: $pasted).frame(minHeight: 120)
+                }
+            }
+
+            Section {
+                Picker("Explain in", selection: $language) {
+                    ForEach(model.languages) { lang in
+                        Text(lang.status == "experimental" ? "\(lang.nativeName) · beta" : lang.nativeName).tag(lang.code)
+                    }
+                }
+            }
+
