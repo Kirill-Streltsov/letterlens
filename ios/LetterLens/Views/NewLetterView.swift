@@ -84,3 +84,32 @@ struct NewLetterView: View {
         await recognize(images)
     }
 
+    private func recognize(_ images: [CGImage]) async {
+        working = "Reading the letter on this iPhone…"
+        defer { working = nil }
+        do {
+            let result = try await TextRecognizer.recognize(images)
+            if result.lines.isEmpty {
+                model.error = "No text was found. Try again with more light and the whole page in view."
+            } else {
+                document = result
+            }
+        } catch {
+            model.error = error.localizedDescription
+        }
+    }
+
+    private func submit() async {
+        let doc = document ?? DocumentBuilder.fromText(pasted)
+        guard !doc.lines.isEmpty else { return }
+        working = "Sending…"
+        defer { working = nil }
+        do {
+            _ = try await model.api.createLetter(doc, language: language, idempotencyKey: idempotencyKey)
+            await model.loadProfile()
+            dismiss()
+        } catch {
+            model.error = error.localizedDescription
+        }
+    }
+}
