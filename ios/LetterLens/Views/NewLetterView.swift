@@ -72,3 +72,15 @@ struct NewLetterView: View {
         .onAppear { language = model.me?.preferredLanguage ?? "en" }
     }
 
+    private func loadPhotos(_ items: [PhotosPickerItem]) async {
+        guard !items.isEmpty else { return }
+        working = "Loading photos…"
+        var images: [CGImage] = []
+        for item in items {
+            if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data)?.cgImage {
+                images.append(image)
+            }
+        }
+        await recognize(images)
+    }
+
