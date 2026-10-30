@@ -26,3 +26,30 @@ struct SettingsView: View {
                 }
             }
 
+            Section {
+                if model.me?.plan == "plus" {
+                    Label("LetterLens Plus is active", systemImage: "checkmark.seal.fill").foregroundStyle(Theme.ok)
+                } else if let product {
+                    Button("Get Plus: unlimited letters, \(product.displayPrice) per month") {
+                        Task {
+                            do { try await model.store.purchase(product, userId: model.me?.id ?? "") } catch {
+                                model.error = error.localizedDescription
+                            }
+                        }
+                    }
+                }
+                Button("Restore purchases") { Task { try? await model.store.restore() } }
+            } header: {
+                Text("Plan")
+            } footer: {
+                if let me = model.me, let limit = me.lettersLimit {
+                    Text("Free plan: \(me.lettersThisMonth) of \(limit) letters used this month.")
+                }
+            }
+
+            Section("Your data") {
+                Text("Letters are deleted automatically after 30 days. Photos never leave this iPhone.")
+                    .font(.callout).foregroundStyle(Theme.inkSoft)
+                Button("Delete my account and all letters", role: .destructive) { confirmDelete = true }
+            }
+
