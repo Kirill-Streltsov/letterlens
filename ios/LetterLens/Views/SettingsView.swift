@@ -53,3 +53,27 @@ struct SettingsView: View {
                 Button("Delete my account and all letters", role: .destructive) { confirmDelete = true }
             }
 
+            Section {
+                Button("Sign out") { Task { await model.signOut() } }
+            } footer: {
+                Text("LetterLens gives general information, not legal advice.")
+            }
+        }
+        .paperBackground()
+        .navigationTitle("Settings")
+        .confirmationDialog("Delete your account and all letters? This cannot be undone.", isPresented: $confirmDelete,
+                            titleVisibility: .visible) {
+            Button("Delete account", role: .destructive) {
+                Task {
+                    try? await model.api.deleteAccount()
+                    await model.signOut()
+                }
+            }
+        }
+        .task {
+            name = model.me?.displayName ?? ""
+            language = model.me?.preferredLanguage ?? "en"
+            product = try? await model.store.plusProduct()
+        }
+    }
+}
