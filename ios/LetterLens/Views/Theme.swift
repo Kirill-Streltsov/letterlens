@@ -51,3 +51,30 @@ struct CardStyle: ViewModifier {
     }
 }
 
+extension View {
+    func paperBackground() -> some View { modifier(PaperBackground()) }
+    func card() -> some View { modifier(CardStyle()) }
+}
+
+struct Pill: View {
+    enum Kind { case neutral, ok, check, urgent }
+    let text: String
+    var kind: Kind = .neutral
+
+    var body: some View {
+        Text(text)
+            .font(.caption.weight(.semibold))
+            .padding(.horizontal, 10).padding(.vertical, 3)
+            .foregroundStyle(foreground)
+            .background(background, in: Capsule())
+    }
+
+    private var foreground: Color {
+        switch kind {
+        case .neutral: Theme.inkSoft
+        case .ok: Theme.ok
+        case .check: Theme.check
+        case .urgent: .white
+        }
+    }
+
