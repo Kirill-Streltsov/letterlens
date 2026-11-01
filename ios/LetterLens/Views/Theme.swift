@@ -22,3 +22,32 @@ enum Theme {
     }
 }
 
+extension UIColor {
+    convenience init(hex: UInt32) {
+        self.init(red: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                  blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+    }
+}
+
+struct PaperBackground: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .background(
+                LinearGradient(colors: [Theme.paperDeep, Theme.paper], startPoint: .top, endPoint: .center)
+                    .ignoresSafeArea()
+            )
+    }
+}
+
+struct CardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.card, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.line))
+            .shadow(color: Theme.ink.opacity(0.08), radius: 10, y: 4)
+    }
+}
+
