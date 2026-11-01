@@ -98,3 +98,31 @@ struct Pill: View {
     }
 }
 
+/// Envelope under a magnifier: the brand illustration for empty states.
+struct EnvelopeArt: View {
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 12).fill(Theme.card).frame(width: 170, height: 115)
+                .overlay(RoundedRectangle(cornerRadius: 12).stroke(Theme.line, lineWidth: 3))
+            Path { p in
+                p.move(to: CGPoint(x: 0, y: 0)); p.addLine(to: CGPoint(x: 85, y: 60)); p.addLine(to: CGPoint(x: 170, y: 0))
+            }
+            .stroke(Theme.inkSoft.opacity(0.6), lineWidth: 3).frame(width: 170, height: 115)
+            Capsule().fill(Theme.marker).frame(width: 80, height: 10).offset(x: -20, y: -70).rotationEffect(.degrees(-6))
+            Circle().fill(Theme.marker.opacity(0.75)).frame(width: 64)
+                .overlay(Circle().stroke(Theme.ink, lineWidth: 4)).offset(x: 70, y: 40)
+            Capsule().fill(Theme.ink).frame(width: 34, height: 8).rotationEffect(.degrees(45)).offset(x: 108, y: 80)
+        }
+        .frame(width: 260, height: 190)
+        .accessibilityHidden(true)
+    }
+}
+
+func formatDate(_ iso: String?) -> String {
+    guard let iso, let date = Deadlines.date(fromISO: iso) else { return "Date unknown" }
+    return date.formatted(.dateTime.weekday(.abbreviated).day().month(.wide).year())
+}
+
+func formatMoney(_ value: String, _ currency: String) -> String {
+    (Decimal(string: value) ?? 0).formatted(.currency(code: currency).locale(Locale(identifier: "de_DE")))
+}
