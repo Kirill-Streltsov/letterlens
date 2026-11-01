@@ -78,3 +78,23 @@ struct Pill: View {
         }
     }
 
+    private var background: Color {
+        switch kind {
+        case .neutral: Theme.paperDeep
+        case .ok: Theme.ok.opacity(0.14)
+        case .check: Theme.check.opacity(0.16)
+        case .urgent: Theme.danger
+        }
+    }
+
+    static func deadline(iso: String?, status: String) -> Pill? {
+        guard let iso, let days = Deadlines.daysUntil(iso) else { return nil }
+        let label = Deadlines.relativeLabel(days: days)
+        switch Deadlines.urgency(days: days) {
+        case .past: return Pill(text: label)
+        case .urgent: return Pill(text: label, kind: .urgent)
+        default: return Pill(text: label, kind: status == "verified" ? .ok : .check)
+        }
+    }
+}
+
