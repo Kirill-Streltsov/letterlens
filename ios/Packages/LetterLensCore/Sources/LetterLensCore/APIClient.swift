@@ -97,3 +97,39 @@ public final class APIClient: Sendable {
     }
     public func deleteAccount() async throws { try await sendVoid("DELETE", "/v1/me") }
 
+    public func letters() async throws -> [LetterListItem] { try await send("GET", "/v1/letters") }
+    public func letter(id: String, language: String) async throws -> LetterView {
+        try await send("GET", "/v1/letters/\(id)?lang=\(language)")
+    }
+    public func createLetter(_ document: LetterDocument, language: String, idempotencyKey: String) async throws -> CreateLetterResponse {
+        struct Body: Encodable { let document: LetterDocument; let language: String }
+        return try await send("POST", "/v1/letters", body: Body(document: document, language: language),
+                              headers: ["Idempotency-Key": idempotencyKey])
+    }
+    public func deleteLetter(id: String) async throws { try await sendVoid("DELETE", "/v1/letters/\(id)") }
+    public func requestExplanation(id: String, language: String) async throws {
+        struct Body: Encodable { let language: String }
+        struct Started: Decodable { let started: Bool }
+        let _: Started = try await send("POST", "/v1/letters/\(id)/explanations", body: Body(language: language))
+    }
+    public func ask(id: String, question: String, language: String) async throws -> QuestionResponse {
+        struct Body: Encodable { let question: String; let language: String }
+        return try await send("POST", "/v1/letters/\(id)/questions", body: Body(question: question, language: language))
+    }
+
+    public func counsellingServices() async throws -> [CounsellingService] { try await send("GET", "/v1/counselling-services") }
+    public func share(letterId: String, tenantId: String) async throws -> ShareInfo {
+        struct Body: Encodable { let tenantId: String; let consent = true; let consentTextVersion = "share-consent-v1" }
+        return try await send("POST", "/v1/letters/\(letterId)/shares", body: Body(tenantId: tenantId))
+    }
+    public func revokeShare(id: String) async throws { try await sendVoid("DELETE", "/v1/shares/\(id)") }
+    public func messages(shareId: String) async throws -> [Message] { try await send("GET", "/v1/shares/\(shareId)/messages") }
+    public func sendMessage(shareId: String, text: String) async throws -> Message {
+        struct Body: Encodable { let text: String }
+        return try await send("POST", "/v1/shares/\(shareId)/messages", body: Body(text: text))
+    }
+    public func submitAppStoreTransaction(jws: String) async throws -> PlanResponse {
+        struct Body: Encodable { let signedTransaction: String }
+        return try await send("POST", "/v1/billing/appstore/transactions", body: Body(signedTransaction: jws))
+    }
+}
