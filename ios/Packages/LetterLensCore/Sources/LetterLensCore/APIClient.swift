@@ -83,3 +83,17 @@ public final class APIClient: Sendable {
         return try Self.decoder.decode(T.self, from: data)
     }
 
+    private func sendVoid(_ method: String, _ path: String, body: (any Encodable)? = nil) async throws {
+        let _: Empty = try await send(method, path, body: body)
+    }
+
+    // MARK: Endpoints
+
+    public func me() async throws -> Me { try await send("GET", "/v1/me") }
+    public func languages() async throws -> [LanguageInfo] { try await send("GET", "/v1/languages") }
+    public func updateMe(displayName: String?, preferredLanguage: String?) async throws {
+        struct Body: Encodable { let displayName: String?; let preferredLanguage: String? }
+        try await sendVoid("PATCH", "/v1/me", body: Body(displayName: displayName, preferredLanguage: preferredLanguage))
+    }
+    public func deleteAccount() async throws { try await sendVoid("DELETE", "/v1/me") }
+
