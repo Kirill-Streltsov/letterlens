@@ -95,3 +95,22 @@ public enum Deadlines {
         return utc.dateComponents([.day], from: start, to: target).day
     }
 
+    public static func urgency(days: Int) -> Urgency {
+        switch days {
+        case ..<0: .past
+        case 0...3: .urgent
+        case 4...14: .soon
+        default: .later
+        }
+    }
+
+    public static func relativeLabel(days: Int) -> String {
+        switch days {
+        case ..<(-1): "\(-days) days ago"
+        case -1: "yesterday"
+        case 0: "today"
+        case 1: "tomorrow"
+        default: "in \(days) days"
+        }
+    }
+
