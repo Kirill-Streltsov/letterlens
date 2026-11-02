@@ -56,3 +56,30 @@ public final class APIClient: Sendable {
         return withFraction.date(from: value) ?? plain.date(from: value)
     }
 
+    // MARK: Transport
+
+    private struct Empty: Codable {}
+
+    private func send<T: Decodable>(_ method: String, _ path: String, body: (any Encodable)? = nil,
+                                    headers extra: [String: String] = [:]) async throws -> T {
+        guard let url = URL(string: path, relativeTo: baseURL) else { throw URLError(.badURL) }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.timeoutInterval = 30
+        for (key, value) in try await auth.headers().merging(extra, uniquingKeysWith: { $1 }) {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try Self.encoder.encode(body)
+        }
+        let (data, response) = try await session.data(for: request)
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+            let body = try? Self.decoder.decode(ErrorBody.self, from: data)
+            throw APIError(status: status, code: body?.code ?? "http_\(status)", message: body?.message ?? "Request failed (\(status))")
+        }
+        if status == 204 || data.isEmpty, let empty = Empty() as? T { return empty }
+        return try Self.decoder.decode(T.self, from: data)
+    }
+
