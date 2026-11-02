@@ -45,3 +45,27 @@ public enum DocumentBuilder {
             let ordered = converted.sorted { a, b in
                 let rowTolerance = min(a.1.h, b.1.h) * 0.5
                 if abs(a.1.y - b.1.y) > rowTolerance { return a.1.y < b.1.y }
+                return a.1.x < b.1.x
+            }
+            var index = 0
+            for (line, box) in ordered {
+                let text = line.text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+                guard !text.isEmpty else { continue }
+                index += 1
+                lines.append(OcrLine(page: pageIndex + 1, index: index, text: String(text.prefix(2000)),
+                                     bbox: box, confidence: line.confidence))
+            }
+        }
+        return LetterDocument(lines: Array(lines.prefix(2000)), ocrEngine: engine)
+    }
+
+    public static func fromText(_ text: String) -> LetterDocument {
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+            .map { $0.split(whereSeparator: \.isWhitespace).joined(separator: " ") }
+            .filter { !$0.isEmpty }
+            .enumerated()
+            .map { OcrLine(page: 1, index: $0.offset + 1, text: $0.element) }
+        return LetterDocument(lines: lines, ocrEngine: "paste")
+    }
+}
+
