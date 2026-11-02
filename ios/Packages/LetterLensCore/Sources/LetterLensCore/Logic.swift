@@ -69,3 +69,29 @@ public enum DocumentBuilder {
     }
 }
 
+// MARK: - Deadlines
+
+public enum Urgency: Equatable, Sendable { case past, urgent, soon, later }
+
+public enum Deadlines {
+    private static var utc: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        return calendar
+    }
+
+    public static func date(fromISO iso: String) -> Date? {
+        let parts = iso.prefix(10).split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return nil }
+        return utc.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2], hour: 12))
+    }
+
+    public static func daysUntil(_ iso: String, today: Date = Date(), calendar: Calendar = .current) -> Int? {
+        guard let target = date(fromISO: iso) else { return nil }
+        let local = calendar.dateComponents([.year, .month, .day], from: today)
+        guard let start = utc.date(from: DateComponents(year: local.year, month: local.month, day: local.day, hour: 12)) else {
+            return nil
+        }
+        return utc.dateComponents([.day], from: start, to: target).day
+    }
+
