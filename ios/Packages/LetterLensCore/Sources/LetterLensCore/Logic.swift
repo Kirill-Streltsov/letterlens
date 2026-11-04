@@ -114,3 +114,27 @@ public enum Deadlines {
         }
     }
 
+    /// When to remind: three days before at 9:00 local time, or tomorrow morning if that is already past.
+    public static func reminderDate(for iso: String, now: Date = Date(), calendar: Calendar = .current) -> Date? {
+        guard let due = date(fromISO: iso) else { return nil }
+        let dueLocal = calendar.dateComponents([.year, .month, .day], from: due)
+        guard let dueDay = calendar.date(from: dueLocal),
+              let threeBefore = calendar.date(byAdding: .day, value: -3, to: dueDay),
+              let reminder = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: threeBefore) else { return nil }
+        if reminder > now { return reminder }
+        guard let tomorrow = calendar.date(byAdding: .day, value: 1, to: now),
+              let morning = calendar.date(bySettingHour: 9, minute: 0, second: 0, of: tomorrow) else { return nil }
+        return morning < dueDay.addingTimeInterval(86_400) ? morning : nil
+    }
+}
+
+public enum LetterTypes {
+    public static let names: [String: String] = [
+        "tax": "Tax office", "benefits": "Social benefits", "health_insurance": "Health insurance",
+        "immigration": "Immigration office", "landlord": "Landlord", "other": "Other",
+    ]
+    public static let symbols: [String: String] = [
+        "tax": "building.columns", "benefits": "person.2", "health_insurance": "cross.case",
+        "immigration": "globe.europe.africa", "landlord": "house", "other": "envelope",
+    ]
+}
