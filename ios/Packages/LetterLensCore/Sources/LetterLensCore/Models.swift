@@ -77,3 +77,33 @@ public struct RequiredAction: Codable, Hashable, Sendable {
     public var lineIds: [String]
 }
 
+public struct VerifiedFacts: Codable, Hashable, Sendable {
+    public var sender: ExtractedText
+    public var subject: ExtractedText
+    public var letterDate: String?
+    public var letterDateStatus: FactStatus
+    public var referenceNumbers: [ReferenceNumber]
+    public var deadlines: [VerifiedDeadline]
+    public var amounts: [VerifiedAmount]
+    public var requiredActions: [RequiredAction]
+    public var groundingRate: Double
+}
+
+public struct SummarySentence: Codable, Hashable, Sendable {
+    public var text: String
+    public var lineIds: [String]
+}
+
+public struct NextStep: Codable, Hashable, Sendable {
+    public var text: String
+    public var citationIds: [String]
+}
+
+public struct Citation: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var title: String
+    public var sourceUrl: String
+    public var sourceName: String
+    public var checkedOn: String
+}
+
