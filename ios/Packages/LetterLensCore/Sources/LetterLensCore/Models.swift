@@ -49,3 +49,31 @@ public struct ReferenceNumber: Codable, Hashable, Sendable {
     public var lineIds: [String]
 }
 
+public struct VerifiedDeadline: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var dueDate: String?
+    public var status: FactStatus
+    public var isEstimate: Bool
+    public var description: String
+    public var sourceText: String?
+    public var lineIds: [String]
+    public var rule: String?
+    public var note: String?
+}
+
+public struct VerifiedAmount: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var value: String
+    public var currency: String
+    public var direction: String
+    public var status: FactStatus
+    public var description: String
+    public var lineIds: [String]
+    public var note: String?
+}
+
+public struct RequiredAction: Codable, Hashable, Sendable {
+    public var description: String
+    public var lineIds: [String]
+}
+
