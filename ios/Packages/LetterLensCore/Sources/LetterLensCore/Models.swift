@@ -22,3 +22,30 @@ public struct OcrLine: Codable, Hashable, Sendable, Identifiable {
     }
 }
 
+public struct LetterDocument: Codable, Hashable, Sendable {
+    public var lines: [OcrLine]
+    public var ocrEngine: String
+    public init(lines: [OcrLine], ocrEngine: String) { self.lines = lines; self.ocrEngine = ocrEngine }
+}
+
+public enum LetterStatus: String, Codable, Sendable { case received, processing, ready, failed }
+public enum FactStatus: String, Codable, Sendable { case verified, needsCheck = "needs_check" }
+
+public struct Classification: Codable, Hashable, Sendable {
+    public var letterType: String
+    public var confidence: Double
+    public var modelVersion: String
+    public var abstained: Bool
+}
+
+public struct ExtractedText: Codable, Hashable, Sendable {
+    public var value: String?
+    public var lineIds: [String]
+}
+
+public struct ReferenceNumber: Codable, Hashable, Sendable {
+    public var label: String
+    public var value: String
+    public var lineIds: [String]
+}
+
