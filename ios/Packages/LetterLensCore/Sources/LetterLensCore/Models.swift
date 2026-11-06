@@ -131,3 +131,29 @@ public struct ShareInfo: Codable, Hashable, Sendable, Identifiable {
     public var revoked: Bool
 }
 
+public struct LetterView: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var status: LetterStatus
+    public var error: String?
+    public var language: String
+    public var createdAt: Date
+    public var expiresAt: Date
+    public var lines: [OcrLine]
+    public var classification: Classification?
+    public var facts: VerifiedFacts?
+    public var explanation: Explanation?
+    public var explanationLanguages: [String]
+    public var degraded: Bool
+    public var degradedReasons: [String]
+    public var imageUrls: [String]
+    public var shares: [ShareInfo]
+
+    public var activeShare: ShareInfo? { shares.first { !$0.revoked } }
+}
+
+public struct DeadlineSummary: Codable, Hashable, Sendable {
+    public var dueDate: String?
+    public var status: String
+    public var label: String
+}
+
