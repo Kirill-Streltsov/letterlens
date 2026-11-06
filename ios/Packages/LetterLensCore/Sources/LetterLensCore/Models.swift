@@ -213,3 +213,27 @@ public struct CounsellingService: Codable, Hashable, Sendable, Identifiable {
     public var languages: [String]
 }
 
+public struct Message: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var authorRole: String
+    public var text: String
+    public var originalText: String?
+    public var createdAt: Date
+}
+
+public struct CreateLetterResponse: Codable, Hashable, Sendable {
+    public var id: String
+    public var status: LetterStatus
+    public var expiresAt: Date
+}
+
+public struct PlanResponse: Codable, Hashable, Sendable {
+    public var plan: String
+    public var planExpiresAt: Date?
+}
+
+public struct ErrorBody: Codable, Hashable, Sendable {
+    public var code: String
+    public var message: String
+    public var requestId: String?
+}
