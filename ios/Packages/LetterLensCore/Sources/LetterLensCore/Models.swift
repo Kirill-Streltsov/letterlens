@@ -107,3 +107,27 @@ public struct Citation: Codable, Hashable, Sendable, Identifiable {
     public var checkedOn: String
 }
 
+public struct Explanation: Codable, Hashable, Sendable {
+    public var language: String
+    public var headline: String
+    public var letterKind: String
+    public var summary: [SummarySentence]
+    public var nextSteps: [NextStep]
+    public var deadlineLabels: [String: String]
+    public var amountLabels: [String: String]
+    public var citations: [Citation]
+    public var counsellingHint: String
+    public var disclaimer: String
+    public var faithfulness: Double?
+    public var model: String
+}
+
+public struct ShareInfo: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var tenantId: String
+    public var tenantName: String
+    public var caseStatus: String
+    public var expiresAt: Date
+    public var revoked: Bool
+}
+
