@@ -188,3 +188,28 @@ public struct Me: Codable, Hashable, Sendable {
     public var isPlatformAdmin: Bool
 }
 
+public struct LanguageInfo: Codable, Hashable, Sendable, Identifiable {
+    public var code: String
+    public var name: String
+    public var nativeName: String
+    public var rtl: Bool
+    public var status: String
+    public var id: String { code }
+}
+
+public struct QuestionResponse: Codable, Hashable, Sendable {
+    public var answer: String?
+    public var refused: Bool
+    public var reason: String?
+    public var handoverSuggested: Bool
+    public var lineIds: [String]
+    public var citations: [Citation]
+}
+
+public struct CounsellingService: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var name: String
+    public var city: String?
+    public var languages: [String]
+}
+
