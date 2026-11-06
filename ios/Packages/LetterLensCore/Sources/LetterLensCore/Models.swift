@@ -157,3 +157,34 @@ public struct DeadlineSummary: Codable, Hashable, Sendable {
     public var label: String
 }
 
+public struct LetterListItem: Codable, Hashable, Sendable, Identifiable {
+    public var id: String
+    public var status: LetterStatus
+    public var letterType: String?
+    public var headline: String?
+    public var sender: String?
+    public var nextDeadline: DeadlineSummary?
+    public var createdAt: Date
+    public var expiresAt: Date
+    public var shared: Bool
+}
+
+public struct Membership: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var tenantName: String
+    public var role: String
+    public var kind: String
+}
+
+public struct Me: Codable, Hashable, Sendable {
+    public var id: String
+    public var displayName: String?
+    public var preferredLanguage: String
+    public var plan: String
+    public var planExpiresAt: Date?
+    public var lettersThisMonth: Int
+    public var lettersLimit: Int?
+    public var memberships: [Membership]
+    public var isPlatformAdmin: Bool
+}
+
