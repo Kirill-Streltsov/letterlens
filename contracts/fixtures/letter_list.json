@@ -1,0 +1,17 @@
+[
+  {
+    "id": "04989465-3b06-4357-9da3-fac3787f1fa8",
+    "status": "ready",
+    "letter_type": "tax",
+    "headline": "Letter from Finanzamt Gelsenkirchen",
+    "sender": "Finanzamt Gelsenkirchen",
+    "next_deadline": {
+      "due_date": "2026-09-28",
+      "status": "needs_check",
+      "label": "Period for a reply or a legal remedy"
+    },
+    "created_at": "2026-11-05T15:16:09.809331Z",
+    "expires_at": "2026-12-05T15:16:09.816848Z",
+    "shared": false
+  }
+]
