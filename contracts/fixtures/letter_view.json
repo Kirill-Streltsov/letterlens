@@ -1,0 +1,304 @@
+{
+  "id": "04989465-3b06-4357-9da3-fac3787f1fa8",
+  "status": "ready",
+  "error": null,
+  "language": "en",
+  "created_at": "2026-11-05T15:16:09.809331Z",
+  "expires_at": "2026-12-05T15:16:09.816848Z",
+  "lines": [
+    {
+      "page": 1,
+      "index": 1,
+      "text": "Finanzamt Gelsenkirchen",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 2,
+      "text": "Postfach 0267",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 3,
+      "text": "44701 Bochum",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 4,
+      "text": "Jan Nowak",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 5,
+      "text": "Bergstraße 93",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 6,
+      "text": "47051 Duisburg",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 7,
+      "text": "Steuernummer: 944/000/54425",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 8,
+      "text": "Identifikationsnummer: 42 101 331 553",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 9,
+      "text": "Bochum, den 23.08.2026",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 10,
+      "text": "Bescheid für 2025 über Einkommensteuer",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 11,
+      "text": "Die Steuer wird für das Kalenderjahr 2025 festgesetzt.",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 12,
+      "text": "Erstattung: 2.965,50 EUR",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 13,
+      "text": "Der Betrag wird auf Ihr angegebenes Konto überwiesen.",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 14,
+      "text": "Rechtsbehelfsbelehrung",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 15,
+      "text": "Der Bescheid kann mit dem Einspruch angefochten werden.",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 16,
+      "text": "Der Einspruch ist innerhalb eines Monats nach Zugang dieses Bescheids",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 17,
+      "text": "bei dem Finanzamt Gelsenkirchen schriftlich oder elektronisch einzulegen.",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 18,
+      "text": "Mit freundlichen Grüßen",
+      "bbox": null,
+      "confidence": 0.99
+    },
+    {
+      "page": 1,
+      "index": 19,
+      "text": "Ihr Finanzamt",
+      "bbox": null,
+      "confidence": 0.99
+    }
+  ],
+  "classification": {
+    "letter_type": "tax",
+    "confidence": 1.0,
+    "probabilities": {
+      "tax": 1.0,
+      "benefits": 0.0,
+      "health_insurance": 0.0,
+      "immigration": 0.0,
+      "landlord": 0.0,
+      "other": 0.0
+    },
+    "model_version": "lt-20261126-8426",
+    "abstained": false
+  },
+  "facts": {
+    "sender": {
+      "value": "Finanzamt Gelsenkirchen",
+      "line_ids": [
+        "p1-l1"
+      ]
+    },
+    "subject": {
+      "value": "Bescheid für 2025 über Einkommensteuer",
+      "line_ids": [
+        "p1-l10"
+      ]
+    },
+    "letter_date": "2026-08-23",
+    "letter_date_status": "verified",
+    "reference_numbers": [
+      {
+        "label": "Steuernummer",
+        "value": "944/000/54425",
+        "line_ids": [
+          "p1-l7"
+        ]
+      }
+    ],
+    "deadlines": [
+      {
+        "id": "d1",
+        "due_date": "2026-09-28",
+        "status": "needs_check",
+        "is_estimate": true,
+        "description": "Period for a reply or a legal remedy",
+        "source_text": "Der Einspruch ist innerhalb eines Monats nach Zugang dieses Bescheids",
+        "line_ids": [
+          "p1-l16"
+        ],
+        "rule": "1 months; received on 2026-08-27 (letter date + 4 days, next working day), moved from 2026-09-27 to a working day",
+        "note": "Estimated from the period in the letter. Please check the exact date."
+      }
+    ],
+    "amounts": [
+      {
+        "id": "a1",
+        "value": "2965.50",
+        "currency": "EUR",
+        "direction": "to_receive",
+        "status": "verified",
+        "description": "Erstattung: 2.965,50 EUR",
+        "line_ids": [
+          "p1-l12"
+        ],
+        "note": null
+      }
+    ],
+    "required_actions": [],
+    "grounding_rate": 1.0
+  },
+  "explanation": {
+    "language": "en",
+    "headline": "Letter from Finanzamt Gelsenkirchen",
+    "letter_kind": "tax letter from Finanzamt Gelsenkirchen",
+    "summary": [
+      {
+        "text": "This letter is from Finanzamt Gelsenkirchen.",
+        "line_ids": [
+          "p1-l1"
+        ]
+      },
+      {
+        "text": "The subject is: Bescheid für 2025 über Einkommensteuer.",
+        "line_ids": [
+          "p1-l10"
+        ]
+      },
+      {
+        "text": "Deadline: 2026-09-28. Please check this date in the original.",
+        "line_ids": [
+          "p1-l16"
+        ]
+      },
+      {
+        "text": "Amount you receive: 2965.50 EUR.",
+        "line_ids": [
+          "p1-l12"
+        ]
+      }
+    ],
+    "next_steps": [
+      {
+        "text": "General information: Objection (Einspruch) against a tax decision.",
+        "citation_ids": [
+          "c1"
+        ]
+      },
+      {
+        "text": "General information: When does a letter sent by post count as received?.",
+        "citation_ids": [
+          "c2"
+        ]
+      },
+      {
+        "text": "General information: Late payment surcharge (Säumniszuschlag) and payment in instalments.",
+        "citation_ids": [
+          "c3"
+        ]
+      }
+    ],
+    "deadline_labels": {
+      "d1": "Period for a reply or a legal remedy"
+    },
+    "amount_labels": {
+      "a1": "Erstattung: 2.965,50 EUR"
+    },
+    "citations": [
+      {
+        "id": "c1",
+        "title": "Objection (Einspruch) against a tax decision",
+        "source_url": "https://www.gesetze-im-internet.de/ao_1977/__355.html",
+        "source_name": "Abgabenordnung § 355, § 357, § 361",
+        "checked_on": "2026-11-05"
+      },
+      {
+        "id": "c2",
+        "title": "When does a letter sent by post count as received?",
+        "source_url": "https://www.gesetze-im-internet.de/ao_1977/__122.html",
+        "source_name": "Abgabenordnung § 122; SGB X § 37; VwVfG § 41",
+        "checked_on": "2026-11-05"
+      },
+      {
+        "id": "c3",
+        "title": "Late payment surcharge (Säumniszuschlag) and payment in instalments",
+        "source_url": "https://www.gesetze-im-internet.de/ao_1977/__240.html",
+        "source_name": "Abgabenordnung § 240, § 222",
+        "checked_on": "2026-11-05"
+      }
+    ],
+    "counselling_hint": "Free help: migration counselling services (MBE, JMD), social counselling and tenant associations can check your case.",
+    "disclaimer": "General information, not legal advice. Always check dates and amounts in the original.",
+    "faithfulness": null,
+    "model": "mistral-medium-latest"
+  },
+  "explanation_languages": [
+    "en"
+  ],
+  "degraded": false,
+  "degraded_reasons": [],
+  "image_urls": [],
+  "shares": []
+}
