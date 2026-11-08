@@ -1,0 +1,44 @@
+[
+  {
+    "code": "en",
+    "name": "English",
+    "native_name": "English",
+    "rtl": false,
+    "status": "enabled"
+  },
+  {
+    "code": "de",
+    "name": "Plain German",
+    "native_name": "Einfaches Deutsch",
+    "rtl": false,
+    "status": "enabled"
+  },
+  {
+    "code": "tr",
+    "name": "Turkish",
+    "native_name": "Türkçe",
+    "rtl": false,
+    "status": "experimental"
+  },
+  {
+    "code": "ar",
+    "name": "Arabic",
+    "native_name": "العربية",
+    "rtl": true,
+    "status": "experimental"
+  },
+  {
+    "code": "uk",
+    "name": "Ukrainian",
+    "native_name": "Українська",
+    "rtl": false,
+    "status": "experimental"
+  },
+  {
+    "code": "ru",
+    "name": "Russian",
+    "native_name": "Русский",
+    "rtl": false,
+    "status": "experimental"
+  }
+]
