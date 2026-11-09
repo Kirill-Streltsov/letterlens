@@ -50,3 +50,34 @@ struct ContractTests {
     }
 }
 
+@Suite struct PKCETests {
+    @Test func rfc7636Example() {
+        #expect(PKCE.challenge(for: "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk") == "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM")
+    }
+
+    @Test func verifierIsURLSafe() {
+        let verifier = PKCE.makeVerifier()
+        #expect(verifier.count >= 43)
+        #expect(verifier.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" })
+    }
+}
+
+@Suite struct DocumentBuilderTests {
+    @Test func ordersTopToBottomAndFlipsY() {
+        let lines = [
+            RecognizedLine(text: "second", x: 0.1, y: 0.70, width: 0.5, height: 0.02, confidence: 0.9),
+            RecognizedLine(text: "first", x: 0.1, y: 0.90, width: 0.5, height: 0.02, confidence: 0.9),
+            RecognizedLine(text: "  ", x: 0.1, y: 0.50, width: 0.5, height: 0.02, confidence: 0.9),
+            RecognizedLine(text: "right", x: 0.6, y: 0.701, width: 0.2, height: 0.02, confidence: 0.9),
+        ]
+        let doc = DocumentBuilder.build(pages: [lines, [lines[0]]])
+        #expect(doc.lines.map(\.text) == ["first", "second", "right", "second"])
+        #expect(doc.lines.map(\.id) == ["p1-l1", "p1-l2", "p1-l3", "p2-l1"])
+        #expect(abs((doc.lines[0].bbox?.y ?? 0) - 0.08) < 0.0001)
+    }
+
+    @Test func pastedText() {
+        #expect(DocumentBuilder.fromText("a\n\n  b  c ").lines.map(\.text) == ["a", "b c"])
+    }
+}
+
