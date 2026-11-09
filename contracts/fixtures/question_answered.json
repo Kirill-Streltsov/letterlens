@@ -1,0 +1,16 @@
+{
+  "answer": "General information about Objection (Einspruch) against a tax decision. The letter itself names the details.",
+  "refused": false,
+  "reason": null,
+  "handover_suggested": false,
+  "line_ids": [],
+  "citations": [
+    {
+      "id": "c1",
+      "title": "Objection (Einspruch) against a tax decision",
+      "source_url": "https://www.gesetze-im-internet.de/ao_1977/__355.html",
+      "source_name": "Abgabenordnung § 355, § 357, § 361",
+      "checked_on": "2026-11-05"
+    }
+  ]
+}
