@@ -53,3 +53,29 @@ flowchart LR
   API --> S3[(S3: optional images<br/>30-day expiry)]
 ```
 
+The rule behind the design: **the model proposes, code verifies.** The model
+extracts dates and amounts with a line reference. Deterministic code checks that
+the cited line contains the value. Values that fail the check are shown as
+"please check", never as facts. Details: [docs/architecture/overview.md](docs/architecture/overview.md).
+
+## Repository
+
+| Path | Content |
+|---|---|
+| [backend/](backend/) | Python 3.13: FastAPI API, pipeline, LLM gateway, grounding, classifier, RAG, safety, billing, tests, evaluation suite |
+| [web/](web/) | Next.js static export, TypeScript, typed API client generated from the OpenAPI contract |
+| [ios/](ios/) | SwiftUI app (XcodeGen) and the `LetterLensCore` Swift package |
+| [infra/](infra/) | AWS CDK (Python) with cdk-nag, GitHub OIDC deploy role |
+| [contracts/](contracts/) | OpenAPI document and response fixtures shared by all clients |
+| [docs/](docs/) | Architecture, ADRs, AI evaluation, security, legal boundary, operations |
+
+## Quick start (local, no accounts needed)
+
+Prerequisites: Docker, [uv](https://docs.astral.sh/uv/), Node.js 22.
+
+```bash
+make seed   # PostgreSQL in Docker, migrations, demo data
+make api    # API on http://localhost:8000 (offline model provider)
+make web    # web app on http://localhost:3000
+```
+
