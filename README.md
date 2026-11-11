@@ -29,3 +29,27 @@ OCR-noise variants and 12 hand-written letters) and on 96 red-team questions in
 | Legal-advice requests caught (rules layer only) / false positives | 85.2 % / 0 % |
 | Prompt-injection attempts caught | 100 % |
 
+These numbers use the offline provider (deterministic rules). The live profile
+runs the same suites with the real model; see [docs/ai/evaluation.md](docs/ai/evaluation.md).
+
+## Architecture
+
+```mermaid
+flowchart LR
+  subgraph Device
+    iOS[iOS app<br/>VisionKit + Vision OCR]
+    Web[Web app<br/>tesseract.js OCR]
+  end
+  iOS -- text lines only --> CF
+  Web -- text lines only --> CF
+  CF[CloudFront<br/>static web + /v1/*] --> API[Lambda: FastAPI<br/>auth, RLS context, quotas]
+  API --> SFN[Step Functions<br/>classify → extract → verify → retrieve → explain]
+  SFN --> W[Lambda: pipeline worker]
+  W --> GW[LLM gateway<br/>budgets, retries, fallbacks, cost ledger]
+  GW --> LLM[(Mistral EU<br/>or Claude / Bedrock)]
+  API --> PG[(Neon PostgreSQL<br/>row-level security,<br/>per-user encryption)]
+  W --> PG
+  API --> COG[Cognito]
+  API --> S3[(S3: optional images<br/>30-day expiry)]
+```
+
