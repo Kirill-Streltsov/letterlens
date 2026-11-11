@@ -12,7 +12,8 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'letterlens_app') THEN
-        CREATE ROLE letterlens_app NOLOGIN NOBYPASSRLS;
+        -- NOBYPASSRLS is the default; stating it needs superuser rights on managed PostgreSQL.
+        CREATE ROLE letterlens_app NOLOGIN;
     END IF;
 END $$;
 
