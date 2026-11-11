@@ -79,3 +79,29 @@ make api    # API on http://localhost:8000 (offline model provider)
 make web    # web app on http://localhost:3000
 ```
 
+Sign in as `demo-client` (reader) or `counsellor-anna` (counselling service).
+More: [docs/development.md](docs/development.md).
+
+## Quality gates
+
+```bash
+make lint   # ruff, mypy --strict, eslint, tsc
+make test   # 157 backend tests (with RLS isolation), infra assertions, web tests
+make eval   # offline gate and fault-injection gate
+cd ios/Packages/LetterLensCore && swift test   # Swift core and API contract tests
+```
+
+## Documentation
+
+- [Deployment guide](docs/operations/deployment.md): the manual steps for AWS, Neon, Mistral, GitHub, Apple, Stripe
+- [Architecture overview](docs/architecture/overview.md) and [decision records](docs/architecture/adr/)
+- [AI pipeline](docs/ai/pipeline.md) and [evaluation](docs/ai/evaluation.md)
+- [Threat model](docs/security/threat-model.md) and [data protection](docs/security/data-protection.md)
+- [Legal-advice boundary (RDG)](docs/legal/rdg-boundary.md)
+- [Runbook](docs/operations/runbook.md) and [cost model](docs/operations/cost.md)
+
+## Status
+
+The product is ready for a closed pilot after the checklist in the
+[deployment guide](docs/operations/deployment.md#before-real-users-checklist).
+The corpus and the legal boundary need a professional review before real users.
