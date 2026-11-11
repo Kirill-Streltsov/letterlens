@@ -40,3 +40,9 @@ ios/DerivedData/
 
 # OS
 .DS_Store
+
+# Build outputs and local tooling
+infra/build/
+infra/cdk-outputs.json
+web/tsconfig.tsbuildinfo
+.claude/
