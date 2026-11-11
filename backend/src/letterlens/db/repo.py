@@ -220,6 +220,7 @@ def purge_expired(conn: Conn, limit: int = 500) -> tuple[int, list[str]]:
     conn.execute("DELETE FROM shares WHERE expires_at < now() - interval '30 days'")
     conn.execute("DELETE FROM rate_limits WHERE window_start < now() - interval '1 day'")
     conn.execute("DELETE FROM idempotency_keys WHERE created_at < now() - interval '2 days'")
+    conn.execute("DELETE FROM llm_calls WHERE created_at < now() - interval '13 months'")
     return len(rows), [k for r in rows for k in r["image_keys"]]
 
 
@@ -360,7 +361,7 @@ def hash_code(code: str) -> str:
     return hashlib.sha256(code.strip().upper().encode()).hexdigest()
 
 
-def create_invite(conn: Conn, tenant_id: str, role: str, created_by: str, code: str) -> None:
+def create_invite(conn: Conn, tenant_id: str, role: str, created_by: str | None, code: str) -> None:
     conn.execute(
         "INSERT INTO tenant_invites (code_hash, tenant_id, role, created_by, expires_at)"
         " VALUES (%s, %s, %s, %s, now() + interval '14 days')",
