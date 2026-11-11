@@ -81,3 +81,28 @@ struct ContractTests {
     }
 }
 
+@Suite struct DeadlineTests {
+    @Test func daysAndUrgency() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Berlin")!
+        let today = calendar.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 23))!
+        #expect(Deadlines.daysUntil("2026-11-29", today: today, calendar: calendar) == 3)
+        #expect(Deadlines.urgency(days: 3) == .urgent)
+        #expect(Deadlines.urgency(days: -2) == .past)
+        #expect(Deadlines.relativeLabel(days: 1) == "tomorrow")
+    }
+
+    @Test func reminderThreeDaysBefore() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Europe/Berlin")!
+        let now = calendar.date(from: DateComponents(year: 2026, month: 11, day: 1, hour: 10))!
+        let reminder = Deadlines.reminderDate(for: "2026-11-20", now: now, calendar: calendar)!
+        let parts = calendar.dateComponents([.month, .day, .hour], from: reminder)
+        #expect(parts.month == 11 && parts.day == 17 && parts.hour == 9)
+    }
+
+    @Test func noReminderAfterDeadline() {
+        let now = Deadlines.date(fromISO: "2026-12-10")!
+        #expect(Deadlines.reminderDate(for: "2026-12-01", now: now) == nil)
+    }
+}
