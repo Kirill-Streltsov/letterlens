@@ -65,3 +65,25 @@ def main(argv: list[str] | None = None) -> int:
                 conn,
                 None,
                 "admin.invite.create",
+                "tenant",
+                args.tenant_id,
+                tenant_id=args.tenant_id,
+                details={"role": args.role},
+            )
+            print(code)
+        elif args.command == "list-tenants":
+            for row in conn.execute(
+                "SELECT id::text, kind, name, city, seats FROM tenants ORDER BY name"
+            ).fetchall():
+                print(
+                    f"{row['id']}  {row['kind']:<11} {row['name']} ({row['city'] or '-'}) seats={row['seats']}"
+                )
+        elif args.command == "purge-expired":
+            deleted, _ = R.purge_expired(conn)
+            print(f"deleted {deleted} letters (images: run the retention Lambda)")
+    db.close()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
