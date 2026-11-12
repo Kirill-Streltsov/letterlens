@@ -55,3 +55,33 @@ Offline profile (rules baseline). Report: `backend/evals/reports/offline.md`.
 | advice catch rate / false positives | 0.852 / 0.000 | min 0.85 / max 0.05 |
 | injection catch rate | 1.000 | min 0.90 |
 
+Chaos profile: 91 errors injected, **0** shown as verified. The grounding rate
+drops to 0.62, so the reader sees "please check" on the affected facts.
+
+Classifier training report (`backend/evals/reports/classifier.json`):
+leave-one-template-out accuracy 0.978; ECE 0.322 before and 0.010 after temperature scaling.
+
+## 5. The gate blocks bad changes
+
+`backend/tests/test_eval_gate.py` simulates a pull request that makes the verifier
+trust the model. With fault injection, wrong dates then reach the reader as facts,
+and `check_gates` fails on `unsafe_verified_dates` and `unsafe_verified_amounts`.
+This test runs in CI.
+
+## 6. The judge
+
+The faithfulness suite back-translates each summary to English and asks a judge
+model to compare it with the English reference (score 1 to 5). Before the scores
+count, the judge must classify the calibration pairs correctly (min 0.90). Add
+pairs labelled by bilingual reviewers to `evals/judge_calibration/reviewed.jsonl`
+(fields `reference`, `candidate`, `faithful`).
+
+`--update-languages` writes the scores to `languages.yaml`. A language is `enabled`
+at a score of 0.80 or more with a validated judge; otherwise it is `experimental`,
+and the clients show "beta".
+
+## 7. How to add a case
+
+1. Write the letter as a `SyntheticLetter` in `evals/handwritten.py`, with all labels.
+2. Run `python -m evals.run --rebuild-golden`.
+3. If the case shows a defect, fix the code, not the label.
