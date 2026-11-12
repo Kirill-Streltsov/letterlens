@@ -30,26 +30,45 @@ def main() -> None:
     app = create_app(Settings(free_letters_per_month=1000))
     with TestClient(app) as c:
         letter = generate_corpus(1, seed=5)[0]
-        created = c.post("/v1/letters", json={"document": to_document(letter).model_dump(mode="json"),
-                                              "language": "en"}, headers=USER).json()
+        created = c.post(
+            "/v1/letters",
+            json={"document": to_document(letter).model_dump(mode="json"), "language": "en"},
+            headers=USER,
+        ).json()
         save("create_letter", created)
         lid = created["id"]
         save("letter_view", c.get(f"/v1/letters/{lid}", headers=USER).json())
         save("letter_list", c.get("/v1/letters", headers=USER).json())
         save("me", c.get("/v1/me", headers=USER).json())
         save("languages", c.get("/v1/languages", headers=USER).json())
-        save("question_refused", c.post(f"/v1/letters/{lid}/questions",
-                                        json={"question": "Should I object?", "language": "en"},
-                                        headers=USER).json())
-        save("question_answered", c.post(f"/v1/letters/{lid}/questions",
-                                         json={"question": "What is an Einspruch?", "language": "en"},
-                                         headers=USER).json())
+        save(
+            "question_refused",
+            c.post(
+                f"/v1/letters/{lid}/questions",
+                json={"question": "Should I object?", "language": "en"},
+                headers=USER,
+            ).json(),
+        )
+        save(
+            "question_answered",
+            c.post(
+                f"/v1/letters/{lid}/questions",
+                json={"question": "What is an Einspruch?", "language": "en"},
+                headers=USER,
+            ).json(),
+        )
         services = c.get("/v1/counselling-services", headers=USER).json()
         save("counselling_services", services)
         if services:
-            share = c.post(f"/v1/letters/{lid}/shares", json={"tenant_id": services[0]["id"], "consent": True,
-                                                              "consent_text_version": "share-consent-v1"},
-                           headers=USER).json()
+            share = c.post(
+                f"/v1/letters/{lid}/shares",
+                json={
+                    "tenant_id": services[0]["id"],
+                    "consent": True,
+                    "consent_text_version": "share-consent-v1",
+                },
+                headers=USER,
+            ).json()
             save("share", share)
             c.post(f"/v1/shares/{share['id']}/messages", json={"text": "Hallo"}, headers=USER)
             save("messages", c.get(f"/v1/shares/{share['id']}/messages", headers=USER).json())
