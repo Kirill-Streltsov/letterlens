@@ -43,3 +43,25 @@ def main(argv: list[str] | None = None) -> int:
     sub.add_parser("purge-expired")
     args = parser.parse_args(argv)
 
+    load_ssm_into_env()
+    db = Database(get_settings().database_url.get_secret_value(), max_size=1)
+    with db.session(DbContext.as_system()) as conn:
+        if args.command == "create-tenant":
+            tid = R.create_tenant(
+                conn,
+                args.name,
+                args.kind,
+                args.city,
+                [x.strip() for x in args.languages.split(",") if x.strip()],
+                not args.hidden,
+                args.seats,
+            )
+            R.audit(conn, None, "admin.tenant.create", "tenant", tid, tenant_id=tid)
+            print(tid)
+        elif args.command == "invite":
+            code = new_code()
+            R.create_invite(conn, args.tenant_id, args.role, None, code)
+            R.audit(
+                conn,
+                None,
+                "admin.invite.create",
