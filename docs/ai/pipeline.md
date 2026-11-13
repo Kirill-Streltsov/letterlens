@@ -50,3 +50,27 @@ Ranking: BM25 over title, German keywords and text; embeddings when an index for
 the configured model exists; reciprocal rank fusion; filter by letter type; drop
 passages without any lexical or dense match. Result: up to 4 passages `c1`…`c4`.
 
+### 2.5 Explain
+
+The model writes, in the reader's language: a headline, the kind of letter, 3 to 6
+summary sentences with line ids, 1 to 4 "next steps" with passage ids, and short
+labels for each deadline and amount. Then the sanitizer enforces the contract:
+
+| Rule | Action |
+|---|---|
+| A sentence reads like individual legal advice | drop it |
+| A sentence contains a number that is not in the letter or the verified facts | drop it |
+| A next step has no valid passage id | drop it |
+| A line id does not exist | remove the id |
+| A URL | remove it |
+
+Counters of dropped items go to the log (`explanation sanitized`).
+
+## 3. Questions
+
+`POST /v1/letters/{id}/questions` runs three layers:
+
+1. **Rules** (`check_question_rules`): multilingual patterns for individual advice and injection. Free and instant.
+2. **Model classifier** (task `guard`): categories general information, individual legal advice, prompt injection, off topic. If this call fails, the API refuses (fail closed).
+3. **Answer** (task `answer`), then the output checks: the model's own `refused` flag, the advisory-phrase check, and the number check.
+
