@@ -27,3 +27,18 @@ and need `Authorization: Bearer <Cognito access token>`.
 | `POST /billing/appstore/transactions`, `POST /billing/appstore/notifications` | App Store |
 | `GET /admin/costs`, `GET /admin/letters/{id}/cost` | Cost ledger |
 
+## Errors
+
+Every error has the body `{"code": "...", "message": "...", "request_id": "..."}`.
+
+| Status | Code | Meaning |
+|---|---|---|
+| 400 | `language_unavailable`, `invalid_signature`, `consent_outdated` | Invalid input |
+| 401 | `unauthorized` | No valid token |
+| 402 | `quota_exceeded`, `plus_required` | Plan limit |
+| 403 | `forbidden` | Role missing, or direct call without CloudFront |
+| 404 | `not_found` | Does not exist or not visible to you (same answer on purpose) |
+| 409 | `not_ready`, `share_revoked` | Wrong state |
+| 422 | `invalid_request` | Schema validation failed; the message lists field paths, never values |
+| 429 | `rate_limited` | Too many requests in one minute |
+| 503 | `llm_unavailable` | Model not available for a synchronous request |
