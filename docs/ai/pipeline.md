@@ -74,3 +74,29 @@ Counters of dropped items go to the log (`explanation sanitized`).
 2. **Model classifier** (task `guard`): categories general information, individual legal advice, prompt injection, off topic. If this call fails, the API refuses (fail closed).
 3. **Answer** (task `answer`), then the output checks: the model's own `refused` flag, the advisory-phrase check, and the number check.
 
+A refusal tells the reader, in their language, that a counselling service can help,
+and the app offers "Talk to a counsellor".
+
+## 4. Prompts
+
+Prompts live in `llm/prompts.py`. Each prompt has a version string
+(`extract-v3`, `explain-v3`, `answer-v2`, `guard-v2`). The cost ledger and every
+evaluation report record the version. Rules for prompt changes:
+
+1. Change the prompt and its version string in the same commit.
+2. Run the live evaluation (`--profile live`). All gates must pass.
+3. Put the report in the pull request.
+
+## 5. Gateway
+
+| Function | Setting |
+|---|---|
+| Model per task | `LETTERLENS_LLM_MODEL_EXTRACT`, `_EXPLAIN`, `_GUARD` |
+| Fallback models | `LETTERLENS_LLM_FALLBACK_MODELS` |
+| Retries | 3 attempts per model, exponential backoff with jitter, for 408/409/425/429/5xx and timeouts |
+| Schema | strict JSON schema (no `$ref`, `additionalProperties: false`); one repair attempt |
+| Budgets | `LETTERLENS_MONTHLY_LLM_BUDGET_USD`, `LETTERLENS_USER_DAILY_TOKEN_BUDGET` |
+| Ledger | table `llm_calls`: task, model, prompt version, tokens, list price, latency, attempts, fallback, error |
+
+To answer "what did this letter cost?", call `GET /v1/admin/letters/{id}/cost`.
+For totals per day, task and model with p50 and p95 latency, call `GET /v1/admin/costs`.
