@@ -26,3 +26,25 @@ flowchart TB
   LL --> stripe[Stripe]
 ```
 
+## 3. Components
+
+The backend is one Python package, `letterlens`. Each module has one task.
+
+| Module | Task |
+|---|---|
+| `api` | HTTP routes, request and response models, authentication, error format, security headers |
+| `services` | Use cases: letters, questions, sharing, case inbox |
+| `pipeline` | The steps classify, extract, verify, retrieve, explain, finalize, and the runners |
+| `llm` | The gateway, the providers, versioned prompts, prices |
+| `grounding` | German date and amount parsers, deadline rules, the verifier |
+| `ml` | The letter-type classifier (dependency-free inference) |
+| `rag` | The curated corpus and hybrid retrieval |
+| `safety` | PII pseudonymization, the legal-advice guardrail, injection defence |
+| `db` | Connection pool, row-level-security context, migrations, repositories |
+| `crypto` | Envelope encryption (AES-256-GCM, per-user data keys) |
+| `billing` | Stripe webhooks, App Store transaction verification |
+| `handlers` | AWS Lambda entry points |
+
+Dependencies point inwards: `api` → `services` → `pipeline` → `llm`, `grounding`, `rag`, `safety`.
+The domain types in `domain.py` have no dependencies.
+
