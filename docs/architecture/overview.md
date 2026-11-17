@@ -74,3 +74,24 @@ sequenceDiagram
   API-->>App: facts, explanation, original lines
 ```
 
+Each step is idempotent: it reads the state, computes, and writes the state.
+Step Functions retries a failed step twice with backoff. If a step still fails,
+the letter gets the status `failed`.
+
+## 5. The pipeline
+
+| Step | Method | Output |
+|---|---|---|
+| classify | TF-IDF + logistic regression + temperature scaling. Abstains below 0.5. | Letter type and calibrated probability |
+| extract | Model with strict JSON schema and type-specific prompt; input is pseudonymized | Sender, dates, deadlines, amounts, references, each with line ids |
+| verify | Deterministic parsers | Each fact `verified` or `needs_check`; relative deadlines estimated with the legal rules |
+| retrieve | BM25 + optional embeddings, reciprocal rank fusion, type filter | Up to 4 dated passages with sources |
+| explain | Model, in the reader's language, with citations | Summary sentences with line ids, next steps with passage ids |
+| sanitize | Deterministic | Drops advice-like sentences, invented numbers, uncited steps, URLs |
+
+If the model fails or a budget is spent, the pipeline does not stop. It uses the
+rule-based extractor and a template explanation, and it marks the letter as
+`degraded`. The client shows a warning.
+
+## 6. Data model
+
