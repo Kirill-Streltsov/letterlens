@@ -123,3 +123,28 @@ own the tables and cannot bypass RLS. 19 tests prove each rule
 | Secrets | SSM Parameter Store SecureString | standard parameters are free |
 | Observability | CloudWatch Logs (14 days), EMF metrics (9), alarms (6), X-Ray | inside the free limits |
 
+See [cost.md](../operations/cost.md) for the limits and the paid upgrade path.
+
+## 8. Quality attributes
+
+| Attribute | Mechanism | Evidence |
+|---|---|---|
+| Correctness of deadlines | Grounding check, "please check" state, fault injection | `evals/reports/chaos.md`, `tests/test_eval_gate.py` |
+| Tenant isolation | RLS, non-owner role, consent-bound shares | `tests/test_rls.py` |
+| Privacy | On-device OCR, pseudonymization, envelope encryption, retention job | `tests/test_pii.py`, `tests/test_crypto.py` |
+| Cost control | Gateway budgets, cost ledger, daily spend alarm | `tests/test_gateway.py`, `/v1/admin/costs` |
+| Resilience | Retries, model fallback, degraded mode | `tests/test_gateway.py`, `tests/test_pipeline.py` |
+| Change safety | Release gate in CI, contract fixtures for clients | `.github/workflows/ci.yml` |
+
+## 9. Decision records
+
+| ADR | Decision |
+|---|---|
+| [0001](adr/0001-modular-monolith-on-serverless.md) | Modular monolith on Lambda and Step Functions |
+| [0002](adr/0002-free-tier-platform.md) | Free-tier platform and its trade-offs |
+| [0003](adr/0003-llm-gateway-and-providers.md) | Provider-neutral LLM gateway, Mistral by default |
+| [0004](adr/0004-postgres-rls-and-in-memory-retrieval.md) | Neon PostgreSQL with RLS; in-memory hybrid retrieval |
+| [0005](adr/0005-on-device-ocr.md) | On-device OCR instead of Textract |
+| [0006](adr/0006-model-proposes-code-verifies.md) | The model proposes, code verifies |
+| [0007](adr/0007-classifier-training-and-serving.md) | Classifier: scikit-learn training, dependency-free serving |
+| [0008](adr/0008-client-contract-fixtures.md) | Hand-written clients guarded by contract fixtures |
