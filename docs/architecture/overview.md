@@ -48,3 +48,29 @@ The backend is one Python package, `letterlens`. Each module has one task.
 Dependencies point inwards: `api` → `services` → `pipeline` → `llm`, `grounding`, `rag`, `safety`.
 The domain types in `domain.py` have no dependencies.
 
+## 4. Request flow: a new letter
+
+```mermaid
+sequenceDiagram
+  participant App as iOS / web
+  participant API as API Lambda
+  participant DB as PostgreSQL (RLS)
+  participant SF as Step Functions
+  participant W as Worker Lambda
+  participant LLM as Model provider
+  App->>App: scan + OCR on the device
+  App->>API: POST /v1/letters (text lines, Idempotency-Key)
+  API->>DB: rate limit, quota, insert encrypted state
+  API->>SF: StartExecution(letter_id)
+  API-->>App: 202 Accepted
+  loop classify, extract, verify, retrieve, explain
+    SF->>W: run step
+    W->>DB: load and decrypt state
+    W->>LLM: only for extract and explain (pseudonymized text)
+    W->>DB: encrypt and save state
+  end
+  SF->>W: mark ready
+  App->>API: GET /v1/letters/{id} (polling)
+  API-->>App: facts, explanation, original lines
+```
+
