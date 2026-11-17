@@ -95,3 +95,31 @@ rule-based extractor and a template explanation, and it marks the letter as
 
 ## 6. Data model
 
+| Table | Content | Isolation |
+|---|---|---|
+| `users` | Token subject, plan, preferred language. No e-mail address. | own row |
+| `user_keys` | Wrapped data key per user | own row; read through an active share |
+| `letters` | Status, type, encrypted pipeline state, expiry | owner; read through an active share |
+| `shares` | Consent version, expiry, case status | owner; the receiving tenant |
+| `messages` | Encrypted message and its translations | share participants |
+| `tenants`, `memberships`, `tenant_invites` | Counselling services and employers | members |
+| `llm_calls` | Cost ledger: tokens, list price, latency, prompt version. No text. | system and own rows |
+| `audit_log` | Append-only actions | actor and tenant |
+| `usage_counters`, `rate_limits`, `idempotency_keys`, `billing_events` | Operations | owner or system |
+
+PostgreSQL row-level security enforces isolation. The application role does not
+own the tables and cannot bypass RLS. 19 tests prove each rule
+(`backend/tests/test_rls.py`).
+
+## 7. Deployment view
+
+| Concern | Service | Free-tier note |
+|---|---|---|
+| Edge, static web | CloudFront, S3 | 1 TB and 10 M requests per month always free |
+| API | Lambda function URL behind CloudFront, with a secret origin header | 1 M requests per month always free |
+| Pipeline | Step Functions Standard, Lambda worker | 4,000 state transitions per month always free (about 400 letters) |
+| Identity | Cognito, Lite plan | free up to the MAU limit of the free tier |
+| Database | Neon PostgreSQL 17, Frankfurt | free plan: 1 GB storage, 100 compute hours per month |
+| Secrets | SSM Parameter Store SecureString | standard parameters are free |
+| Observability | CloudWatch Logs (14 days), EMF metrics (9), alarms (6), X-Ray | inside the free limits |
+
