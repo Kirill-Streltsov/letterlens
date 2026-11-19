@@ -45,3 +45,28 @@ LETTERLENS_LLM_PROVIDER=mistral LETTERLENS_LLM_API_KEY=... make api
 3. Run `cd backend && uv run python scripts/export_fixtures.py` (needs `make migrate`).
 4. Update the Swift models in `ios/Packages/LetterLensCore/Sources/LetterLensCore/Models.swift` and run `swift test`.
 
+## Change a prompt or the pipeline
+
+1. Change the prompt and its version string in `llm/prompts.py`.
+2. Run `make eval`. For prompt changes, also run the live profile (see [ai/evaluation.md](ai/evaluation.md)).
+3. Add the report to the pull request.
+
+## Retrain the classifier
+
+```bash
+cd backend && uv run python scripts/train_classifier.py
+```
+
+The script writes the model to `src/letterlens/ml/artifacts/letter_type.json` and
+the metrics to `evals/reports/classifier.json`. Commit both.
+
+## Database migrations
+
+Add a file `backend/migrations/NNNN_description.sql`. Never edit an applied file.
+Every new table needs `ENABLE ROW LEVEL SECURITY`, policies and a test in `tests/test_rls.py`.
+
+## Code style
+
+- Python: ruff (lint and format), mypy `--strict`. Line length 110.
+- TypeScript: eslint, `tsc --noEmit`, strict mode.
+- Commit messages: imperative mood, one subject line.
