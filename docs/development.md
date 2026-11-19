@@ -22,3 +22,26 @@ as `demo-client` or `counsellor-anna`.
 
 To use a real model locally:
 
+```bash
+LETTERLENS_LLM_PROVIDER=mistral LETTERLENS_LLM_API_KEY=... make api
+```
+
+## Tests
+
+| Command | Scope |
+|---|---|
+| `cd backend && uv run pytest` | unit, RLS isolation (needs Docker), API integration, gate test |
+| `cd backend && uv run pytest -m "not db"` | without a database |
+| `cd infra && uv run pytest` | CDK template assertions |
+| `cd web && npm test` | library and component tests |
+| `cd ios/Packages/LetterLensCore && swift test` | Swift core and contract tests |
+| `ios/scripts/typecheck.sh` | iOS app against the simulator SDK, without a simulator |
+| `make eval` | offline gate and fault-injection gate |
+
+## Change the API
+
+1. Change the models in `backend/src/letterlens/api/schemas.py` and the routes.
+2. Run `make contract`. This updates `contracts/openapi.json` and the web types.
+3. Run `cd backend && uv run python scripts/export_fixtures.py` (needs `make migrate`).
+4. Update the Swift models in `ios/Packages/LetterLensCore/Sources/LetterLensCore/Models.swift` and run `swift test`.
+
