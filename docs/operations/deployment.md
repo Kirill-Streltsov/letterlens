@@ -24,3 +24,21 @@ necessary only for TestFlight and the App Store.
 | 11 | Xcode, App Store Connect | The iOS app in TestFlight |
 | 12 | Stripe (optional) | Web subscriptions and counsellor seats |
 
+## 1. GitHub: allow workflow files
+
+The GitHub CLI token on this Mac cannot push files in `.github/workflows/`.
+
+1. Run this command and approve the scope in the browser:
+   ```bash
+   gh auth refresh -h github.com -s workflow
+   ```
+2. Push the local commits:
+   ```bash
+   cd ~/letterlens && git push
+   ```
+
+Result: the CI workflow starts on GitHub and the jobs `backend`, `eval-gate`,
+`infra` and `web` pass.
+
+## 2. Neon: create the database
+
