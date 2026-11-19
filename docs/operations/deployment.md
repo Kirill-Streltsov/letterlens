@@ -42,3 +42,32 @@ Result: the CI workflow starts on GitHub and the jobs `backend`, `eval-gate`,
 
 ## 2. Neon: create the database
 
+1. Create a free account at <https://neon.com>.
+2. Create a project. Name: `letterlens`. Region: **AWS Europe Central 1 (Frankfurt)**. PostgreSQL version: 17.
+3. Copy the connection string of the owner role (for example `neondb_owner`). Use the **direct** host (no `-pooler` in the host name). This is `NEON_ADMIN_URL`. Keep `?sslmode=require` at the end.
+4. Make a password for the application role:
+   ```bash
+   openssl rand -base64 24 | tr -d '/+=' | cut -c1-28
+   ```
+   This is `NEON_APP_PASSWORD`.
+5. Apply the migrations from your Mac. This also creates the role `letterlens_app`:
+   ```bash
+   cd ~/letterlens/backend
+   LETTERLENS_DATABASE_ADMIN_URL='<NEON_ADMIN_URL>' LETTERLENS_DB_APP_PASSWORD='<NEON_APP_PASSWORD>' \
+     uv run python -m letterlens.db.migrate
+   ```
+6. Make the application URL. Use the **pooled** host (with `-pooler`), the user `letterlens_app` and the password from step 4:
+   `postgresql://letterlens_app:<NEON_APP_PASSWORD>@<endpoint>-pooler.<region>.aws.neon.tech/neondb?sslmode=require`.
+   This is `DATABASE_URL`.
+
+Result: `applied: ['0001_init']`.
+
+## 3. Mistral: create the API key
+
+The default model provider is Mistral (EU company, EU processing, free tier).
+See [ADR-0003](../architecture/adr/0003-llm-gateway-and-providers.md).
+
+1. Create an account at <https://console.mistral.ai>. Select the free plan.
+2. Open **Admin console > Privacy**. Turn **off** the use of your API data for training.
+3. Create an API key. This is `MISTRAL_API_KEY`.
+
