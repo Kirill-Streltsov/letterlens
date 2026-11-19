@@ -20,3 +20,26 @@ the volume at which each service starts to cost money.
 AWS free-plan accounts created after 15 July 2025 also get credits for the first
 months. The design does not depend on them.
 
+## Unit economics at scale (list prices)
+
+The cost ledger records the list price of each call, also on free tiers.
+Estimate per letter with Mistral list prices: extraction about 2,000 input and
+800 output tokens on `mistral-small`, explanation about 3,000 input and 900
+output tokens on `mistral-medium`: approximately 0.003 USD. With Claude Opus 5.5
+($4 / $20 per million tokens): approximately 0.06 USD.
+
+| Volume | AWS + Neon | Model (Mistral list price) |
+|---|---|---|
+| 300 letters per month | 0 EUR | 0 EUR on the free tier |
+| 3,000 letters per month | about 1 EUR (27,000 transitions, of which 23,000 over the free limit, at 0.025 USD per 1,000) | about 9 USD on a paid plan |
+| 30,000 letters per month | about 15 EUR, plus Neon Launch plan | about 90 USD |
+
+Switch to Step Functions Express workflows above about 2,000 letters per month
+(priced per request and duration, not per transition).
+
+## Controls
+
+- AWS Budget: e-mail at 50 % and 100 % of 1 USD actual spend and at 100 % forecast.
+- Gateway: monthly model budget (`monthlyLlmBudgetUsd`) and daily tokens per user.
+- Alarm `LlmSpendDaily`.
+- Quotas: 3 letters per month on the free plan.
