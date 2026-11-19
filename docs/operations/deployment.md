@@ -71,3 +71,28 @@ See [ADR-0003](../architecture/adr/0003-llm-gateway-and-providers.md).
 2. Open **Admin console > Privacy**. Turn **off** the use of your API data for training.
 3. Create an API key. This is `MISTRAL_API_KEY`.
 
+Result: you have a key, and training on your data is off.
+
+> The production settings refuse to start with Mistral until you confirm step 2
+> (parameter `llm_training_opt_out_confirmed` in step 6).
+
+## 4. AWS: account, budget, CDK bootstrap
+
+1. Create an AWS account at <https://aws.amazon.com>. Select region **Europe (Frankfurt) eu-central-1** for all work.
+2. Turn on MFA for the root user. Do not use the root user after this step.
+3. In IAM Identity Center, create a user with the `AdministratorAccess` permission set. Use this user for steps 4 to 6 only.
+4. Install the AWS CLI and sign in:
+   ```bash
+   brew install awscli
+   aws configure sso
+   ```
+5. Set your e-mail address for alarms and the budget in `infra/cdk.json`, key `stages.prod.alarmEmail`.
+6. If the Cognito domain prefix `letterlens-ks26` is not available, change `stages.prod.cognitoDomainPrefix` in `infra/cdk.json`.
+7. Bootstrap CDK in the account:
+   ```bash
+   cd ~/letterlens/infra
+   npx aws-cdk@2 bootstrap aws://<ACCOUNT_ID>/eu-central-1
+   ```
+
+Result: the stack `CDKToolkit` exists in CloudFormation.
+
