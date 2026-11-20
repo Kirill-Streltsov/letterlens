@@ -24,3 +24,30 @@ fields @timestamp, step, ms, degraded, msg
 | sort @timestamp asc
 ```
 
+Slow API routes:
+
+```
+fields route, ms
+| filter msg = "request"
+| stats pct(ms, 95) as p95, count() as n by route
+| sort p95 desc
+```
+
+Model failures by type:
+
+```
+fields model, error
+| filter msg = "llm call failed"
+| stats count() by model, error
+```
+
+Log lines contain no letter text. Do not add any.
+
+## Alarms
+
+### ApiErrors (5 or more errors in 5 minutes)
+
+1. Run the "Errors in the last hour" query.
+2. If `exc_type` is `OperationalError` or `PoolTimeout`: check Neon status and the Neon compute hours (free plan: 100 per month). A suspended or over-quota compute causes this.
+3. If the errors started after a deploy: run the Deploy workflow on the previous commit (rollback).
+
