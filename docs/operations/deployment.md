@@ -195,3 +195,25 @@ before you invite users, and after every prompt or model change.
    git commit -am "Language status from live evaluation" && git push
    ```
 
+Result: `languages.yaml` marks each language `enabled` or `experimental`.
+
+## 11. iOS app in TestFlight
+
+1. In the Apple Developer portal, create the App ID `app.letterlens.ios`.
+2. In App Store Connect, create the app and the auto-renewable subscription `app.letterlens.plus.monthly` (group "LetterLens Plus", 4.99 EUR).
+3. In App Store Connect, set **App Store Server Notifications V2** to `https://<SiteUrl>/v1/billing/appstore/notifications`.
+4. Put the stack outputs into `ios/Config/Release.xcconfig`: the site domain, `AuthDomain` and `IosClientId`.
+5. Generate the project and open it:
+   ```bash
+   cd ~/letterlens/ios && xcodegen generate && open LetterLens.xcodeproj
+   ```
+6. Select your team in **Signing & Capabilities**. Add the capability **In-App Purchase**.
+7. Select **Product > Archive**, then **Distribute App > TestFlight**.
+
+To run the app against your local API, use the Debug configuration. It uses
+`http://localhost:8000` and the demo user. Start the API with `make api`.
+
+## 12. Stripe (optional)
+
+Stripe sells Plus on the web and counsellor seats to services.
+
