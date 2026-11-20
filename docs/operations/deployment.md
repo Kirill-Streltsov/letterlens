@@ -162,3 +162,36 @@ aws cloudformation describe-stacks --stack-name LetterLens-prod --query 'Stacks[
 
 ## 9. First counselling service and admin
 
+1. Create the counselling service. The command prints its id:
+   ```bash
+   cd ~/letterlens/backend
+   LETTERLENS_SSM_PREFIX=/letterlens/prod/ uv run python -m letterlens.admin \
+     create-tenant "Migrationsberatung Musterstadt" --city Bochum --languages de,tr,ar,uk
+   ```
+2. Create an admin invite code for this service:
+   ```bash
+   LETTERLENS_SSM_PREFIX=/letterlens/prod/ uv run python -m letterlens.admin invite <tenant-id> --role admin
+   ```
+3. Give the code to the counsellor. The counsellor signs up on the web app, opens **Settings**, and enters the code.
+4. To give yourself the cost dashboard, add your user to the Cognito group `platform_admin`:
+   ```bash
+   aws cognito-idp admin-add-user-to-group --user-pool-id <UserPoolId> --username <your-email> --group-name platform_admin
+   ```
+
+Result: the counsellor sees **Case inbox** in the navigation.
+
+## 10. Live evaluation and language status
+
+The offline gate runs on every pull request. Run the live gate with the real model
+before you invite users, and after every prompt or model change.
+
+1. Open **Actions > CI > Run workflow**. Select **live_eval**.
+2. Read the job summary. All gates must pass.
+3. Update the language status on your Mac and commit the change:
+   ```bash
+   cd ~/letterlens/backend
+   LETTERLENS_LLM_PROVIDER=mistral LETTERLENS_LLM_API_KEY='<MISTRAL_API_KEY>' \
+     uv run python -m evals.run --profile live --update-languages
+   git commit -am "Language status from live evaluation" && git push
+   ```
+
