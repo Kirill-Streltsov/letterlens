@@ -217,3 +217,28 @@ To run the app against your local API, use the Debug configuration. It uses
 
 Stripe sells Plus on the web and counsellor seats to services.
 
+1. Create a Stripe account. Stay in **test mode** until the legal review is complete.
+2. Create two recurring prices: Plus (4.99 EUR per month) and Seat (29 EUR per month per seat).
+3. Create a webhook endpoint `https://<SiteUrl>/v1/billing/stripe/webhook` for the events `customer.subscription.created`, `customer.subscription.updated` and `customer.subscription.deleted`.
+4. Store the values:
+   ```bash
+   P=/letterlens/prod
+   aws ssm put-parameter --name $P/stripe_secret_key --type SecureString --value '<sk_test_...>'
+   aws ssm put-parameter --name $P/stripe_webhook_secret --type SecureString --value '<whsec_...>'
+   aws ssm put-parameter --name $P/stripe_price_plus --type String --value '<price_...>'
+   aws ssm put-parameter --name $P/stripe_price_seat --type String --value '<price_...>'
+   ```
+5. Force a cold start of the API so that it reads the new values:
+   ```bash
+   aws lambda update-function-configuration --function-name <ApiFunctionName> \
+     --description "reload $(date +%s)"
+   ```
+
+## Before real users: checklist
+
+- [ ] A lawyer has reviewed the legal-advice boundary ([rdg-boundary.md](../legal/rdg-boundary.md)).
+- [ ] A counsellor has reviewed every corpus entry and set `reviewed_by` in `backend/corpus/*.md`.
+- [ ] The privacy policy names all processors ([data-protection.md](../security/data-protection.md)).
+- [ ] The live evaluation passes, and you have added real, consented letters to the golden set.
+- [ ] Counsellor accounts use MFA (Cognito, TOTP).
+- [ ] A custom domain with its own certificate replaces the CloudFront domain.
