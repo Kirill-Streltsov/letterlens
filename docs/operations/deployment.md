@@ -121,3 +121,25 @@ aws ssm put-parameter --name $P/llm_api_key --type SecureString --value '<MISTRA
 aws ssm put-parameter --name $P/llm_training_opt_out_confirmed --type String --value true
 ```
 
+> **Warning:** the parameter `kek_base64` encrypts all letters. If you lose it,
+> you cannot read the stored letters. Do not change it after the first letter.
+> To keep a copy, print it once and store it in your password manager.
+
+Result: `aws ssm get-parameters-by-path --path /letterlens/prod/` shows four parameters.
+
+## 7. GitHub: secrets and environment
+
+1. Make the origin secret:
+   ```bash
+   openssl rand -hex 32
+   ```
+2. In the repository settings, create the environment **production**.
+3. In this environment, add these secrets:
+
+| Secret | Value |
+|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | output of step 5 |
+| `NEON_ADMIN_URL` | step 2.3 |
+| `NEON_APP_PASSWORD` | step 2.4 |
+| `ORIGIN_VERIFY_SECRET` | step 7.1 |
+
