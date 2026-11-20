@@ -96,3 +96,28 @@ Result: you have a key, and training on your data is off.
 
 Result: the stack `CDKToolkit` exists in CloudFormation.
 
+## 5. AWS: the GitHub deploy role
+
+The deploy role lets GitHub Actions deploy without stored AWS keys (OIDC).
+
+```bash
+cd ~/letterlens/infra
+make -C .. build-lambda
+npx aws-cdk@2 deploy LetterLens-ci -c stage=prod
+```
+
+Result: the output `DeployRoleArn`. This is `AWS_DEPLOY_ROLE_ARN`.
+
+## 6. AWS SSM: the runtime secrets
+
+The Lambda functions read these parameters at cold start. Standard parameters
+are free. Replace the values in angle brackets.
+
+```bash
+P=/letterlens/prod
+aws ssm put-parameter --name $P/database_url --type SecureString --value '<DATABASE_URL>'
+aws ssm put-parameter --name $P/kek_base64 --type SecureString --value "$(openssl rand -base64 32)"
+aws ssm put-parameter --name $P/llm_api_key --type SecureString --value '<MISTRAL_API_KEY>'
+aws ssm put-parameter --name $P/llm_training_opt_out_confirmed --type String --value true
+```
+
