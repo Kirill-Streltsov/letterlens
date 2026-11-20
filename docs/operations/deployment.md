@@ -143,3 +143,22 @@ Result: `aws ssm get-parameters-by-path --path /letterlens/prod/` shows four par
 | `NEON_APP_PASSWORD` | step 2.4 |
 | `ORIGIN_VERIFY_SECRET` | step 7.1 |
 
+4. Add `MISTRAL_API_KEY` as a **repository** secret (the live evaluation uses it).
+
+## 8. First deployment
+
+1. Open **Actions > Deploy > Run workflow** on the branch `main`.
+2. Wait for the job to finish (approximately 10 minutes).
+3. Open the job log. Find the line `SiteUrl`.
+
+Result: the smoke test passes. `https://<SiteUrl>/health` returns `{"status":"ok"}`.
+Later pushes to `main` deploy automatically after CI passes.
+
+To see all stack outputs:
+
+```bash
+aws cloudformation describe-stacks --stack-name LetterLens-prod --query 'Stacks[0].Outputs'
+```
+
+## 9. First counselling service and admin
+
