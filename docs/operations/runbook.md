@@ -75,3 +75,29 @@ The daily list price of model calls is over the limit.
 
 ### GuardrailSpike (50 or more refusals in one hour)
 
+1. Check whether one user sends many advice or injection questions (log field `reason`).
+2. A spike after a prompt change can be a false-positive regression: run the live evaluation.
+
+## Routine tasks
+
+| Task | Frequency | Procedure |
+|---|---|---|
+| Check the AWS bill and Neon usage | Monthly | AWS Billing console; Neon dashboard |
+| Review corpus entries (`checked_on`) | Every 6 months, and after a law change | Update text, source and `checked_on`; run the offline gate |
+| Live evaluation | Before each release; monthly | Deployment guide, step 10 |
+| Rotate the Mistral key | Every 6 months or after a leak | Create a new key, update SSM `llm_api_key`, force a cold start (deployment guide step 12.5), delete the old key |
+| Rotate the origin secret | Yearly or after a leak | Update the GitHub secret, run Deploy |
+| Delete audit-log rows older than 3 years | Yearly | Connect with the owner role: `DELETE FROM audit_log WHERE at < now() - interval '3 years'` |
+
+## The key encryption key (KEK)
+
+The KEK in SSM (`kek_base64`) decrypts every letter. Do not change it in place.
+If the KEK leaks: create a new KEK, re-wrap all rows in `user_keys` with a
+one-off script (unwrap with the old KEK, wrap with the new KEK, increase
+`kek_version`), then replace the SSM value. Letter ciphertext does not change.
+
+## Restore
+
+Neon keeps a history for point-in-time restore (free plan: limited window). To
+restore, create a branch from a time before the incident in the Neon console and
+point `database_url` to it. Letters remain encrypted; the KEK must be the same.
