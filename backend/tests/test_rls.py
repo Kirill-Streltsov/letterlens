@@ -194,3 +194,42 @@ def test_messages_visible_to_participants_only(db: Database, world: dict[str, st
         with db.session(ctx(world, who, *tenants)) as conn:
             n = conn.execute("SELECT count(*) AS n FROM messages").fetchone()
         assert n == {"n": expected}, who
+
+
+def test_admin_cli_creates_tenant_and_invite(
+    database_urls: tuple[str, str], monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from letterlens import admin
+    from letterlens.config import get_settings
+
+    monkeypatch.setenv("LETTERLENS_DATABASE_URL", database_urls[1])
+    monkeypatch.delenv("LETTERLENS_SSM_PREFIX", raising=False)
+    get_settings.cache_clear()
+    try:
+        assert admin.main(["create-tenant", "CLI Service", "--city", "Dortmund"]) == 0
+        tenant_id = capsys.readouterr().out.strip()
+        assert admin.main(["invite", tenant_id]) == 0
+        assert len(capsys.readouterr().out.strip()) == 14
+    finally:
+        get_settings.cache_clear()
+
+
+def test_retention_job_purges_old_ledger_rows_only_in_system_context(
+    db: Database, world: dict[str, str]
+) -> None:
+    with db.session(DbContext.as_system()) as conn:
+        conn.execute(
+            "INSERT INTO llm_calls (created_at, task, provider, model, prompt_version, input_tokens,"
+            " output_tokens, list_price_usd, latency_ms, attempts, fallback_used, ok)"
+            " VALUES (now() - interval '14 months','extract','p','m','old',1,1,0,1,1,false,true)"
+        )
+    with db.session(ctx(world, "alice")) as conn:
+        conn.execute("DELETE FROM llm_calls")  # allowed statement, but RLS matches no rows
+    with db.session(DbContext.as_system()) as conn:
+        assert conn.execute(
+            "SELECT count(*) AS n FROM llm_calls WHERE prompt_version = 'old'"
+        ).fetchone() == {"n": 1}
+        R.purge_expired(conn)
+        assert conn.execute(
+            "SELECT count(*) AS n FROM llm_calls WHERE prompt_version = 'old'"
+        ).fetchone() == {"n": 0}
