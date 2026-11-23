@@ -144,6 +144,8 @@ Result: `aws ssm get-parameters-by-path --path /letterlens/prod/` shows four par
 | `ORIGIN_VERIFY_SECRET` | step 7.1 |
 
 4. Add `MISTRAL_API_KEY` as a **repository** secret (the live evaluation uses it).
+5. Add the **repository variable** `DEPLOY_ENABLED` with the value `true`. Without it,
+   pushes to `main` do not deploy; only a manual run of the Deploy workflow does.
 
 ## 8. First deployment
 
