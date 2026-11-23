@@ -46,3 +46,5 @@ infra/build/
 infra/cdk-outputs.json
 web/tsconfig.tsbuildinfo
 .claude/
+.build/
+.swiftpm/
