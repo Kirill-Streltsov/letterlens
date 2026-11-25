@@ -1,0 +1,126 @@
+{
+  "profile": "live",
+  "provider": "mistral",
+  "prompt_versions": [
+    "extract-v3",
+    "explain-v3",
+    "guard-v2"
+  ],
+  "golden_letters": 126,
+  "suites": {
+    "classification": {
+      "synthetic_accuracy": 1.0,
+      "handwritten_accuracy": 0.9166666666666666,
+      "macro_recall": 0.9920634920634921,
+      "per_class_recall": {
+        "tax": 1.0,
+        "benefits": 1.0,
+        "health_insurance": 1.0,
+        "immigration": 1.0,
+        "landlord": 1.0,
+        "other": 0.9523809523809523
+      },
+      "ece": 0.0068,
+      "model_version": "lt-20261126-8426"
+    },
+    "extraction": {
+      "letters": 126,
+      "letter_date_accuracy": 1.0,
+      "explicit_deadline_recall": 0.9898,
+      "explicit_deadline_precision": 1.0,
+      "deadline_exact_match_letters": 0.9921,
+      "relative_deadline_recall": 1.0,
+      "amount_recall": 0.9854,
+      "amount_direction_accuracy": 0.963,
+      "unsafe_verified_dates": 0,
+      "unsafe_verified_amounts": 0,
+      "verified_share_of_dates": 1.0,
+      "mean_grounding_rate": 1.0,
+      "degraded_letters": 0,
+      "failures": [
+        {
+          "id": "insurance_arrears-4255419593",
+          "expected_dates": [
+            "2026-05-13"
+          ],
+          "shown_dates": [
+            "2026-05-13"
+          ],
+          "missing_amounts": [
+            "1169.50",
+            "38.50"
+          ]
+        },
+        {
+          "id": "hw-care-insurance",
+          "expected_dates": [
+            "2026-03-17"
+          ],
+          "shown_dates": [],
+          "missing_amounts": []
+        }
+      ]
+    },
+    "retrieval": {
+      "letters": 114,
+      "recall_at_4": 0.9912,
+      "mrr": 0.9912,
+      "misses": [
+        {
+          "id": "hw-kindergeld-school",
+          "got": [
+            "tax-objection",
+            "legal-aid",
+            "formal-delivery",
+            "benefits-repayment"
+          ],
+          "expected": [
+            "cooperation-duty"
+          ]
+        }
+      ]
+    },
+    "guardrail": {
+      "questions": 96,
+      "advice_catch_rate": 1.0,
+      "advice_catch_rate_rules_only": 0.8519,
+      "benign_false_positive_rate": 0.0294,
+      "injection_catch_rate": 1.0,
+      "per_language_advice_catch": {
+        "ar": 1.0,
+        "de": 1.0,
+        "en": 1.0,
+        "ru": 1.0,
+        "tr": 1.0,
+        "uk": 1.0
+      },
+      "per_language_false_positive": {
+        "ar": 0.0,
+        "de": 0.0,
+        "en": 0.0,
+        "ru": 0.0,
+        "tr": 0.0,
+        "uk": 0.2
+      }
+    },
+    "faithfulness": {
+      "judge_accuracy_on_calibration_set": 0.95,
+      "letters": 8,
+      "per_language": {
+        "de": 0.95,
+        "tr": 0.925,
+        "ar": 0.95,
+        "uk": 0.9,
+        "ru": 0.975
+      },
+      "min_language_score": 0.9
+    }
+  },
+  "seconds": 790.0,
+  "llm_calls": 492,
+  "llm_list_price_usd": 0.1215,
+  "gate": {
+    "passed": true,
+    "failures": []
+  }
+}

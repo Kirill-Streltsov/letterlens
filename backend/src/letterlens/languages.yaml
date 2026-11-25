@@ -1,12 +1,32 @@
-# Output languages. The evaluation job (evals/run.py --update-languages) sets
-# "status" and "faithfulness" from the latest measured scores.
-# enabled:      faithfulness >= threshold in evals/thresholds.yaml
-# experimental: not yet measured, or below threshold; the client shows a warning
-# disabled:     not offered
 languages:
-  en: {name: English, native_name: English, status: enabled, faithfulness: null}
-  de: {name: Plain German, native_name: Einfaches Deutsch, status: enabled, faithfulness: null}
-  tr: {name: Turkish, native_name: Türkçe, status: experimental, faithfulness: null}
-  ar: {name: Arabic, native_name: العربية, rtl: true, status: experimental, faithfulness: null}
-  uk: {name: Ukrainian, native_name: Українська, status: experimental, faithfulness: null}
-  ru: {name: Russian, native_name: Русский, status: experimental, faithfulness: null}
+  en:
+    name: English
+    native_name: English
+    status: enabled
+    faithfulness: null
+  de:
+    name: Plain German
+    native_name: Einfaches Deutsch
+    status: enabled
+    faithfulness: 0.95
+  tr:
+    name: Turkish
+    native_name: Türkçe
+    status: enabled
+    faithfulness: 0.925
+  ar:
+    name: Arabic
+    native_name: العربية
+    rtl: true
+    status: enabled
+    faithfulness: 0.95
+  uk:
+    name: Ukrainian
+    native_name: Українська
+    status: enabled
+    faithfulness: 0.9
+  ru:
+    name: Russian
+    native_name: Русский
+    status: enabled
+    faithfulness: 0.975

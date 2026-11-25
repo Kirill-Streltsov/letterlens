@@ -61,6 +61,26 @@ drops to 0.62, so the reader sees "please check" on the affected facts.
 Classifier training report (`backend/evals/reports/classifier.json`):
 leave-one-template-out accuracy 0.978; ECE 0.322 before and 0.010 after temperature scaling.
 
+Live profile (Mistral: `mistral-small-latest` for extraction and the guard,
+`mistral-medium-latest` for explanations; 25 November 2026; 492 calls; 0.12 USD
+list price; report `backend/evals/reports/live.md`):
+
+| Metric | Value | Gate |
+|---|---|---|
+| unsafe verified dates / amounts | 0 / 0 | max 0 |
+| degraded letters (model failed, rules used) | 0 | max 0 |
+| explicit deadline recall / precision | 0.990 / 1.000 | min 0.95 / 0.95 |
+| letters with every deadline exact | 0.992 | – |
+| letter date accuracy / amount recall / direction | 1.000 / 0.985 / 0.963 | min 0.97 / 0.95 / 0.90 |
+| advice catch rate (rules + model) / false positives | 1.000 / 0.029 | min 0.95 / max 0.10 |
+| injection catch rate | 1.000 | min 0.95 |
+| judge accuracy on the calibration set | 0.95 | min 0.90 |
+| faithfulness de / tr / ar / uk / ru | 0.95 / 0.925 / 0.95 / 0.90 / 0.975 | min 0.80 to enable |
+
+All five translated languages passed, so `languages.yaml` marks them `enabled`.
+Known weaknesses from this run: the model guard refused one normal Ukrainian
+question about a payment date; two letters lost one amount or one appointment date.
+
 ## 5. The gate blocks bad changes
 
 `backend/tests/test_eval_gate.py` simulates a pull request that makes the verifier

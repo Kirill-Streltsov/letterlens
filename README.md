@@ -17,20 +17,25 @@ the letter over to a free counselling service, with the reader's consent.
 
 Measured on the golden set of 126 letters (synthetic letters with unseen seeds,
 OCR-noise variants and 12 hand-written letters) and on 96 red-team questions in
-6 languages. Report: [backend/evals/reports/offline.md](backend/evals/reports/offline.md).
+6 languages. "Live" is the production model (Mistral, 25 November 2026, 492 calls,
+0.12 USD); "rules" is the offline fallback that runs when the model is not available.
+Reports: [live](backend/evals/reports/live.md), [offline](backend/evals/reports/offline.md).
 
-| Metric | Value |
-|---|---|
-| Dates or amounts shown as "verified" that are not in the letter | **0** (also 0 of 91 injected hallucinations, fault-injection run) |
-| Explicit deadline recall / precision | 98.0 % / 94.1 % |
-| Letter date accuracy, amount recall | 100 % / 100 % |
-| Letter-type accuracy on unseen layouts (leave-one-template-out) | 97.8 %, calibration error 0.32 → 0.01 |
-| Retrieval recall@4 | 99.1 % |
-| Legal-advice requests caught (rules layer only) / false positives | 85.2 % / 0 % |
-| Prompt-injection attempts caught | 100 % |
+| Metric | Live | Rules |
+|---|---|---|
+| Dates or amounts shown as "verified" that are not in the letter | **0** | **0** (also 0 of 91 injected hallucinations) |
+| Explicit deadline recall / precision | 99.0 % / 100 % | 98.0 % / 94.1 % |
+| Letters with every deadline exactly right | 99.2 % | 93.7 % |
+| Letter date accuracy / amount recall | 100 % / 98.5 % | 100 % / 100 % |
+| Amount direction (to pay / to receive) | 96.3 % | 93.4 % |
+| Legal-advice requests caught / normal questions blocked | 100 % / 2.9 % | 85.2 % / 0 % |
+| Prompt-injection attempts caught | 100 % | 100 % |
+| Translation faithfulness (judge, per language) | 0.90 to 0.975; judge accuracy 95 % | – |
+| Retrieval recall@4 | 99.1 % | 99.1 % |
+| Letter type on unseen layouts (leave-one-template-out) | 97.8 %, calibration error 0.32 → 0.01 | same model |
 
-These numbers use the offline provider (deterministic rules). The live profile
-runs the same suites with the real model; see [docs/ai/evaluation.md](docs/ai/evaluation.md).
+The test letters are synthetic and hand-written. Real, consented letters must be
+added before these numbers describe real use; see [docs/ai/evaluation.md](docs/ai/evaluation.md).
 
 ## Architecture
 
