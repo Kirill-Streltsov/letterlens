@@ -1,0 +1,218 @@
+<section id="p3">
+  <h2><span class="num">3</span> Architecture</h2>
+  <div class="summary">Two clients (iOS and web) read the letter on the device and send only text. One API on AWS Lambda
+  stores the letter encrypted and starts a background workflow. The workflow uses a small local model, the
+  Mistral language model, and plain code. PostgreSQL stores everything and enforces who can see what.</div>
+
+  [[big_picture]]
+
+  <h3>The parts and their jobs</h3>
+  <table>
+    <tr><th>Part</th><th>Technology</th><th>Job</th></tr>
+    <tr><td>iOS app</td><td>SwiftUI, VisionKit, Vision, StoreKit 2</td><td>Scan, read text on the device, show the result, reminders, purchases</td></tr>
+    <tr><td>Web app</td><td>Next.js (React, TypeScript), static files</td><td>The same reader flow in a browser; the counsellor case inbox</td></tr>
+    <tr><td>CloudFront</td><td>AWS content delivery network</td><td>One address for web files and API; HTTPS; security headers</td></tr>
+    <tr><td>API</td><td>Python 3.13, FastAPI, on Lambda</td><td>Authentication, quotas, letters, questions, sharing, billing</td></tr>
+    <tr><td>Pipeline</td><td>AWS Step Functions + a worker Lambda</td><td>Classify, extract, verify, retrieve, explain: each step with retries</td></tr>
+    <tr><td>Database</td><td>PostgreSQL 17 on Neon (Frankfurt)</td><td>All data, encrypted per user; row-level security isolates users and services</td></tr>
+    <tr><td>Language model</td><td>Mistral (EU), behind a gateway</td><td>Extraction, explanation, translation, question answering</td></tr>
+    <tr><td>Identity</td><td>Amazon Cognito</td><td>Sign-up, sign-in, tokens; groups for counsellors and admins</td></tr>
+  </table>
+
+  <h3>Why "a modular monolith on serverless"</h3>
+  <p>The backend is one Python package with clear modules, deployed as Lambda functions. There are no
+  microservices: one engineer runs the product, and one database and one deploy are easier to understand and to test.
+  Serverless functions cost nothing when nobody uses them, which keeps the hosting inside the free tier.</p>
+  <p class="ios"><strong>iOS analogy:</strong> one app target with well-separated Swift packages, instead of several apps
+  that talk to each other.</p>
+
+  <h3>Where the code is</h3>
+  <table>
+    <tr><th>Folder</th><th>Content</th><th>Size</th></tr>
+    <tr><td><code>backend/src/letterlens/</code></td><td>The Python application</td><td>7,400 lines</td></tr>
+    <tr><td><code>backend/tests/</code>, <code>backend/evals/</code></td><td>Tests and the evaluation suite</td><td>2,650 lines</td></tr>
+    <tr><td><code>backend/corpus/</code></td><td>24 explanation passages with sources</td><td>24 Markdown files</td></tr>
+    <tr><td><code>web/src/</code></td><td>Web app</td><td>2,100 lines</td></tr>
+    <tr><td><code>ios/</code></td><td>iOS app and the <code>LetterLensCore</code> package</td><td>2,500 lines</td></tr>
+    <tr><td><code>infra/</code></td><td>AWS infrastructure as code (CDK, Python)</td><td>600 lines</td></tr>
+    <tr><td><code>contracts/</code></td><td>OpenAPI description and real API responses for client tests</td><td></td></tr>
+    <tr><td><code>docs/</code></td><td>Decision records, threat model, runbook, deployment guide, this guide</td><td></td></tr>
+  </table>
+</section>
+
+<section id="p4">
+  <h2><span class="num">4</span> The life of one letter</h2>
+  <div class="summary">The upload returns at once. A background workflow then runs six steps. The app polls until the
+  status is "ready". Only two steps call the language model; the others are plain code.</div>
+
+  [[life_of_letter]]
+
+  <h3>Step by step</h3>
+  <ol class="steps">
+    <li><strong>On the phone.</strong> VisionKit finds the page edges; Apple Vision reads the German text.
+      <code>DocumentBuilder.build</code> (Swift) sorts the lines top to bottom and numbers them, for example <code>p1-l13</code>
+      = page 1, line 13. These ids are the backbone of the grounding check.</li>
+    <li><strong>Upload.</strong> The app sends <code>POST /v1/letters</code> with the lines and an <code>Idempotency-Key</code>.
+      If the network repeats the request, the server returns the first answer instead of creating a second letter.</li>
+    <li><strong>Accept.</strong> <code>LetterService.create</code> checks the rate limit (30 per minute) and the monthly quota
+      (3 letters on the free plan), encrypts the letter with the reader's key, and stores it.</li>
+    <li><strong>Start.</strong> The API starts a Step Functions execution and answers <code>202 Accepted</code> at once.</li>
+    <li><strong>Pipeline.</strong> Six steps run in the worker Lambda (figure 3). After each step, the state is saved encrypted.</li>
+    <li><strong>Ready.</strong> The status changes to <code>ready</code>. The app, which polls every 1.5 seconds, shows the result.</li>
+  </ol>
+
+  [[pipeline]]
+
+  <h3>What happens when something fails</h3>
+  <table>
+    <tr><th>Failure</th><th>Response</th></tr>
+    <tr><td>The model times out or is rate-limited</td><td>The gateway retries 3 times with growing pauses, then tries the fallback model.</td></tr>
+    <tr><td>All models fail, or the monthly budget is spent</td><td>A rule-based extractor and a template explanation take over. The letter is marked <em>degraded</em>, and the app shows a warning.</td></tr>
+    <tr><td>A pipeline step crashes</td><td>Step Functions retries it twice. After that, the letter gets the status <code>failed</code>, and the reader can submit it again.</td></tr>
+    <tr><td>The model returns broken JSON</td><td>The gateway asks once more with the error message ("repair"). Then it falls back.</td></tr>
+  </table>
+</section>
+
+<section id="p5">
+  <h2><span class="num">5</span> Code tour: the backend</h2>
+  <div class="summary">The backend is the package <code>letterlens</code>. Dependencies point inwards: HTTP routes call
+  services, services call the pipeline, and the pipeline uses small, separately tested modules. This chapter shows the
+  most important functions with short code excerpts.</div>
+
+  [[modules]]
+
+  <h3>5.1 Shared types: <code>domain.py</code></h3>
+  <p>All data structures are pydantic models (Python's equivalent of <code>Codable</code> structs with validation).
+  Most are <em>frozen</em> (immutable, like a Swift <code>struct</code> with <code>let</code> properties).</p>
+  <pre><code>class OcrLine(Frozen):
+    page: int = Field(ge=1, le=50)
+    index: int = Field(ge=1, le=500)
+    text: str = Field(max_length=2000)
+    bbox: BBox | None = None
+
+    @property
+    def id(self) -&gt; str:
+        return f"p{self.page}-l{self.index}"     # "p1-l13"
+
+class VerifiedDeadline(Frozen):
+    due_date: date | None
+    status: FactStatus        # VERIFIED or NEEDS_CHECK
+    is_estimate: bool
+    line_ids: list[str]
+    rule: str | None          # how an estimate was computed</code></pre>
+  <p>Important types: <code>LetterDocument</code> (the input), <code>Extraction</code> (what the model proposes),
+  <code>VerifiedFacts</code> (what the code accepted), <code>Explanation</code> (the text the reader sees).</p>
+
+  <h3>5.2 German dates and amounts: <code>grounding/german.py</code></h3>
+  <p>Two pure functions with regular expressions: <code>find_dates(text)</code> finds "15.12.2026", "15. Dezember 2026",
+  "15.12.26" and ISO dates; <code>find_amounts(text)</code> finds "1.234,56 €", "EUR 12,00" and "99 Euro". They are tested
+  with <em>property-based tests</em>: the test library generates hundreds of random dates and amounts, formats them the
+  German way, and checks that the parser reads back the same value.</p>
+
+  <h3>5.3 The grounding check: <code>grounding/verifier.py</code> — the most important function</h3>
+  [[grounding]]
+  <p><code>verify(extraction, doc)</code> takes the model's proposal and the original lines and returns
+  <code>VerifiedFacts</code>. For each date and amount it asks one question: <em>does the cited line contain this value?</em></p>
+  <pre><code>explicit = parse_iso_date(item.date)
+if explicit in find_dates(cited):          # the cited line contains it
+    status, note = VERIFIED, None
+elif explicit in doc_dates:                # somewhere else in the letter
+    status, note = NEEDS_CHECK, NOTE_OTHER_LINE
+else:                                      # invented
+    status, note = NEEDS_CHECK, NOTE_NOT_IN_SOURCE</code></pre>
+  <p>It also drops reference numbers that are not in their line, removes line ids that do not exist, and ignores lines
+  that look like instructions to a model (prompt injection). The result includes a <code>grounding_rate</code>:
+  the share of facts that passed.</p>
+
+  <h3>5.4 Deadline rules: <code>grounding/deadlines.py</code></h3>
+  <p>Many letters do not give a date. They say "innerhalb eines Monats nach Bekanntgabe" (within one month after
+  notification). The model only copies this phrase. Code computes the date:</p>
+  <ol>
+    <li><code>parse_relative_period</code> finds the number, the unit (days, weeks, months) and the start event.</li>
+    <li><code>estimate_deadline</code> applies the general legal rules: a posted letter counts as received on the
+      <strong>fourth</strong> day after posting (since 1 January 2025); a month ends on the same day number of the next month;
+      if the last day is a weekend or a nationwide public holiday, the period ends on the next working day.</li>
+    <li>Easter (needed for Good Friday, Ascension, Whit Monday) is computed with the Gauss/Meeus algorithm in <code>easter_sunday</code>.</li>
+  </ol>
+  <p>An estimate is <strong>always</strong> shown as "please check", with the rule used, because regional holidays and
+  the real delivery date can change it.</p>
+
+  <h3>5.5 Personal data: <code>safety/pii.py</code></h3>
+  [[pii]]
+  <p><code>PiiVault</code> replaces identifiers with placeholders before text reaches the model, and puts the real values
+  back after the answer. Rules exist for IBANs, e-mail addresses, phone numbers, the tax id, tax numbers, benefit and
+  insurance numbers, birth dates and case references. <code>_address_block_flags</code> finds the recipient name and street:
+  the two lines above a postcode line, if they look like a person and a street (and not like "Finanzamt …").
+  A test caught a real bug here: the street "Am <u>Stadt</u>park 113" was first mistaken for an organization.</p>
+
+  <h3>5.6 The letter-type classifier: <code>ml/classifier.py</code></h3>
+  [[classifier]]
+  <p><code>LinearModel.classify(text)</code> turns the text into weighted features (TF-IDF), computes one score per letter
+  type, and converts scores into probabilities with a <em>temperature</em> T. Temperature scaling makes the probability honest:
+  "0.9" means right about 9 times in 10. Below 0.5, the model <em>abstains</em> and the letter is handled as "other".</p>
+  <p>The training script <code>backend/scripts/train_classifier.py</code> uses scikit-learn. The serving code reimplements
+  the maths in plain Python, so the Lambda bundle stays at 84 MB; numpy, scipy and scikit-learn would add about 150 MB (the limit is 250 MB). A test proves that both give the
+  same probabilities (<code>tests/test_classifier.py::test_parity_with_sklearn</code>).</p>
+
+  <h3>5.7 Retrieval: <code>rag/retriever.py</code></h3>
+  [[retrieval]]
+  <p>The 24 passages in <code>backend/corpus/*.md</code> are short English texts, each with a source link (mostly
+  <em>gesetze-im-internet.de</em>), a check date and German keywords. <code>Bm25</code> is a classic keyword-ranking formula
+  (the one behind most search engines). <code>HybridRetriever.search</code> fuses the keyword ranking with the optional
+  embedding ranking by <em>reciprocal rank fusion</em>, filters by letter type, and drops passages without any match.</p>
+
+  <h3>5.8 The LLM gateway: <code>llm/gateway.py</code></h3>
+  [[gateway]]
+  <p><code>Gateway.generate(task, schema_model, system, user, prompt_version, …)</code> is the only way the application calls
+  a model. It returns a validated pydantic object, never raw text.</p>
+  <pre><code>facts = gateway.generate(
+    Task.EXTRACT, Extraction,                 # task and expected schema
+    P.extract_system(letter_type),            # versioned prompt
+    P.extract_user(redacted.as_numbered_text()),
+    P.EXTRACT_VERSION,                         # "extract-v3", stored in the ledger
+    user_id=state.owner_id, letter_id=state.letter_id)</code></pre>
+  <p>Providers implement one small protocol (<code>complete</code>, <code>embed</code>), like a Swift protocol with three
+  conforming types:</p>
+  <ul>
+    <li><code>OpenAICompatibleProvider</code>: Mistral (production); also Groq, Ollama, vLLM;</li>
+    <li><code>AnthropicProvider</code>: Claude, on the Claude API or Amazon Bedrock (the paid option);</li>
+    <li><code>FakeProvider</code>: offline and deterministic, for tests and local development. It answers with the rule-based extractor.</li>
+  </ul>
+
+  <h3>5.9 Prompts: <code>llm/prompts.py</code></h3>
+  <p>Prompts are code, with a version string each. Example rules from the extraction prompt:</p>
+  <pre><code>- Copy values exactly as they are written in the letter.
+- For every value, list the ids of the lines that contain it.
+  Never give a value that you cannot point to.
+- Validity periods, approval periods and effective dates are not deadlines.
+- Placeholders such as [TAXNO_1] replace personal data. Copy them unchanged.</code></pre>
+  <p>The letter is wrapped in <code>&lt;letter&gt;</code> tags with the instruction to treat it as data, never as instructions.
+  A type-specific paragraph (chosen by the classifier) adds domain knowledge, for example "a monthly benefit amount is <em>to receive</em>".</p>
+
+  <h3>5.10 The pipeline: <code>pipeline/steps.py</code> and <code>pipeline/runner.py</code></h3>
+  <p>Each step is a pure function <code>(state, deps) → state</code>. <code>PipelineState</code> holds everything
+  (document, classification, extraction, facts, passages, explanations, degraded flag). Two runners execute the same steps:</p>
+  <ul>
+    <li><code>InProcessRunner</code>: all steps in one process (local development, tests);</li>
+    <li><code>StepFunctionsRunner</code>: starts an AWS workflow; each AWS task calls <code>run_step</code> in the worker Lambda.</li>
+  </ul>
+  <p><code>sanitize_explanation</code> enforces the output contract after the model writes the explanation: it removes
+  sentences that sound like legal advice, sentences with numbers that are not in the letter (<code>unsupported_numbers</code>),
+  "next steps" without a valid source, unknown line ids and URLs. A test caught a real gap here: "9.999,00" first passed because
+  each fragment ("9", "999", "00") looked harmless. Now whole numbers are compared in normalized form (<code>number_forms</code>).</p>
+
+  <h3>5.11 Services and API: <code>services/</code>, <code>api/</code></h3>
+  <table>
+    <tr><th>Function</th><th>What it does</th></tr>
+    <tr><td><code>LetterService.create</code></td><td>Rate limit, idempotency, quota, encrypt and store, audit log entry</td></tr>
+    <tr><td><code>LetterService.view</code></td><td>Decrypts the state and builds the response for the app</td></tr>
+    <tr><td><code>LetterService.ask</code></td><td>Question answering with three safety layers (rules, model classifier, output checks); fails closed</td></tr>
+    <tr><td><code>SharingService.share</code></td><td>Consent-bound share with expiry; prepares a German summary for the counsellor</td></tr>
+    <tr><td><code>SharingService.post_message</code></td><td>Stores the message and its translation for the other side</td></tr>
+    <tr><td><code>BillingService.appstore_transaction</code></td><td>Verifies a StoreKit 2 signed transaction and sets the plan</td></tr>
+    <tr><td><code>create_app</code> (<code>api/app.py</code>)</td><td>FastAPI app: origin check, request ids, security headers, error format that never echoes input</td></tr>
+  </table>
+  <p>Authentication (<code>api/auth.py</code>) verifies the Cognito access token: signature (RS256), issuer, expiry,
+  token type and client id. In local development, a header <code>X-Dev-User</code> replaces the token; the settings
+  refuse this mode in production.</p>
+</section>

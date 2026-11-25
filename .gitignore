@@ -49,3 +49,5 @@ web/tsconfig.tsbuildinfo
 .build/
 .swiftpm/
 infra/ci-outputs.json
+docs/guide/guide.html
+docs/guide/__pycache__/

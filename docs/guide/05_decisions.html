@@ -1,0 +1,97 @@
+<section id="p12">
+  <h2><span class="num">12</span> Technical decisions and their trade-offs</h2>
+  <div class="summary">Every main decision is written down as an Architecture Decision Record (ADR) in
+  <code>docs/architecture/adr/</code>. The table gives the decision, the alternative, and what was given up.</div>
+
+  <table class="small">
+    <tr><th>Decision</th><th>Main alternative</th><th>Why</th><th>What we give up</th></tr>
+    <tr><td><strong>ADR-1</strong> One Python package on Lambda + Step Functions</td><td>Containers on ECS Fargate</td>
+      <td>0 € when idle; each pipeline step has its own retries and history</td><td>About 1 s cold start after quiet periods</td></tr>
+    <tr><td><strong>ADR-2</strong> Free-tier platform</td><td>Aurora, WAF, KMS keys, Secrets Manager</td>
+      <td>The reference platform costs a few hundred euros per month</td><td>No edge firewall; no hardware key; documented upgrade paths</td></tr>
+    <tr><td><strong>ADR-3</strong> One gateway, several model providers; Mistral by default</td><td>Call one SDK directly</td>
+      <td>EU processing; a model change is configuration plus an evaluation run</td><td>Mistral needs prepaid credit (10 €)</td></tr>
+    <tr><td><strong>ADR-4</strong> PostgreSQL with RLS; search in memory</td><td>DynamoDB; pgvector</td>
+      <td>Isolation inside the database; 24 passages do not need a vector database</td><td>Neon is a sub-processor outside AWS (data stays in Frankfurt)</td></tr>
+    <tr><td><strong>ADR-5</strong> OCR on the device</td><td>Amazon Textract</td>
+      <td>Free; the photo never leaves the phone</td><td>OCR quality depends on the device; the reader checks the text</td></tr>
+    <tr><td><strong>ADR-6</strong> The model proposes, code verifies</td><td>Trust the model's JSON</td>
+      <td>Measurable safety: 0 unsafe facts, also with injected errors</td><td>Some correct values show as "please check"</td></tr>
+    <tr><td><strong>ADR-7</strong> scikit-learn training, plain-Python serving</td><td>An LLM for classification; numpy in Lambda</td>
+      <td>Fast, free, calibrated; bundle 84 MB</td><td>A parity test must keep both implementations equal</td></tr>
+    <tr><td><strong>ADR-8</strong> Hand-written Swift models + contract fixtures</td><td>Swift OpenAPI Generator</td>
+      <td>Idiomatic SwiftUI code; real responses decoded in tests</td><td>Models are updated by hand after API changes</td></tr>
+  </table>
+
+  <h3>Decisions that came from tests and measurements</h3>
+  <p>Several design points were not planned. A test or a measurement showed a problem, and the design changed:</p>
+  <ul>
+    <li>The classifier first scored 50 % on unseen layouts. Domain vocabulary in the training data and calibration on held-out
+      layouts raised it to 97.8 %.</li>
+    <li>A check against the live law text showed that "Bürgergeld" became "Grundsicherungsgeld" on 1 July 2026, with a 30 %
+      reduction for missed appointments. The corpus and the letter templates were updated.</li>
+    <li>A hand-written injection letter showed that a planted date could pass the grounding check, because the date was
+      really in the line. Suspicious lines are now excluded as sources.</li>
+    <li>The first live run hit a billing error, and the evaluation silently measured the rules fallback. The live gate now requires
+      0 degraded letters.</li>
+  </ul>
+</section>
+
+<section id="p13">
+  <h2><span class="num">13</span> Status, limits and next steps</h2>
+  <div class="summary">The code, tests, evaluation and documentation are complete. The database, the model provider and the
+  AWS account are set up. The first deploy waits for AWS to verify the account for CloudFront.</div>
+
+  <h3>Done</h3>
+  <ul>
+    <li>Backend, web app, iOS app, infrastructure, CI/CD, documentation.</li>
+    <li>Neon database migrated; secrets in Parameter Store and GitHub; deploy role with OIDC.</li>
+    <li>Live evaluation with Mistral: every gate passed; six languages enabled.</li>
+  </ul>
+
+  <h3>Known limits</h3>
+  <ul>
+    <li>Test letters are synthetic and hand-written; real consented letters are missing.</li>
+    <li>The 24 corpus passages and the legal boundary need a review by a counsellor and a lawyer.</li>
+    <li>The iOS app compiles against the iOS SDK but has not run on a device yet (no simulator runtime on this Mac).</li>
+    <li>Person names outside the address block are not pseudonymized.</li>
+    <li>Only nationwide public holidays are known; regional ones keep deadlines in "please check".</li>
+  </ul>
+
+  <h3>Next steps</h3>
+  <ol>
+    <li>AWS verifies the account → deploy → smoke test → first counselling service.</li>
+    <li>Turn on MFA for the AWS root user.</li>
+    <li>Run the iOS app on a device; set the production values in <code>ios/Config/Release.xcconfig</code>; TestFlight.</li>
+    <li>Pilot with one counselling service; collect consented letters for the golden set.</li>
+    <li>Legal review of the boundary; counsellor review of the corpus; privacy policy and DPIA.</li>
+  </ol>
+</section>
+
+<section id="p14">
+  <h2><span class="num">14</span> Glossary</h2>
+  <table class="small">
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>ADR</td><td>Architecture Decision Record: a short document for one decision, its alternatives and its consequences</td></tr>
+    <tr><td>BM25</td><td>A standard formula that ranks texts by matching keywords</td></tr>
+    <tr><td>Calibration</td><td>A model is calibrated when "90 % sure" means right 9 times out of 10</td></tr>
+    <tr><td>CDK</td><td>AWS Cloud Development Kit: infrastructure defined in a programming language</td></tr>
+    <tr><td>Degraded</td><td>A result made with rules only, because the model was not available</td></tr>
+    <tr><td>DEK, KEK</td><td>Data encryption key (one per user), key encryption key (one, held by the service)</td></tr>
+    <tr><td>Embedding</td><td>A vector of numbers that represents the meaning of a text</td></tr>
+    <tr><td>Gate</td><td>A check that fails the build when a metric is below its threshold</td></tr>
+    <tr><td>Golden set</td><td>Test inputs with known correct answers</td></tr>
+    <tr><td>Grounding</td><td>Linking each fact to its source and checking it there</td></tr>
+    <tr><td>Hallucination</td><td>A fact that the model invented</td></tr>
+    <tr><td>Judge</td><td>A model call that grades another model's output; it must be validated first</td></tr>
+    <tr><td>OIDC</td><td>OpenID Connect; here, GitHub proves its identity to AWS without stored keys</td></tr>
+    <tr><td>Prompt</td><td>The instructions and data sent to a model</td></tr>
+    <tr><td>Prompt injection</td><td>Data that tries to act as instructions to the model</td></tr>
+    <tr><td>RAG</td><td>Retrieval-augmented generation: find trusted passages first, then let the model answer from them</td></tr>
+    <tr><td>RDG</td><td>Rechtsdienstleistungsgesetz, the German Legal Services Act</td></tr>
+    <tr><td>RLS</td><td>Row-level security: database rules that decide which rows a user can see</td></tr>
+    <tr><td>Temperature scaling</td><td>Dividing a model's scores by one number to make its probabilities honest</td></tr>
+    <tr><td>TF-IDF</td><td>Word weights: frequent in this text, rare in all texts = important</td></tr>
+    <tr><td>Token</td><td>The unit that models count and bill (about ¾ of a word)</td></tr>
+  </table>
+</section>
