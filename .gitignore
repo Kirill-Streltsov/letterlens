@@ -48,3 +48,4 @@ web/tsconfig.tsbuildinfo
 .claude/
 .build/
 .swiftpm/
+infra/ci-outputs.json

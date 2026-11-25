@@ -1,6 +1,6 @@
 # Runbook
 
-Each alarm sends an e-mail to the address in `infra/cdk.json` (`alarmEmail`).
+Each alarm sends an e-mail to the address in the GitHub secret `ALARM_EMAIL`.
 For each alarm, do the steps in sequence. Stop when the cause is found.
 
 ## Logs

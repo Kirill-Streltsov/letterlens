@@ -21,6 +21,8 @@ stage = app.node.try_get_context("stage") or "dev"
 config = dict(app.node.try_get_context("stages")[stage])
 # The origin secret comes from the environment (GitHub secret), never from git.
 config["originVerifySecret"] = os.environ.get("LETTERLENS_ORIGIN_VERIFY_SECRET", "local-synth-only")
+# The alarm address is personal data: it comes from the environment (GitHub secret ALARM_EMAIL), not from git.
+config["alarmEmail"] = os.environ.get("LETTERLENS_ALARM_EMAIL", config.get("alarmEmail", ""))
 env = cdk.Environment(
     account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
     region=config.get("region", os.environ.get("CDK_DEFAULT_REGION", "eu-central-1")),

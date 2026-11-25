@@ -86,7 +86,7 @@ Result: you have a key, and training on your data is off.
    brew install awscli
    aws configure sso
    ```
-5. Set your e-mail address for alarms and the budget in `infra/cdk.json`, key `stages.prod.alarmEmail`.
+5. Store your e-mail address for alarms and the budget as the GitHub secret `ALARM_EMAIL` (environment `production`). It is not kept in git.
 6. If the Cognito domain prefix `letterlens-ks26` is not available, change `stages.prod.cognitoDomainPrefix` in `infra/cdk.json`.
 7. Bootstrap CDK in the account:
    ```bash
