@@ -1,7 +1,10 @@
 # Cost model
 
-Target: 0 EUR per month during the pilot. The table shows the free limits and
-the volume at which each service starts to cost money.
+Target: 0 EUR per month for hosting during the pilot, plus prepaid model credit
+(10 EUR lasts about 3,000 letters). The table shows the free limits and the volume
+at which each service starts to cost money. A model provider with a free tier and
+no card (for example Groq, US processing) is a configuration change
+(`LETTERLENS_LLM_PROVIDER=openai_compat`, `LETTERLENS_LLM_BASE_URL`); see ADR-0003.
 
 ## Free limits (checked 19 November 2026)
 
@@ -15,7 +18,7 @@ the volume at which each service starts to cost money.
 | SSM Parameter Store | standard parameters free | — | — |
 | CloudWatch | 5 GB logs, 10 custom metrics, 10 alarms | small JSON lines; 9 metrics; 6 alarms | inside |
 | Neon free plan | 1 GB storage, 100 compute hours per month, scale to zero | a few KB per letter | about 100,000 letters of storage |
-| Mistral free plan | rate-limited, free | 2 to 4 model calls | depends on current rate limits |
+| Mistral API | prepaid credit, minimum 10 EUR (no free API tier without credit since 2026) | 2 to 4 model calls, about 0.003 USD | about 3,000 letters per 10 EUR |
 
 AWS free-plan accounts created after 15 July 2025 also get credits for the first
 months. The design does not depend on them.

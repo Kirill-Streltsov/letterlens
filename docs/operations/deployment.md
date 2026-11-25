@@ -3,9 +3,10 @@
 This guide puts LetterLens into production. Do the steps in sequence. Each step
 names the person who does it and the result that you must see.
 
-Time: approximately 90 minutes. Cost: 0 EUR per month at pilot volume (see
-[cost.md](cost.md)). The Apple Developer Program (99 USD per year) is
-necessary only for TestFlight and the App Store.
+Time: approximately 90 minutes. Cost: 0 EUR per month for hosting at pilot volume
+(see [cost.md](cost.md)), and 10 EUR once for Mistral prepaid credit (about 3,000
+letters). The Apple Developer Program (99 USD per year) is necessary only for
+TestFlight and the App Store.
 
 ## Overview
 
@@ -67,9 +68,10 @@ Result: `applied: ['0001_init']`.
 The default model provider is Mistral (EU company, EU processing, free tier).
 See [ADR-0003](../architecture/adr/0003-llm-gateway-and-providers.md).
 
-1. Create an account at <https://console.mistral.ai>. Select the free plan.
-2. Open **Admin console > Privacy**. Turn **off** the use of your API data for training.
-3. Create an API key. This is `MISTRAL_API_KEY`.
+1. Create an account at <https://console.mistral.ai>.
+2. Open **Admin console > API > Privacy** (not the "Vibe" privacy page). Turn **off** the use of your API data for training.
+3. Open **Billing > Subscription** and select **Enable** next to **API pay-as-you-go**. Buy prepaid credits (minimum 10 EUR). Keep **Auto Recharge** disabled and set a monthly limit of 10 EUR in the **Limits** step. When the credit reaches 0, the API stops; there is no further charge.
+4. Open **API > API Keys** and create a key. This is `MISTRAL_API_KEY`. To store it without showing it, run `bash scripts/store_mistral_key.sh`.
 
 Result: you have a key, and training on your data is off.
 
