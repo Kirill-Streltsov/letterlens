@@ -78,6 +78,15 @@ The daily list price of model calls is over the limit.
 1. Check whether one user sends many advice or injection questions (log field `reason`).
 2. A spike after a prompt change can be a false-positive regression: run the live evaluation.
 
+### The first deploy of a stage fails
+
+CloudFormation rolls back, but it keeps the Cognito user pool (it is retained on
+purpose). The next deploy then fails on the duplicate domain. Before you deploy again:
+
+1. Check that the pool `letterlens-<stage>` has no users.
+2. Delete its domain, turn off its deletion protection, and delete it.
+3. Delete the stack in state `ROLLBACK_COMPLETE`.
+
 ## Routine tasks
 
 | Task | Frequency | Procedure |

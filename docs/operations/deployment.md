@@ -82,15 +82,19 @@ Result: you have a key, and training on your data is off.
 
 1. Create an AWS account at <https://aws.amazon.com>. Select region **Europe (Frankfurt) eu-central-1** for all work.
 2. Turn on MFA for the root user. Do not use the root user after this step.
-3. In IAM Identity Center, create a user with the `AdministratorAccess` permission set. Use this user for steps 4 to 6 only.
-4. Install the AWS CLI and sign in:
+3. **New accounts only:** AWS blocks CloudFront until it verifies the account. Open
+   **Support > Create case > Account and billing** before the first deploy, and ask
+   for CloudFront access (the deploy fails with "Your account must be verified before
+   you can add new CloudFront resources" otherwise). The answer usually takes 1 to 2 days.
+4. In IAM Identity Center, create a user with the `AdministratorAccess` permission set. Use this user for steps 4 to 6 only.
+5. Install the AWS CLI and sign in:
    ```bash
    brew install awscli
    aws configure sso
    ```
-5. Store your e-mail address for alarms and the budget as the GitHub secret `ALARM_EMAIL` (environment `production`). It is not kept in git.
-6. If the Cognito domain prefix `letterlens-ks26` is not available, change `stages.prod.cognitoDomainPrefix` in `infra/cdk.json`.
-7. Bootstrap CDK in the account:
+6. Store your e-mail address for alarms and the budget as the GitHub secret `ALARM_EMAIL` (environment `production`). It is not kept in git.
+7. If the Cognito domain prefix `letterlens-ks26` is not available, change `stages.prod.cognitoDomainPrefix` in `infra/cdk.json`.
+8. Bootstrap CDK in the account:
    ```bash
    cd ~/letterlens/infra
    npx aws-cdk@2 bootstrap aws://<ACCOUNT_ID>/eu-central-1
