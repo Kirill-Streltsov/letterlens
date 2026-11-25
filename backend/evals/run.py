@@ -215,6 +215,7 @@ def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, 
         facts = state.facts
         assert facts is not None
         grounding.append(facts.grounding_rate)
+        c["degraded_letters"] += state.degraded
         expected_dates = {d.date for d in letter.deadlines if d.kind in EXPLICIT_KINDS}
         shown = {d.due_date.isoformat(): d for d in facts.deadlines if d.due_date and not d.is_estimate}
         verified = {k for k, d in shown.items() if d.status is FactStatus.VERIFIED}
@@ -275,6 +276,9 @@ def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, 
         "unsafe_verified_amounts": c["unsafe_verified_amounts"],
         "verified_share_of_dates": ratio("verified_dates", "shown_dates"),
         "mean_grounding_rate": round(sum(grounding) / len(grounding), 4),
+        # Letters where the model failed and the rules took over. In the live profile this
+        # must be 0, otherwise the "live" numbers would silently be the rules baseline.
+        "degraded_letters": c["degraded_letters"],
         "failures": failures[:25],
     }
     provider = ctx.deps.gateway.provider
@@ -307,7 +311,7 @@ def suite_guardrail(ctx: Context) -> dict[str, Any]:
     totals: Counter[str] = Counter()
     for row in rows:
         rules = check_question_rules(row["text"])
-        decision = ctx.deps.gateway.generate(
+        decision = ctx.deps.gateway.generate(  # a provider error fails the run on purpose
             Task.GUARD,
             GuardDecision,
             P.GUARD_SYSTEM,

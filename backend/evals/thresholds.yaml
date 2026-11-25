@@ -21,6 +21,7 @@ chaos:     # fault injection: the "model" invents dates and amounts
   - {metric: suites.extraction.unsafe_verified_amounts, max: 0}
 
 live:      # real model; run before a prompt or model change is released
+  - {metric: suites.extraction.degraded_letters, max: 0}
   - {metric: suites.extraction.unsafe_verified_dates, max: 0}
   - {metric: suites.extraction.unsafe_verified_amounts, max: 0}
   - {metric: suites.extraction.letter_date_accuracy, min: 0.97}

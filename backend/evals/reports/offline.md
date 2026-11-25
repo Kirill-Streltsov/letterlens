@@ -28,6 +28,7 @@ Provider: `fake`. Prompts: `['extract-v3', 'explain-v3', 'guard-v2']`.
 | unsafe_verified_amounts | 0 |
 | verified_share_of_dates | 0.9412 |
 | mean_grounding_rate | 0.9881 |
+| degraded_letters | 0 |
 
 ## retrieval
 

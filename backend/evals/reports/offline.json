@@ -36,6 +36,7 @@
       "unsafe_verified_amounts": 0,
       "verified_share_of_dates": 0.9412,
       "mean_grounding_rate": 0.9881,
+      "degraded_letters": 0,
       "failures": [
         {
           "id": "landlord_utility_statement-2032721390",
@@ -146,7 +147,7 @@
       }
     }
   },
-  "seconds": 1.0,
+  "seconds": 0.7,
   "llm_calls": 336,
   "llm_list_price_usd": 0.0286,
   "gate": {

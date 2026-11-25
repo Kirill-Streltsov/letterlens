@@ -1,8 +1,21 @@
 {
   "app": "uv run python app.py",
-  "watch": {"include": ["**"], "exclude": ["build", "cdk.out", "**/__pycache__"]},
+  "watch": {
+    "include": [
+      "**"
+    ],
+    "exclude": [
+      "build",
+      "cdk.out",
+      "**/__pycache__"
+    ]
+  },
   "context": {
     "repository": "Kirill-Streltsov/letterlens",
+    "oidcSubjects": [
+      "repo:Kirill-Streltsov@43089872/letterlens@1473278323:environment:production",
+      "repo:Kirill-Streltsov/letterlens:environment:production"
+    ],
     "stages": {
       "dev": {
         "region": "eu-central-1",
@@ -33,7 +46,9 @@
     },
     "@aws-cdk/aws-lambda:recognizeLayerVersion": true,
     "@aws-cdk/core:checkSecretUsage": true,
-    "@aws-cdk/core:target-partitions": ["aws"],
+    "@aws-cdk/core:target-partitions": [
+      "aws"
+    ],
     "@aws-cdk/aws-iam:minimizePolicies": true,
     "@aws-cdk/core:validateSnapshotRemovalPolicy": true,
     "@aws-cdk/aws-s3:createDefaultLoggingPolicy": true,

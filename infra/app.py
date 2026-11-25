@@ -29,7 +29,13 @@ env = cdk.Environment(
 )
 
 stack = LetterLensStack(app, f"LetterLens-{stage}", stage=stage, config=config, env=env)
-ci = LetterLensCiStack(app, "LetterLens-ci", repository=app.node.try_get_context("repository"), env=env)
+ci = LetterLensCiStack(
+    app,
+    "LetterLens-ci",
+    repository=app.node.try_get_context("repository"),
+    subjects=app.node.try_get_context("oidcSubjects"),
+    env=env,
+)
 
 for s in (stack, ci):
     cdk.Tags.of(s).add("project", "letterlens")

@@ -15,7 +15,15 @@ from constructs import Construct
 
 
 class LetterLensCiStack(Stack):
-    def __init__(self, scope: Construct, construct_id: str, *, repository: str, **kwargs: Any) -> None:
+    def __init__(
+        self,
+        scope: Construct,
+        construct_id: str,
+        *,
+        repository: str,
+        subjects: list[str] | None = None,
+        **kwargs: Any,
+    ) -> None:
         super().__init__(scope, construct_id, **kwargs)
         provider = iam.OpenIdConnectProvider(
             self,
@@ -32,8 +40,11 @@ class LetterLensCiStack(Stack):
                 provider.open_id_connect_provider_arn,
                 conditions={
                     "StringEquals": {"token.actions.githubusercontent.com:aud": "sts.amazonaws.com"},
+                    # GitHub can send immutable ids (owner@id/repo@id); a recreated repository with
+                    # the same name then cannot deploy. The plain name is kept for older formats.
                     "StringLike": {
-                        "token.actions.githubusercontent.com:sub": f"repo:{repository}:environment:production"
+                        "token.actions.githubusercontent.com:sub": subjects
+                        or [f"repo:{repository}:environment:production"]
                     },
                 },
             ),
