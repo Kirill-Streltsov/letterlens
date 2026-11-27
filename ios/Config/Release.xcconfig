@@ -1,5 +1,6 @@
-// Production values come from the CDK outputs (docs/operations/deployment.md, step "iOS").
-LL_API_BASE_URL = https:/$()/REPLACE_WITH_CLOUDFRONT_DOMAIN
-LL_AUTH_DOMAIN = REPLACE_WITH_AUTH_DOMAIN
-LL_CLIENT_ID = REPLACE_WITH_IOS_CLIENT_ID
+// Production values from the CDK stack outputs of LetterLens-prod.
+// "//" starts a comment in xcconfig files, hence the $() trick in URLs.
+LL_API_BASE_URL = https:/$()/d29qneyrss9rci.cloudfront.net
+LL_AUTH_DOMAIN = letterlens-ks26.auth.eu-central-1.amazoncognito.com
+LL_CLIENT_ID = 7v24ps3tv4usp7pljsrnfs6d2r
 LL_DEV_USER =
