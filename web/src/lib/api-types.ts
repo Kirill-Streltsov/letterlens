@@ -52,6 +52,9 @@ export interface paths {
         /**
          * Delete Me
          * @description Delete the account and all letters. The data key is destroyed (crypto-shredding).
+         *
+         *     The sign-in account (email address, password hash) is deleted last. If that call fails, the
+         *     request fails and can be repeated: the next sign-in finds no data and deletion runs again.
          */
         delete: operations["delete_me_v1_me_delete"];
         options?: never;
@@ -903,6 +906,8 @@ export interface components {
             memberships: components["schemas"]["MembershipInfo"][];
             /** Is Platform Admin */
             is_platform_admin: boolean;
+            /** Plus Checkout Available */
+            plus_checkout_available: boolean;
         };
         /** MembershipInfo */
         MembershipInfo: {

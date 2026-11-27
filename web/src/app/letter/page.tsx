@@ -116,7 +116,7 @@ function SharePanel({ letter, onChange }: { letter: LetterView; onChange: () => 
       ) : (
         <>
           <p className="muted">
-            A free counselling service can look at your letter and help with your case. You decide if and with whom to
+            A counselling service can look at your letter and help with your case. You decide if and with whom to
             share it.
           </p>
           <button

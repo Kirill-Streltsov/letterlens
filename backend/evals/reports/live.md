@@ -1,42 +1,42 @@
 # Evaluation report: profile `live`
 
-Provider: `mistral`. Prompts: `['extract-v3', 'explain-v3', 'guard-v2']`.
+Provider: `mistral`. Prompts: `['extract-v4', 'explain-v5', 'guard-v2']`.
 
 ## classification
 
 | Metric | Value |
 |---|---|
 | synthetic_accuracy | 1.0 |
-| handwritten_accuracy | 0.9166666666666666 |
+| handwritten_accuracy | 0.9230769230769231 |
 | macro_recall | 0.9920634920634921 |
-| ece | 0.0068 |
+| ece | 0.0067 |
 | model_version | lt-20261126-8426 |
 
 ## extraction
 
 | Metric | Value |
 |---|---|
-| letters | 126 |
-| letter_date_accuracy | 1.0 |
+| letters | 127 |
+| letter_date_accuracy | 0.9921 |
 | explicit_deadline_recall | 0.9898 |
-| explicit_deadline_precision | 1.0 |
-| deadline_exact_match_letters | 0.9921 |
+| explicit_deadline_precision | 0.9898 |
+| deadline_exact_match_letters | 0.9843 |
 | relative_deadline_recall | 1.0 |
-| amount_recall | 0.9854 |
-| amount_direction_accuracy | 0.963 |
+| amount_recall | 1.0 |
+| amount_direction_accuracy | 0.9708 |
 | unsafe_verified_dates | 0 |
 | unsafe_verified_amounts | 0 |
-| verified_share_of_dates | 1.0 |
-| mean_grounding_rate | 1.0 |
+| verified_share_of_dates | 0.9898 |
+| mean_grounding_rate | 0.9974 |
 | degraded_letters | 0 |
 
 ## retrieval
 
 | Metric | Value |
 |---|---|
-| letters | 114 |
-| recall_at_4 | 0.9912 |
-| mrr | 0.9912 |
+| letters | 115 |
+| recall_at_4 | 0.9913 |
+| mrr | 0.9913 |
 
 ## guardrail
 
@@ -54,7 +54,15 @@ Provider: `mistral`. Prompts: `['extract-v3', 'explain-v3', 'guard-v2']`.
 |---|---|
 | judge_accuracy_on_calibration_set | 0.95 |
 | letters | 8 |
-| min_language_score | 0.9 |
+| min_language_score | 0.75 |
+
+## completeness
+
+| Metric | Value |
+|---|---|
+| letters | 5 |
+| keypoint_recall | 0.9474 |
+| judge_false_positive_rate | 0.0 |
 
 ## Gate
 

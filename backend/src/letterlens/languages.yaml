@@ -8,25 +8,25 @@ languages:
     name: Plain German
     native_name: Einfaches Deutsch
     status: enabled
-    faithfulness: 0.95
+    faithfulness: 0.825
   tr:
     name: Turkish
     native_name: Türkçe
     status: enabled
-    faithfulness: 0.925
+    faithfulness: 0.9
   ar:
     name: Arabic
     native_name: العربية
     rtl: true
     status: enabled
-    faithfulness: 0.95
+    faithfulness: 0.875
   uk:
     name: Ukrainian
     native_name: Українська
-    status: enabled
-    faithfulness: 0.9
+    status: experimental
+    faithfulness: 0.75
   ru:
     name: Russian
     native_name: Русский
     status: enabled
-    faithfulness: 0.975
+    faithfulness: 0.8

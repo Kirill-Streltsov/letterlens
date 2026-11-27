@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "LetterLens: understand official letters",
   description:
-    "Scan an official German letter, understand it in your language, never miss the deadline. General information, not legal advice.",
+    "Scan an official German letter, understand it in your language and see its deadlines. General information, not legal advice.",
   robots: { index: true, follow: true },
 };
 

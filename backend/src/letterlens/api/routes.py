@@ -92,6 +92,7 @@ def me(principal: PrincipalDep, services: ServicesDep) -> MeResponse:
             for m in principal.memberships
         ],
         is_platform_admin=principal.is_platform_admin,
+        plus_checkout_available=settings.stripe_secret_key is not None and bool(settings.stripe_price_plus),
     )
 
 
@@ -107,13 +108,18 @@ def update_me(body: UpdateMeRequest, principal: PrincipalDep, services: Services
 
 @router.delete("/me", status_code=204, tags=["me"])
 def delete_me(principal: PrincipalDep, services: ServicesDep) -> Response:
-    """Delete the account and all letters. The data key is destroyed (crypto-shredding)."""
+    """Delete the account and all letters. The data key is destroyed (crypto-shredding).
+
+    The sign-in account (email address, password hash) is deleted last. If that call fails, the
+    request fails and can be repeated: the next sign-in finds no data and deletion runs again.
+    """
     with services.container.db.session(principal.ctx) as conn:
         R.audit(conn, principal.user_id, "account.delete", "user", principal.user_id)
         keys = R.delete_user(conn, principal.user_id)
     services.container.keys.cache.drop(principal.user_id)
     services.container.storage.delete(keys)
     services.principals.invalidate(principal.identity.sub)
+    services.container.directory.delete_user(principal.identity.sub)
     return Response(status_code=204)
 
 

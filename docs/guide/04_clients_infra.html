@@ -6,7 +6,7 @@
   <table>
     <tr><th>File</th><th>Job</th></tr>
     <tr><td><code>web/src/lib/api.ts</code></td><td>Typed API client; types generated from <code>contracts/openapi.json</code> (<code>npm run gen:api</code>)</td></tr>
-    <tr><td><code>web/src/lib/auth.ts</code></td><td>Sign-in with the Cognito hosted page: OAuth authorization code with PKCE; token refresh</td></tr>
+    <tr><td><code>web/src/lib/cognito.ts</code>, <code>auth.ts</code></td><td>Own sign-in and sign-up screens that call the Cognito user-pool API directly (ADR-9); token refresh; sign-out revokes the refresh token</td></tr>
     <tr><td><code>web/src/lib/ocr.ts</code></td><td>OCR in the browser (tesseract.js, German model); the PDF text layer for digital PDFs</td></tr>
     <tr><td><code>web/src/lib/ics.ts</code></td><td>Calendar file for a deadline, with a reminder 3 days before (RFC 5545)</td></tr>
     <tr><td><code>web/src/components/LetterWorkspace.tsx</code></td><td>The main screen: original letter on the left, summary and cards on the right; hovering a sentence highlights its source line</td></tr>

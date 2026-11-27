@@ -116,6 +116,8 @@ export function LetterWorkspace({
                 <li
                   key={i}
                   tabIndex={0}
+                  className={s.line_ids.length ? undefined : "nolink"}
+                  title={s.line_ids.length ? undefined : "This sentence is not linked to a line in the letter."}
                   onMouseEnter={() => focus(s.line_ids)}
                   onFocus={() => focus(s.line_ids)}
                   onMouseLeave={() => setHover([])}

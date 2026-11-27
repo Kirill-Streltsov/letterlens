@@ -113,3 +113,28 @@ def test_functions_may_read_their_ssm_path_with_trailing_slash(template: Templat
         for res in (stmt["Resource"] if isinstance(stmt["Resource"], list) else [stmt["Resource"]])
     ]
     assert any("parameter/letterlens/prod/" in r for r in resources), resources
+
+
+def test_web_client_uses_direct_password_auth_without_hosted_ui(template: Template) -> None:
+    clients = template.find_resources("AWS::Cognito::UserPoolClient")
+    web = next(c["Properties"] for k, c in clients.items() if k.startswith("UsersWebClient"))
+    ios = next(c["Properties"] for k, c in clients.items() if k.startswith("UsersIosClient"))
+    assert set(web["ExplicitAuthFlows"]) == {"ALLOW_USER_PASSWORD_AUTH", "ALLOW_REFRESH_TOKEN_AUTH"}
+    assert web.get("AllowedOAuthFlowsUserPoolClient") in (None, False)
+    assert "CallbackURLs" not in web
+    assert web["PreventUserExistenceErrors"] == "ENABLED"
+    assert web["EnableTokenRevocation"] is True
+    # The iOS app keeps the hosted UI with PKCE and no password flow.
+    assert ios["AllowedOAuthFlows"] == ["code"]
+    assert "ALLOW_USER_PASSWORD_AUTH" not in ios.get("ExplicitAuthFlows", [])
+
+
+def test_api_may_delete_cognito_users_for_account_deletion(template: Template) -> None:
+    statements = [
+        st
+        for policy in template.find_resources("AWS::IAM::Policy").values()
+        for st in policy["Properties"]["PolicyDocument"]["Statement"]
+    ]
+    deletes = [st for st in statements if st["Action"] == "cognito-idp:AdminDeleteUser"]
+    assert len(deletes) == 1
+    assert "Fn::GetAtt" in deletes[0]["Resource"]  # this pool only, not "*"

@@ -81,7 +81,7 @@
           "me"
         ],
         "summary": "Delete Me",
-        "description": "Delete the account and all letters. The data key is destroyed (crypto-shredding).",
+        "description": "Delete the account and all letters. The data key is destroyed (crypto-shredding).\n\nThe sign-in account (email address, password hash) is deleted last. If that call fails, the\nrequest fails and can be repeated: the next sign-in finds no data and deletion runs again.",
         "operationId": "delete_me_v1_me_delete",
         "responses": {
           "204": {
@@ -2558,6 +2558,10 @@
           "is_platform_admin": {
             "type": "boolean",
             "title": "Is Platform Admin"
+          },
+          "plus_checkout_available": {
+            "type": "boolean",
+            "title": "Plus Checkout Available"
           }
         },
         "additionalProperties": false,
@@ -2571,7 +2575,8 @@
           "letters_this_month",
           "letters_limit",
           "memberships",
-          "is_platform_admin"
+          "is_platform_admin",
+          "plus_checkout_available"
         ],
         "title": "MeResponse"
       },

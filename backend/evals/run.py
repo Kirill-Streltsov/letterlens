@@ -27,9 +27,9 @@ from typing import Any
 
 import yaml
 
-from evals.handwritten import HANDWRITTEN
+from evals.handwritten import HANDWRITTEN, KEY_POINTS
 from letterlens.config import Settings
-from letterlens.domain import FactStatus
+from letterlens.domain import FactStatus, Frozen
 from letterlens.llm import Gateway, InMemoryLedger, Task, build_provider
 from letterlens.llm import prompts as P
 from letterlens.llm.outputs import BackTranslation as _BackText
@@ -77,6 +77,7 @@ EXPECTED_PASSAGES: dict[str, set[str]] = {
     "handwritten-kindergeld-school": {"cooperation-duty"},
     "handwritten-sick-pay": {"benefits-objection"},
     "handwritten-injection": {"rent-arrears"},
+    "handwritten-study-warning": {"residence-for-study", "acknowledgement-of-receipt"},
 }
 
 
@@ -221,9 +222,8 @@ def suite_extraction(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, 
         verified = {k for k, d in shown.items() if d.status is FactStatus.VERIFIED}
 
         c["letters"] += 1
-        c["letter_date_ok"] += (
-            facts.letter_date is not None and facts.letter_date.isoformat() == letter.letter_date
-        )
+        shown_date = facts.letter_date.isoformat() if facts.letter_date else None
+        c["letter_date_ok"] += shown_date == (letter.letter_date or None)  # "" = no date in the letter
         c["expected_dates"] += len(expected_dates)
         c["found_dates"] += len(expected_dates & set(shown))
         c["shown_dates"] += len(shown)
@@ -373,6 +373,7 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
     from letterlens.i18n import languages
 
     scores: dict[str, list[float]] = defaultdict(list)
+    low: list[dict[str, Any]] = []  # judge reasons for scores below 4, to see what goes wrong
     for letter in picked:
         state = run_letter(ctx, letter, ("classify", "extract", "verify", "retrieve"))
         state = explain(state, ctx.deps, "en")
@@ -400,17 +401,83 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
                 max_tokens=400,
             )
             scores[code].append(score.score / 5)
+            if score.score < 4:
+                low.append(
+                    {"letter": letter.id, "language": code, "score": score.score, "issues": score.issues}
+                )
     return {
         "judge_accuracy_on_calibration_set": judge_accuracy,
         "letters": len(picked),
         "per_language": {k: round(sum(v) / len(v), 4) for k, v in scores.items()},
         "min_language_score": round(min((sum(v) / len(v) for v in scores.values()), default=0.0), 4),
+        "low_scores": low,
     }
 
 
 # --------------------------------------------------------------------------
 # Gate
 # --------------------------------------------------------------------------
+
+
+class KeyPointVerdict(Frozen):
+    index: int
+    present: bool
+
+
+class KeyPointJudgement(Frozen):
+    points: list[KeyPointVerdict]
+
+
+KEYPOINT_JUDGE = """You check whether a summary of a letter contains given key points.
+For each numbered key point, answer present = true only if the summary states the same fact
+(the wording may differ; numbers, dates and amounts must match). Return JSON only."""
+
+
+def judge_keypoints(gw: Gateway, summary: str, points: list[str]) -> list[bool]:
+    listing = "\n".join(f"{i}. {p}" for i, p in enumerate(points, 1))
+    result = gw.generate(
+        Task.GUARD,
+        KeyPointJudgement,
+        KEYPOINT_JUDGE,
+        f"<summary>\n{summary}\n</summary>\n\n<key_points>\n{listing}\n</key_points>",
+        "keypoints-v1",
+        max_tokens=600,
+    )
+    found = {v.index: v.present for v in result.points}
+    return [bool(found.get(i, False)) for i in range(1, len(points) + 1)]
+
+
+def suite_completeness(ctx: Context, letters: list[SyntheticLetter]) -> dict[str, Any]:
+    """Live only. Does the explanation contain the points that matter most?"""
+    gw = ctx.deps.gateway
+    by_id = {x.id: x for x in letters}
+    total = hits = probe_hits = probe_total = 0
+    per_letter: dict[str, float] = {}
+    missed: list[str] = []
+    for letter_id, points in KEY_POINTS.items():
+        letter = by_id.get(letter_id)
+        if letter is None:
+            continue
+        state = run_letter(ctx, letter, ("classify", "extract", "verify", "retrieve"))
+        state = explain(state, ctx.deps, "en")
+        exp = state.explanations["en"]
+        text = " ".join([exp.headline] + [s.text for s in exp.summary])
+        verdicts = judge_keypoints(gw, text, points)
+        hits += sum(verdicts)
+        total += len(points)
+        per_letter[letter_id] = round(sum(verdicts) / len(points), 3)
+        missed += [f"{letter_id}: {p}" for p, ok in zip(points, verdicts, strict=True) if not ok]
+        # Calibration probe: an empty summary must not "contain" the points.
+        probe = judge_keypoints(gw, "This is an official letter.", points)
+        probe_hits += sum(probe)
+        probe_total += len(points)
+    return {
+        "letters": len(per_letter),
+        "keypoint_recall": round(hits / total, 4) if total else 0.0,
+        "judge_false_positive_rate": round(probe_hits / probe_total, 4) if probe_total else 0.0,
+        "per_letter": per_letter,
+        "missed": missed,
+    }
 
 
 def lookup(report: dict[str, Any], dotted: str) -> Any:
@@ -475,7 +542,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument(
         "--suite",
         action="append",
-        choices=["classification", "extraction", "retrieval", "guardrail", "faithfulness"],
+        choices=["classification", "extraction", "retrieval", "guardrail", "faithfulness", "completeness"],
     )
     parser.add_argument("--sample", type=int, default=8, help="letters for the faithfulness suite")
     parser.add_argument("--rebuild-golden", action="store_true")
@@ -490,7 +557,7 @@ def main(argv: list[str] | None = None) -> int:
         ["extraction"]
         if args.profile == "chaos"
         else ["classification", "extraction", "retrieval", "guardrail"]
-        + (["faithfulness"] if args.profile == "live" else [])
+        + (["faithfulness", "completeness"] if args.profile == "live" else [])
     )
     started = time.time()
     report: dict[str, Any] = {
@@ -511,6 +578,8 @@ def main(argv: list[str] | None = None) -> int:
             report["suites"][suite] = suite_guardrail(ctx)
         elif suite == "faithfulness":
             report["suites"][suite] = suite_faithfulness(ctx, letters, args.sample)
+        elif suite == "completeness":
+            report["suites"][suite] = suite_completeness(ctx, letters)
     report["seconds"] = round(time.time() - started, 1)
     report["llm_calls"] = len(ctx.ledger.calls)
     report["llm_list_price_usd"] = round(sum(c.list_price_usd for c in ctx.ledger.calls), 4)

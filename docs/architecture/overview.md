@@ -108,7 +108,7 @@ rule-based extractor and a template explanation, and it marks the letter as
 | `usage_counters`, `rate_limits`, `idempotency_keys`, `billing_events` | Operations | owner or system |
 
 PostgreSQL row-level security enforces isolation. The application role does not
-own the tables and cannot bypass RLS. 19 tests prove each rule
+own the tables and cannot bypass RLS. 20 tests prove each rule
 (`backend/tests/test_rls.py`).
 
 ## 7. Deployment view

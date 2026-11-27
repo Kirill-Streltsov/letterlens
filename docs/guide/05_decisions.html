@@ -12,7 +12,7 @@
     <tr><td><strong>ADR-3</strong> One gateway, several model providers; Mistral by default</td><td>Call one SDK directly</td>
       <td>EU processing; a model change is configuration plus an evaluation run</td><td>Mistral needs prepaid credit (10 €)</td></tr>
     <tr><td><strong>ADR-4</strong> PostgreSQL with RLS; search in memory</td><td>DynamoDB; pgvector</td>
-      <td>Isolation inside the database; 24 passages do not need a vector database</td><td>Neon is a sub-processor outside AWS (data stays in Frankfurt)</td></tr>
+      <td>Isolation inside the database; 26 passages do not need a vector database</td><td>Neon is a sub-processor outside AWS (data stays in Frankfurt)</td></tr>
     <tr><td><strong>ADR-5</strong> OCR on the device</td><td>Amazon Textract</td>
       <td>Free; the photo never leaves the phone</td><td>OCR quality depends on the device; the reader checks the text</td></tr>
     <tr><td><strong>ADR-6</strong> The model proposes, code verifies</td><td>Trust the model's JSON</td>
@@ -21,6 +21,8 @@
       <td>Fast, free, calibrated; bundle 84 MB</td><td>A parity test must keep both implementations equal</td></tr>
     <tr><td><strong>ADR-8</strong> Hand-written Swift models + contract fixtures</td><td>Swift OpenAPI Generator</td>
       <td>Idiomatic SwiftUI code; real responses decoded in tests</td><td>Models are updated by hand after API changes</td></tr>
+    <tr><td><strong>ADR-9</strong> Own sign-in screens on the web; hosted UI on iOS</td><td>Cognito hosted UI or managed login</td>
+      <td>The first screen looks like the product; errors in plain words</td><td>Password rules exist twice; no social sign-in on the web</td></tr>
   </table>
 
   <h3>Decisions that came from tests and measurements</h3>
@@ -34,25 +36,29 @@
       really in the line. Suspicious lines are now excluded as sources.</li>
     <li>The first live run hit a billing error, and the evaluation silently measured the rules fallback. The live gate now requires
       0 degraded letters.</li>
+    <li>A real letter showed that summaries left out conditions, reassuring statements and the signed receipt form. A new
+      completeness metric (key points per hand-written letter, checked by a validated judge) now has a gate, and the
+      explanation prompt names these points.</li>
   </ul>
 </section>
 
 <section id="p13">
   <h2><span class="num">13</span> Status, limits and next steps</h2>
-  <div class="summary">The code, tests, evaluation and documentation are complete. The database, the model provider and the
-  AWS account are set up. The first deploy waits for AWS to verify the account for CloudFront.</div>
+  <div class="summary">The code, tests, evaluation and documentation are complete. LetterLens runs in production on AWS
+  (eu-central-1); every push to <code>main</code> that passes CI is deployed automatically.</div>
 
   <h3>Done</h3>
   <ul>
     <li>Backend, web app, iOS app, infrastructure, CI/CD, documentation.</li>
     <li>Neon database migrated; secrets in Parameter Store and GitHub; deploy role with OIDC.</li>
+    <li>Production deploy with smoke test; the daily retention job runs and deletes expired letters.</li>
     <li>Live evaluation with Mistral: every gate passed; six languages enabled.</li>
   </ul>
 
   <h3>Known limits</h3>
   <ul>
     <li>Test letters are synthetic and hand-written; real consented letters are missing.</li>
-    <li>The 24 corpus passages and the legal boundary need a review by a counsellor and a lawyer.</li>
+    <li>The 26 corpus passages and the legal boundary need a review by a counsellor and a lawyer.</li>
     <li>The iOS app compiles against the iOS SDK but has not run on a device yet (no simulator runtime on this Mac).</li>
     <li>Names that appear only in the body text (not in the address block or a greeting) are not pseudonymized.</li>
     <li>Only nationwide public holidays are known; regional ones keep deadlines in "please check".</li>
@@ -60,7 +66,7 @@
 
   <h3>Next steps</h3>
   <ol>
-    <li>AWS verifies the account → deploy → smoke test → first counselling service.</li>
+    <li>Find the first counselling service; replace the test service in production with it.</li>
     <li>Turn on MFA for the AWS root user.</li>
     <li>Run the iOS app on a device; set the production values in <code>ios/Config/Release.xcconfig</code>; TestFlight.</li>
     <li>Pilot with one counselling service; collect consented letters for the golden set.</li>

@@ -34,6 +34,8 @@ live:      # real model; run before a prompt or model change is released
   - {metric: suites.guardrail.benign_false_positive_rate, max: 0.10}
   - {metric: suites.guardrail.injection_catch_rate, min: 0.95}
   - {metric: suites.faithfulness.judge_accuracy_on_calibration_set, min: 0.90}
+  - {metric: suites.completeness.keypoint_recall, min: 0.80}
+  - {metric: suites.completeness.judge_false_positive_rate, max: 0.10}
 
 languages:  # used by --update-languages
   min_faithfulness: 0.80

@@ -11,8 +11,8 @@ from typing import Any
 
 from letterlens.domain import LetterType, Passage
 
-EXTRACT_VERSION = "extract-v3"
-EXPLAIN_VERSION = "explain-v3"
+EXTRACT_VERSION = "extract-v4"
+EXPLAIN_VERSION = "explain-v5"
 ANSWER_VERSION = "answer-v2"
 GUARD_VERSION = "guard-v2"
 BACKTRANSLATE_VERSION = "backtranslate-v1"
@@ -66,6 +66,8 @@ Rules:
 - Validity periods, approval periods and effective dates are not deadlines.
 - amounts: every money amount with its direction: to_pay, to_receive or info.
 - reference_numbers: case numbers such as Steuernummer, Aktenzeichen, BG-Nummer, Kundennummer.
+- required_actions: everything the reader must do, in short English. Include returning forms: a letter
+  sent "gegen Empfangsbekenntnis" asks the reader to sign and return the acknowledgement of receipt.
 - Placeholders such as [TAXNO_1] or [NAME_1] replace personal data. Copy them unchanged.
 - Write description fields in short, plain English.
 
@@ -87,7 +89,17 @@ Write for a reader with basic reading skills: short sentences, common words, one
 Rules:
 - headline: one sentence that says what the letter is about.
 - letter_kind: what kind of letter it is and who sent it.
-- summary: 3 to 6 sentences about what the letter says. Each sentence lists the ids of the letter lines it is based on.
+- summary: 3 to 10 sentences about what the letter says. Short letters need few sentences; a letter with several
+  conditions or permissions needs more. Each sentence lists the ids of the letter lines it is based on.
+  Cover each of these points if the letter contains it, in this order:
+  1. what the authority decided or states about the reader's situation;
+  2. every condition or criterion the letter names (numbers, periods, limits), one per sentence;
+  3. the consequences, both negative and reassuring (for example "for now, no measures are taken");
+  4. every action the reader must take, including returning a signed form such as an Empfangsbekenntnis;
+  5. permissions or rights that the letter states, including general rules that allow the reader something
+     (for example how much the reader may work).
+  Prefer facts that affect the reader's rights and next steps over background explanations of the law.
+  A rule that allows or forbids the reader something is not background.
 - next_steps: 1 to 4 items of general information about what people usually do with this kind of letter. Each item cites at least one passage id (c1, c2, ...). Use only the passages for this.
 - Never tell the reader what they personally should decide. Never say whether the letter is correct, lawful or likely to succeed. You may say that free counselling services can check the individual case.
 - deadline_labels and amount_labels: use the ids from the verified facts (d1, a1, ...) as keys. Each value is a short label in {language_name}.

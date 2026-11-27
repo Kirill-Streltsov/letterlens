@@ -1,19 +1,7 @@
-import { base64Url, challengeFor } from "@/lib/auth";
 import { toCsv } from "@/lib/csv";
 import { daysUntil, money, relativeLabel, urgency } from "@/lib/format";
 import { buildIcs } from "@/lib/ics";
 import { documentFromText, toDocument } from "@/lib/ocr";
-
-describe("PKCE", () => {
-  it("encodes base64url without padding", () => {
-    expect(base64Url(new Uint8Array([251, 255, 0]))).toBe("-_8A");
-  });
-
-  it("matches the RFC 7636 appendix B example", async () => {
-    const verifier = "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk";
-    expect(await challengeFor(verifier)).toBe("E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM");
-  });
-});
 
 describe("calendar export", () => {
   it("builds an all-day event with a reminder", () => {

@@ -55,6 +55,8 @@ class MeResponse(ApiModel):
     letters_limit: int | None
     memberships: list[MembershipInfo]
     is_platform_admin: bool
+    # False while the web payment provider is not configured; clients then hide "Upgrade".
+    plus_checkout_available: bool
 
 
 class UpdateMeRequest(ApiModel):

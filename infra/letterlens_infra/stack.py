@@ -297,6 +297,10 @@ class LetterLensStack(Stack):
                 resources=[f"{letters_bucket_arn}/letters/*"],
             )
         )
+        # Account deletion also removes the sign-in account (email, password hash).
+        api.add_to_role_policy(
+            iam.PolicyStatement(actions=["cognito-idp:AdminDeleteUser"], resources=[user_pool.user_pool_arn])
+        )
         api_url = api.add_function_url(auth_type=lambda_.FunctionUrlAuthType.NONE)
 
         events.Rule(
@@ -400,12 +404,11 @@ class LetterLensStack(Stack):
             access_token_validity=Duration.hours(1),
             id_token_validity=Duration.hours(1),
             refresh_token_validity=Duration.days(30),
-            o_auth=cognito.OAuthSettings(
-                flows=cognito.OAuthFlows(authorization_code_grant=True),
-                scopes=oauth_scopes,
-                callback_urls=[f"{site_url}/auth/callback/", "http://localhost:3000/auth/callback/"],
-                logout_urls=[f"{site_url}/", "http://localhost:3000/"],
-            ),
+            # The web app draws its own sign-in screens and calls the user-pool API directly
+            # (ADR-0009). The password goes over TLS to Cognito only. No hosted UI, no OAuth.
+            auth_flows=cognito.AuthFlow(user_password=True),
+            disable_o_auth=True,
+            enable_token_revocation=True,
         )
         ios_client = user_pool.add_client(
             "IosClient",

@@ -289,7 +289,7 @@
         "checked_on": "2026-11-05"
       }
     ],
-    "counselling_hint": "Free help: migration counselling services (MBE, JMD), social counselling and tenant associations can check your case.",
+    "counselling_hint": "Free help: migration counselling (MBE, JMD) and social counselling services can look at your case. Tenant associations help their members with rent questions.",
     "disclaimer": "General information, not legal advice. Always check dates and amounts in the original.",
     "faithfulness": null,
     "model": "mistral-medium-latest"

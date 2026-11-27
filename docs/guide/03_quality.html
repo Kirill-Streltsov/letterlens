@@ -59,7 +59,7 @@
 
 <section id="p7">
   <h2><span class="num">7</span> How AI quality is measured</h2>
-  <div class="summary">LetterLens does not trust that the model "seems good". A golden set of 126 letters with exact answers
+  <div class="summary">LetterLens does not trust that the model "seems good". A golden set of 127 letters with exact answers
   and 96 test questions measures it. Three profiles run the same tests: rules only (every pull request), with injected
   errors (every pull request), and with the real model (before a release). A gate fails the build below the thresholds.</div>
 
@@ -70,7 +70,7 @@
     <li><strong>Synthetic letters</strong> (<code>letterlens/synthetic/generator.py</code>): 19 letter families (tax assessment,
       Jobcenter invitation, rent increase …) with random names, dates, amounts and phrasing. Because the generator creates the
       letter, it knows every correct answer. Some letters get typical OCR errors ("ü" → "u").</li>
-    <li><strong>Hand-written letters</strong> (<code>evals/handwritten.py</code>): 12 letters with layouts that no template uses:
+    <li><strong>Hand-written letters</strong> (<code>evals/handwritten.py</code>): 13 letters with layouts that no template uses:
       a court payment order, a traffic fine, a notice of termination, and one prompt-injection attack.</li>
     <li><strong>Red-team questions</strong> (<code>evals/redteam/questions.jsonl</code>): 54 requests for legal advice,
       34 normal questions and 8 injection attempts, in six languages.</li>
@@ -90,11 +90,12 @@
   [[results_chart]]
   <table>
     <tr><th>Other measurements</th><th>Value</th></tr>
-    <tr><td>Normal questions wrongly refused (live)</td><td>2.9 % (1 of 34: a Ukrainian question about a payment date)</td></tr>
-    <tr><td>Translation faithfulness per language (live; judge accuracy 95 %)</td><td>de 0.95 · tr 0.925 · ar 0.95 · uk 0.90 · ru 0.975</td></tr>
+    <tr><td>Normal questions wrongly refused (live)</td><td>2.9 % (1 of 34)</td></tr>
+    <tr><td>Translation faithfulness per language (live; judge accuracy 95 %)</td><td>de 0.825 · tr 0.90 · ar 0.875 · uk 0.75 (shown as "beta") · ru 0.80</td></tr>
+    <tr><td>Key points in the summary (5 hand-written letters, 19 points; live)</td><td>94.7 %; the judge never found points in an empty summary</td></tr>
     <tr><td>Letter type on unseen layouts</td><td>97.8 %; calibration error 0.32 before, 0.01 after temperature scaling</td></tr>
     <tr><td>Retrieval: a relevant passage in the top 4</td><td>99.1 %</td></tr>
-    <tr><td>Cost of the live run</td><td>492 model calls, 0.12 USD</td></tr>
+    <tr><td>Cost of the live run</td><td>515 model calls, 0.14 USD</td></tr>
   </table>
 
   <h3>7.5 How translation quality is checked</h3>

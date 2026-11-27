@@ -42,6 +42,7 @@ an automated test. Review this document when an interface or a processor changes
 | T15 | Lost KEK makes data unreadable (D) | Documented backup of the KEK in the password manager; warning in the deployment guide | runbook |
 | T16 | Supply-chain compromise in CI (T, E) | GitHub OIDC role limited to the CDK bootstrap roles and one environment; no stored AWS keys; locked dependency files | `infra/letterlens_infra/ci.py` |
 | T17 | Cross-site scripting in the web app steals tokens (E) | React escaping; strict Content Security Policy at CloudFront; tokens in sessionStorage only | `infra` CSP |
+| T18 | Password guessing and account discovery on the own sign-in screen (S, I) | Password goes to Cognito only (ADR-0009); Cognito lockout and rate limits; `PreventUserExistenceErrors`; one message for wrong password and unknown account; refresh token revoked on sign-out | `infra/tests` web client test, `web/src/__tests__/cognito.test.ts` |
 
 ## 4. Residual risks
 

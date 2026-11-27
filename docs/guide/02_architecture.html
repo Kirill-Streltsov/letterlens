@@ -31,7 +31,7 @@
     <tr><th>Folder</th><th>Content</th><th>Size</th></tr>
     <tr><td><code>backend/src/letterlens/</code></td><td>The Python application</td><td>7,400 lines</td></tr>
     <tr><td><code>backend/tests/</code>, <code>backend/evals/</code></td><td>Tests and the evaluation suite</td><td>2,650 lines</td></tr>
-    <tr><td><code>backend/corpus/</code></td><td>24 explanation passages with sources</td><td>24 Markdown files</td></tr>
+    <tr><td><code>backend/corpus/</code></td><td>26 explanation passages with sources</td><td>26 Markdown files</td></tr>
     <tr><td><code>web/src/</code></td><td>Web app</td><td>2,100 lines</td></tr>
     <tr><td><code>ios/</code></td><td>iOS app and the <code>LetterLensCore</code> package</td><td>2,500 lines</td></tr>
     <tr><td><code>infra/</code></td><td>AWS infrastructure as code (CDK, Python)</td><td>600 lines</td></tr>
@@ -156,7 +156,7 @@ else:                                      # invented
 
   <h3>5.7 Retrieval: <code>rag/retriever.py</code></h3>
   [[retrieval]]
-  <p>The 24 passages in <code>backend/corpus/*.md</code> are short English texts, each with a source link (mostly
+  <p>The 26 passages in <code>backend/corpus/*.md</code> are short English texts, each with a source link (mostly
   <em>gesetze-im-internet.de</em>), a check date and German keywords. <code>Bm25</code> is a classic keyword-ranking formula
   (the one behind most search engines). <code>HybridRetriever.search</code> fuses the keyword ranking with the optional
   embedding ranking by <em>reciprocal rank fusion</em>, filters by letter type, and drops passages without any match.</p>

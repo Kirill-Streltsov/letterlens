@@ -2,25 +2,25 @@
   "profile": "chaos",
   "provider": "chaos",
   "prompt_versions": [
-    "extract-v3",
-    "explain-v3",
+    "extract-v4",
+    "explain-v5",
     "guard-v2"
   ],
-  "golden_letters": 126,
+  "golden_letters": 127,
   "suites": {
     "extraction": {
-      "letters": 126,
+      "letters": 127,
       "letter_date_accuracy": 1.0,
       "explicit_deadline_recall": 0.5612,
       "explicit_deadline_precision": 0.5392,
-      "deadline_exact_match_letters": 0.6111,
+      "deadline_exact_match_letters": 0.6142,
       "relative_deadline_recall": 1.0,
       "amount_recall": 0.6496,
       "amount_direction_accuracy": 0.9101,
       "unsafe_verified_dates": 0,
       "unsafe_verified_amounts": 0,
       "verified_share_of_dates": 0.5392,
-      "mean_grounding_rate": 0.6167,
+      "mean_grounding_rate": 0.6197,
       "degraded_letters": 0,
       "failures": [
         {
@@ -287,8 +287,8 @@
     }
   },
   "seconds": 0.3,
-  "llm_calls": 126,
-  "llm_list_price_usd": 0.0138,
+  "llm_calls": 127,
+  "llm_list_price_usd": 0.0146,
   "gate": {
     "passed": true,
     "failures": []

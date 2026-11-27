@@ -15,22 +15,23 @@ the letter over to a free counselling service, with the reader's consent.
 
 ## Results
 
-Measured on the golden set of 126 letters (synthetic letters with unseen seeds,
-OCR-noise variants and 12 hand-written letters) and on 96 red-team questions in
-6 languages. "Live" is the production model (Mistral, 25 November 2026, 492 calls,
-0.12 USD); "rules" is the offline fallback that runs when the model is not available.
+Measured on the golden set of 127 letters (synthetic letters with unseen seeds,
+OCR-noise variants and 13 hand-written letters) and on 96 red-team questions in
+6 languages. "Live" is the production model (Mistral, 25 November 2026, 515 calls,
+0.14 USD); "rules" is the offline fallback that runs when the model is not available.
 Reports: [live](backend/evals/reports/live.md), [offline](backend/evals/reports/offline.md).
 
 | Metric | Live | Rules |
 |---|---|---|
 | Dates or amounts shown as "verified" that are not in the letter | **0** | **0** (also 0 of 91 injected hallucinations) |
-| Explicit deadline recall / precision | 99.0 % / 100 % | 98.0 % / 94.1 % |
-| Letters with every deadline exactly right | 99.2 % | 93.7 % |
-| Letter date accuracy / amount recall | 100 % / 98.5 % | 100 % / 100 % |
-| Amount direction (to pay / to receive) | 96.3 % | 93.4 % |
+| Explicit deadline recall / precision | 99.0 % / 99.0 % | 98.0 % / 94.1 % |
+| Letters with every deadline exactly right | 98.4 % | 93.7 % |
+| Letter date accuracy / amount recall | 99.2 % / 100 % | 100 % / 100 % |
+| Amount direction (to pay / to receive) | 97.1 % | 93.4 % |
 | Legal-advice requests caught / normal questions blocked | 100 % / 2.9 % | 85.2 % / 0 % |
 | Prompt-injection attempts caught | 100 % | 100 % |
-| Translation faithfulness (judge, per language) | 0.90 to 0.975; judge accuracy 95 % | – |
+| Translation faithfulness (judge, per language) | 0.75 (uk, now "beta") to 0.90; judge accuracy 95 % | – |
+| Key points in the summary (5 hand-written letters, 19 points) | 94.7 %; judge false positives 0 % | – |
 | Retrieval recall@4 | 99.1 % | 99.1 % |
 | Letter type on unseen layouts (leave-one-template-out) | 97.8 %, calibration error 0.32 → 0.01 | same model |
 
@@ -91,7 +92,7 @@ More: [docs/development.md](docs/development.md).
 
 ```bash
 make lint   # ruff, mypy --strict, eslint, tsc
-make test   # 157 backend tests (with RLS isolation), infra assertions, web tests
+make test   # 163 backend tests (with RLS isolation), infra assertions, web tests
 make eval   # offline gate and fault-injection gate
 cd ios/Packages/LetterLensCore && swift test   # Swift core and API contract tests
 ```

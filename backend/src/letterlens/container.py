@@ -5,10 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from functools import cached_property
 
-from letterlens.config import PipelineRunner, Settings
+from letterlens.config import AuthMode, PipelineRunner, Settings
 from letterlens.crypto import get_kek
 from letterlens.db import Database
 from letterlens.db.repo import KeyRing, PgLedger, PgStateStore
+from letterlens.identity import CognitoDirectory, IdentityDirectory, NoDirectory
 from letterlens.llm import Gateway, UsageLedger, build_provider
 from letterlens.ml.classifier import LinearModel, default_model
 from letterlens.pipeline.runner import InProcessRunner, Runner, StepFunctionsRunner
@@ -69,3 +70,9 @@ class Container:
         if self.settings.letters_bucket:
             return S3Storage(self.settings.letters_bucket, self.settings.aws_region)
         return DisabledStorage()
+
+    @cached_property
+    def directory(self) -> IdentityDirectory:
+        if self.settings.auth_mode is AuthMode.COGNITO and self.settings.cognito_user_pool_id:
+            return CognitoDirectory(self.settings.cognito_user_pool_id, self.settings.cognito_region)
+        return NoDirectory()

@@ -30,7 +30,12 @@ _REF_LABELS = re.compile(
     r"Unser Zeichen|Kindergeld-Nr\.|Mietobjekt-Nr\.)\s*:?\s*(?P<value>\S.*)$",
     re.IGNORECASE,
 )
-_DUE = re.compile(r"\bbis\s+(zum|spätestens|zu)?\b|\bspätestens\b|\bfrist\b", re.IGNORECASE)
+# A deadline keyword followed closely by a date. "bis zu 140 Tage" (up to) is not a deadline.
+_DUE = re.compile(
+    r"\b(?:bis|spätestens|frist)\b(?:\s+(?:zum|zur|zu\s+dem|spätestens|am|ende))?[\s:,]{1,4}"
+    r"(?:\d{1,2}\.\s?\d{1,2}\.\s?\d{2,4}|\d{1,2}\.\s+[A-Za-zÄÖÜäöü]+\.?\s+\d{4})",
+    re.IGNORECASE,
+)
 _APPOINTMENT = re.compile(r"\b(termin|am\s.+\bum\s+\d{1,2}[:.]\d{2})", re.IGNORECASE)
 _VALID_FROM = re.compile(r"\b(ab dem|ab|vom|gültig bis|für die zeit)\b", re.IGNORECASE)
 # "Datum: 03.11.2026", "Bochum, den 03.11.2026", "Hagen, 12.10.2026", "Bochum, 30. Juni 2026"
@@ -42,6 +47,7 @@ _TO_PAY = re.compile(
     re.IGNORECASE,
 )
 _ACTION = re.compile(r"^(bitte|reichen sie|senden sie|zahlen sie|bringen sie|überweisen sie)", re.IGNORECASE)
+_RECEIPT_FORM = re.compile(r"gegen\s+empfangsbekenntnis|^empfangsbekenntnis\b", re.IGNORECASE)
 _SKIP_SUBJECT = re.compile(r"^(sehr geehrte|liebe|anbei|datum)", re.IGNORECASE)
 
 
@@ -130,6 +136,13 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
             )
         if _ACTION.match(text.strip()):
             actions.append(ExtractedAction(description=text.strip(), line_ids=[line.id]))
+        elif _RECEIPT_FORM.search(text) and not any("acknowledgement" in a.description for a in actions):
+            actions.append(
+                ExtractedAction(
+                    description="Sign and return the acknowledgement of receipt (Empfangsbekenntnis)",
+                    line_ids=[line.id],
+                )
+            )
 
     return Extraction(
         sender=sender,

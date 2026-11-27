@@ -34,7 +34,8 @@ NOTE_ESTIMATE = "Estimated from the period in the letter. Please check the exact
 NOTE_NO_LETTER_DATE = "The letter date is unknown, so the end of the period cannot be estimated."
 NOTE_BEFORE_LETTER = "This date is before the letter date. Please check."
 
-_LETTER_DATE_HINTS = ("datum", "den ", "vom ")
+# Whole words only: "den" must not match inside "Studierenden".
+_LETTER_DATE_HINT = re.compile(r"\b(?:datum|den|vom)\b", re.IGNORECASE)
 _HEADER_LINES = 20
 _PLACE_DATE = re.compile(r"^[A-ZÄÖÜ][\wäöüß .-]{1,40},\s*\d{1,2}\.")
 
@@ -58,7 +59,7 @@ def _verify_letter_date(
     for line in doc.lines[:_HEADER_LINES]:
         lowered = line.text.lower()
         dates = find_dates(line.text)
-        if dates and (any(hint in lowered for hint in _LETTER_DATE_HINTS) or _PLACE_DATE.match(line.text)):
+        if dates and (_LETTER_DATE_HINT.search(lowered) or _PLACE_DATE.match(line.text)):
             return dates[0], FactStatus.NEEDS_CHECK
     return proposed, FactStatus.NEEDS_CHECK
 

@@ -203,6 +203,8 @@ def test_account_deletion_crypto_shreds(client: TestClient) -> None:
     services = client.app.state.services  # type: ignore[attr-defined]
     with services.container.db.session(DbContext.as_system()) as conn:
         assert R.letter_row(conn, lid) is None
+    # The sign-in account (email, password hash) is removed too.
+    assert services.container.directory.deleted == [f"dev:{h['X-Dev-User']}"]
 
 
 def test_cost_endpoint(client: TestClient) -> None:

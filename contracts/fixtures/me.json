@@ -7,5 +7,6 @@
   "letters_this_month": 1,
   "letters_limit": 1000,
   "memberships": [],
-  "is_platform_admin": false
+  "is_platform_admin": false,
+  "plus_checkout_available": false
 }

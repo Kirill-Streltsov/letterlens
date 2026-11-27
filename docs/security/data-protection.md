@@ -12,7 +12,7 @@ health data (Art. 9 GDPR) and data about residence status.
 | Letter images | Reader, only with consent | Counsellor sees the original | S3, encrypted | Deleted with the letter; lifecycle rule as backstop |
 | Results (facts, explanations) | Pipeline | Display | Neon, encrypted per user | With the letter |
 | Messages | Reader, counsellor | Counselling | Neon, encrypted with the reader's key | With the share or the account |
-| Account | Cognito | Sign-in | Cognito (e-mail), Neon (subject id, plan, optional display name) | Until account deletion |
+| Account | Cognito | Sign-in | Cognito (e-mail, password hash), Neon (subject id, plan, optional display name) | Until account deletion; `DELETE /v1/me` removes the Neon rows and the Cognito user |
 | Cost ledger | Gateway | Cost control | Neon, no content | 13 months, deleted by the daily job |
 | Audit log | API | Accountability | Neon, no content | 3 years; the operator deletes older rows with the owner role (the app role cannot delete) |
 

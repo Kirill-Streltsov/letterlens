@@ -2,7 +2,7 @@
 id: formal-delivery
 title: "Formal delivery in a yellow envelope (Postzustellungsurkunde)"
 letter_types: [tax, benefits, immigration, other]
-source_name: "Zivilprozessordnung §§ 180, 182; Verwaltungszustellungsgesetz"
+source_name: "Zivilprozessordnung §§ 180, 181, 182; Verwaltungszustellungsgesetz"
 source_url: "https://www.gesetze-im-internet.de/zpo/__180.html"
 checked_on: 2026-06-29
 language: en

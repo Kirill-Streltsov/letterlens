@@ -239,6 +239,39 @@ HANDWRITTEN: list[SyntheticLetter] = [
         [AmountLabel("87.00", "to_pay"), AmountLabel("2.50", "to_pay"), AmountLabel("89.50", "to_pay")],
     ),
     _l(
+        "study-warning",
+        "immigration",
+        "Stadt Bochum - Ausländerbehörde",
+        "",  # like the real letter it mirrors: no date in the header
+        """
+        Stadt Bochum Der Oberbürgermeister
+        Abteilung Ausbildungs- und Arbeitsmigration
+        Stadt Bochum 30/1 44777 Bochum
+        Gegen Empfangsbekenntnis
+        Max Mustermann
+        Lindenallee 7
+        44787 Bochum
+        Mein Zeichen: 30/1-S-221-4567/2021
+        Ihr Aufenthalt im Bundesgebiet
+        Guten Tag Max Mustermann,
+        Sie haben die Verlängerung Ihrer Aufenthaltserlaubnis zu Studienzwecken beantragt.
+        Sie befinden sich derzeit im 11. Fachsemester des Studiengangs Maschinenbau (Bachelor). Die Regelstudienzeit beträgt 7 Semester.
+        Laut Prüfbescheinigung haben Sie bisher 95 Leistungspunkte erzielt und benötigen noch 115 Leistungspunkte.
+        Seit dem 01.03.2024 ist es ausländischen Studierenden erlaubt, bis zu 140 Tage im Jahr beschäftigt zu sein. Studentische Nebentätigkeiten sind gestattet.
+        Der Hauptzweck des Aufenthalts muss jedoch das Studium sein.
+        Ein angemessener Zeitraum ist in der Regel nicht mehr gegeben, wenn das Studium innerhalb einer Gesamtaufenthaltsdauer von zehn Jahren nicht abgeschlossen werden kann.
+        Die durchschnittliche Studiendauer soll nicht um mehr als 3 Semester überschritten werden.
+        Ich nehme dies zum Anlass, Sie ausländerrechtlich zu verwarnen.
+        Vorerst sehe ich von der Einleitung aufenthaltsbeendender Maßnahmen ab, um Ihnen die Gelegenheit zu geben, Ihr Studium zu beenden.
+        Sollten sich Ihre Studienleistungen nicht verbessern, müssen Sie damit rechnen, dass Ihre Aufenthaltserlaubnis nicht weiter verlängert wird.
+        Empfangsbekenntnis
+        Das vorstehende Schriftstück habe ich heute erhalten und zur Kenntnis genommen.
+        Bochum, den 12.03.2026
+    """,
+        [],
+        [],
+    ),
+    _l(
         "injection",
         "landlord",
         "Wohnen am Kanal GmbH",
@@ -255,3 +288,38 @@ HANDWRITTEN: list[SyntheticLetter] = [
         [AmountLabel("640.00", "to_pay")],
     ),
 ]
+
+
+# Points a complete summary must contain (checked by the live completeness suite).
+KEY_POINTS: dict[str, list[str]] = {
+    "hw-study-warning": [
+        "The reader received a formal warning (Verwarnung) about slow study progress.",
+        "For now, the office takes no steps to end the stay, so the reader can finish the studies.",
+        "If study performance does not improve, the residence permit may not be extended again.",
+        "Studies should be completed within a total stay of ten years, or the average duration "
+        "should not be exceeded by more than 3 semesters.",
+        "Employment of up to 140 days per year (plus student jobs) is allowed.",
+        "The reader must sign and return the acknowledgement of receipt (Empfangsbekenntnis).",
+    ],
+    "hw-court-order": [
+        "It is a court payment order (Mahnbescheid).",
+        "The total amount is 425.90 EUR.",
+        "An objection (Widerspruch) is possible within two weeks after delivery.",
+    ],
+    "hw-jobcenter-change": [
+        "Benefits are recalculated because the reader started employment.",
+        "The new monthly amount is 312.44 EUR.",
+        "214.10 EUR was overpaid and must be paid back by 30 September 2026.",
+        "An objection (Widerspruch) is possible within one month after notification.",
+    ],
+    "hw-termination": [
+        "The landlord terminates the tenancy because of own use (Eigenbedarf).",
+        "The flat must be handed over by 31 December 2026.",
+        "The tenant can object at the latest two months before the tenancy ends.",
+    ],
+    "hw-fine": [
+        "It is a fine notice (Bußgeldbescheid) for speeding.",
+        "The total to pay is 98.50 EUR, by 1 October 2026.",
+        "An objection (Einspruch) is possible within two weeks after delivery.",
+    ],
+}

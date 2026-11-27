@@ -122,3 +122,11 @@ def test_reference_not_in_letter_is_dropped() -> None:
     fake_ref = ExtractedReference(label="Aktenzeichen", value="XYZ-1", line_ids=["p1-l2"])
     facts = verify(extraction(reference_numbers=[fake_ref]), DOC)
     assert facts.reference_numbers == []
+
+
+def test_letter_date_hint_is_a_whole_word() -> None:
+    # Regression: "den " inside "Studierenden" made a permission date look like the letter date.
+    lines = ["Stadt Bochum", "Seit dem 01.03.2024 ist es ausländischen Studierenden erlaubt, zu arbeiten."]
+    doc = LetterDocument(lines=[OcrLine(page=1, index=i, text=t) for i, t in enumerate(lines, 1)])
+    empty = extraction(letter_date=ExtractedDate(value=None, line_ids=[]), deadlines=[], amounts=[])
+    assert verify(empty, doc).letter_date is None

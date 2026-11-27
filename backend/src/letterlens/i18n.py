@@ -59,52 +59,54 @@ def is_available(code: str) -> bool:
 
 
 REFUSAL: dict[str, str] = {
+    # The app's buttons are in English in every language, so the button name stays English.
     "en": (
         "I can explain what the letter says, but I cannot assess your personal case or tell "
-        "you what to decide. A counselling service can do this for free. Tap "
+        "you what to decide. A counselling service can do this, often for free. Use "
         '"Talk to a counsellor" to share this letter with one.'
     ),
     "de": (
         "Ich kann erklären, was im Brief steht. Ich kann aber Ihren persönlichen Fall nicht "
-        "rechtlich prüfen und Ihnen keine Entscheidung empfehlen. Eine Beratungsstelle hilft "
-        'Ihnen kostenlos. Tippen Sie auf "Mit Beratung sprechen".'
+        "rechtlich prüfen und Ihnen keine Entscheidung empfehlen. Eine Beratungsstelle kann das, "
+        'oft kostenlos. Mit "Talk to a counsellor" können Sie den Brief mit einer Beratungsstelle teilen.'
     ),
     "tr": (
         "Mektupta ne yazdığını açıklayabilirim, ancak kişisel durumunuzu hukuki olarak "
         "değerlendiremem ve size ne karar vermeniz gerektiğini söyleyemem. Bir danışma "
-        'merkezi bunu ücretsiz yapabilir. Mektubu paylaşmak için "Danışmanla konuş" '
-        "düğmesine dokunun."
+        'merkezi bunu yapabilir, çoğu zaman ücretsiz. Mektubu paylaşmak için "Talk to a counsellor" '
+        "bölümünü kullanın."
     ),
     "ar": (
         "يمكنني شرح ما يقوله الخطاب، لكن لا يمكنني تقييم حالتك الشخصية قانونياً أو إخبارك "
-        'بما يجب أن تقرره. يمكن لمركز استشارات مساعدتك مجاناً. اضغط على "تحدث مع مستشار" '
-        "لمشاركة هذا الخطاب."
+        "بما يجب أن تقرره. يمكن لمركز استشارات القيام بذلك، وغالباً مجاناً. استخدم "
+        '"Talk to a counsellor" لمشاركة هذا الخطاب.'
     ),
     "uk": (
         "Я можу пояснити, що написано в листі, але не можу юридично оцінити вашу особисту "
-        "ситуацію чи порадити, яке рішення ухвалити. Консультаційна служба допоможе "
-        "безкоштовно. Натисніть «Поговорити з консультантом», щоб поділитися листом."
+        "ситуацію чи порадити, яке рішення ухвалити. Консультаційна служба може це зробити, "
+        "часто безкоштовно. Скористайтеся «Talk to a counsellor», щоб поділитися листом."
     ),
     "ru": (
         "Я могу объяснить, что написано в письме, но не могу юридически оценить вашу личную "
-        "ситуацию или посоветовать, какое решение принять. Консультационная служба поможет "
-        "бесплатно. Нажмите «Поговорить с консультантом», чтобы поделиться письмом."
+        "ситуацию или посоветовать, какое решение принять. Консультационная служба может это "
+        "сделать, часто бесплатно. Используйте «Talk to a counsellor», чтобы поделиться письмом."
     ),
 }
 
 COUNSELLING_HINT: dict[str, str] = {
-    "en": "Free help: migration counselling services (MBE, JMD), social counselling and "
-    "tenant associations can check your case.",
-    "de": "Kostenlose Hilfe: Migrationsberatung (MBE, JMD), Sozialberatung und Mietervereine "
-    "können Ihren Fall prüfen.",
-    "tr": "Ücretsiz yardım: göçmen danışma hizmetleri (MBE, JMD), sosyal danışma ve kiracı "
-    "dernekleri durumunuzu inceleyebilir.",
-    "ar": "مساعدة مجانية: يمكن لخدمات استشارة المهاجرين (MBE وJMD) والاستشارات الاجتماعية "
-    "وجمعيات المستأجرين فحص حالتك.",
-    "uk": "Безкоштовна допомога: міграційні консультації (MBE, JMD), соціальні консультації "
-    "та спілки орендарів можуть перевірити вашу ситуацію.",
-    "ru": "Бесплатная помощь: миграционные консультации (MBE, JMD), социальные консультации "
-    "и союзы арендаторов могут проверить вашу ситуацию.",
+    # Tenant associations (Mietervereine) charge a membership fee, so they are not called free.
+    "en": "Free help: migration counselling (MBE, JMD) and social counselling services can look at "
+    "your case. Tenant associations help their members with rent questions.",
+    "de": "Kostenlose Hilfe: Migrationsberatung (MBE, JMD) und Sozialberatung können Ihren Fall "
+    "ansehen. Mietervereine helfen ihren Mitgliedern bei Fragen zur Miete.",
+    "tr": "Ücretsiz yardım: göçmen danışma hizmetleri (MBE, JMD) ve sosyal danışma merkezleri "
+    "durumunuza bakabilir. Kiracı dernekleri, kira konularında üyelerine yardım eder.",
+    "ar": "مساعدة مجانية: يمكن لخدمات استشارة المهاجرين (MBE وJMD) ومراكز الاستشارة الاجتماعية "
+    "النظر في حالتك. تساعد جمعيات المستأجرين أعضاءها في مسائل الإيجار.",
+    "uk": "Безкоштовна допомога: міграційні консультації (MBE, JMD) і соціальні консультації можуть "
+    "розглянути вашу ситуацію. Спілки орендарів допомагають своїм членам із питаннями оренди.",
+    "ru": "Бесплатная помощь: миграционные консультации (MBE, JMD) и социальные консультации могут "
+    "рассмотреть вашу ситуацию. Союзы арендаторов помогают своим членам в вопросах аренды.",
 }
 
 DISCLAIMER: dict[str, str] = {

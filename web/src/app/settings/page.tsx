@@ -52,7 +52,7 @@ function Settings({ me }: { me: Me }) {
           You use <strong>LetterLens {me.plan === "plus" ? "Plus" : "Free"}</strong>
           {me.letters_limit !== null && ` (${me.letters_this_month} of ${me.letters_limit} letters this month)`}.
         </p>
-        {me.plan === "free" && (
+        {me.plan === "free" && me.plus_checkout_available && (
           <div>
             <button
               className="btn small"

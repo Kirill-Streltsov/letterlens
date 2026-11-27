@@ -33,10 +33,17 @@ export function Header({ me }: { me?: Me | null }) {
           </nav>
         )}
         <span className="spacer" />
-        {me && (
+        {me ? (
           <button className="btn ghost small" onClick={() => void signOut()}>
             Sign out
           </button>
+        ) : (
+          me === undefined &&
+          path === "/" && (
+            <Link className="btn ghost small" href="/signin/">
+              Sign in
+            </Link>
+          )
         )}
       </div>
     </header>
