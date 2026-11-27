@@ -1,6 +1,6 @@
 # Evaluation report: profile `live`
 
-Provider: `mistral`. Prompts: `['extract-v4', 'explain-v5', 'guard-v2']`.
+Provider: `mistral`. Prompts: `['extract-v4', 'explain-v5', 'translate-explanation-v1', 'guard-v2', 'backtranslate-v2']`.
 
 ## classification
 
@@ -18,15 +18,15 @@ Provider: `mistral`. Prompts: `['extract-v4', 'explain-v5', 'guard-v2']`.
 |---|---|
 | letters | 127 |
 | letter_date_accuracy | 0.9921 |
-| explicit_deadline_recall | 0.9898 |
-| explicit_deadline_precision | 0.9898 |
-| deadline_exact_match_letters | 0.9843 |
+| explicit_deadline_recall | 1.0 |
+| explicit_deadline_precision | 0.9899 |
+| deadline_exact_match_letters | 0.9921 |
 | relative_deadline_recall | 1.0 |
 | amount_recall | 1.0 |
-| amount_direction_accuracy | 0.9708 |
+| amount_direction_accuracy | 0.9781 |
 | unsafe_verified_dates | 0 |
 | unsafe_verified_amounts | 0 |
-| verified_share_of_dates | 0.9898 |
+| verified_share_of_dates | 0.9899 |
 | mean_grounding_rate | 0.9974 |
 | degraded_letters | 0 |
 
@@ -54,14 +54,15 @@ Provider: `mistral`. Prompts: `['extract-v4', 'explain-v5', 'guard-v2']`.
 |---|---|
 | judge_accuracy_on_calibration_set | 0.95 |
 | letters | 8 |
-| min_language_score | 0.75 |
+| min_language_score | 0.95 |
+| aligned_share | 1.0 |
 
 ## completeness
 
 | Metric | Value |
 |---|---|
 | letters | 5 |
-| keypoint_recall | 0.9474 |
+| keypoint_recall | 0.8947 |
 | judge_false_positive_rate | 0.0 |
 
 ## Gate

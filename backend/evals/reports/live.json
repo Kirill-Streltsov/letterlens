@@ -4,7 +4,9 @@
   "prompt_versions": [
     "extract-v4",
     "explain-v5",
-    "guard-v2"
+    "translate-explanation-v1",
+    "guard-v2",
+    "backtranslate-v2"
   ],
   "golden_letters": 127,
   "suites": {
@@ -26,15 +28,15 @@
     "extraction": {
       "letters": 127,
       "letter_date_accuracy": 0.9921,
-      "explicit_deadline_recall": 0.9898,
-      "explicit_deadline_precision": 0.9898,
-      "deadline_exact_match_letters": 0.9843,
+      "explicit_deadline_recall": 1.0,
+      "explicit_deadline_precision": 0.9899,
+      "deadline_exact_match_letters": 0.9921,
       "relative_deadline_recall": 1.0,
       "amount_recall": 1.0,
-      "amount_direction_accuracy": 0.9708,
+      "amount_direction_accuracy": 0.9781,
       "unsafe_verified_dates": 0,
       "unsafe_verified_amounts": 0,
-      "verified_share_of_dates": 0.9898,
+      "verified_share_of_dates": 0.9899,
       "mean_grounding_rate": 0.9974,
       "degraded_letters": 0,
       "failures": [
@@ -47,14 +49,6 @@
             "2026-10-31",
             "2026-12-31"
           ],
-          "missing_amounts": []
-        },
-        {
-          "id": "hw-care-insurance",
-          "expected_dates": [
-            "2026-03-17"
-          ],
-          "shown_dates": [],
           "missing_amounts": []
         }
       ]
@@ -105,33 +99,36 @@
       "judge_accuracy_on_calibration_set": 0.95,
       "letters": 8,
       "per_language": {
-        "de": 0.825,
-        "tr": 0.9,
-        "ar": 0.875,
-        "uk": 0.75,
-        "ru": 0.8
+        "de": 0.975,
+        "tr": 0.95,
+        "ar": 1.0,
+        "uk": 1.0,
+        "ru": 0.95
       },
-      "min_language_score": 0.75
+      "min_language_score": 0.95,
+      "aligned_share": 1.0,
+      "low_scores": []
     },
     "completeness": {
       "letters": 5,
-      "keypoint_recall": 0.9474,
+      "keypoint_recall": 0.8947,
       "judge_false_positive_rate": 0.0,
       "per_letter": {
-        "hw-study-warning": 1.0,
+        "hw-study-warning": 0.833,
         "hw-court-order": 0.667,
         "hw-jobcenter-change": 1.0,
         "hw-termination": 1.0,
         "hw-fine": 1.0
       },
       "missed": [
+        "hw-study-warning: Employment of up to 140 days per year (plus student jobs) is allowed.",
         "hw-court-order: It is a court payment order (Mahnbescheid)."
       ]
     }
   },
-  "seconds": 823.7,
-  "llm_calls": 515,
-  "llm_list_price_usd": 0.136,
+  "seconds": 771.3,
+  "llm_calls": 514,
+  "llm_list_price_usd": 0.1146,
   "gate": {
     "passed": true,
     "failures": []

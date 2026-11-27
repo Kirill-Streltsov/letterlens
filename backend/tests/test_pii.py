@@ -104,3 +104,21 @@ def test_generic_greeting_is_not_a_name() -> None:
         doc("Sehr geehrte Damen und Herren,", "Mit freundlichen Grüßen")
     ).plain_text()
     assert redacted == "Sehr geehrte Damen und Herren,\nMit freundlichen Grüßen"
+
+
+def test_reapply_hides_restored_names_and_addresses_again() -> None:
+    lines = [
+        "Max Mustermann",
+        "Lindenallee 7",
+        "44787 Bochum",
+        "Guten Tag Max Mustermann,",
+        "Ihre IBAN DE89370400440532013000",
+    ]
+    doc = LetterDocument(lines=[OcrLine(page=1, index=i + 1, text=t) for i, t in enumerate(lines)])
+    vault = PiiVault()
+    vault.redact_document(doc)
+    text = "Mr Mustermann (Max Mustermann, Lindenallee 7) must pay from DE89370400440532013000."
+    hidden = vault.reapply(text)
+    assert "Mustermann" not in hidden and "Lindenallee" not in hidden and "DE8937" not in hidden
+    # The surname alone shares the full name's placeholder (as in redact_document).
+    assert vault.restore(hidden) == text.replace("Mr Mustermann", "Mr Max Mustermann")

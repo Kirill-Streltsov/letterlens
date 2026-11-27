@@ -91,11 +91,11 @@
   <table>
     <tr><th>Other measurements</th><th>Value</th></tr>
     <tr><td>Normal questions wrongly refused (live)</td><td>2.9 % (1 of 34)</td></tr>
-    <tr><td>Translation faithfulness per language (live; judge accuracy 95 %)</td><td>de 0.825 · tr 0.90 · ar 0.875 · uk 0.75 (shown as "beta") · ru 0.80</td></tr>
-    <tr><td>Key points in the summary (5 hand-written letters, 19 points; live)</td><td>94.7 %; the judge never found points in an empty summary</td></tr>
+    <tr><td>Translation faithfulness per language (live; judge accuracy 95 %)</td><td>de 0.975 · tr 0.95 · ar 1.00 · uk 1.00 · ru 0.95; every translation keeps one sentence per English sentence</td></tr>
+    <tr><td>Key points in the summary (5 hand-written letters, 19 points; live)</td><td>89.5 % to 94.7 % in two runs; the judge never found points in an empty summary</td></tr>
     <tr><td>Letter type on unseen layouts</td><td>97.8 %; calibration error 0.32 before, 0.01 after temperature scaling</td></tr>
     <tr><td>Retrieval: a relevant passage in the top 4</td><td>99.1 %</td></tr>
-    <tr><td>Cost of the live run</td><td>515 model calls, 0.14 USD</td></tr>
+    <tr><td>Cost of the live run</td><td>514 model calls, 0.11 USD</td></tr>
   </table>
 
   <h3>7.5 How translation quality is checked</h3>
@@ -103,6 +103,12 @@
   the English summary. A judge can also be wrong, so it is tested first: it must sort 20 pairs with known answers (unchanged
   summaries versus summaries with a changed date, amount or obligation). It scored 95 %. Only then do its scores count. A language
   with a score of 0.80 or more is marked <em>enabled</em>; otherwise the app shows it as "beta".</p>
+  <p>How other languages are made: the model writes the explanation once, in English, and the code checks it against the letter.
+  Then a second call translates this checked text item by item. Code puts the line links and sources back from the English
+  version, so every language shows the same content. An earlier design wrote each language separately from the letter; the
+  languages then differed in content, and Ukrainian fell to 0.75. With translation, every language scores 0.95 to 1.00.</p>
+  <p class="ios">iOS analogy: one source of truth (the checked English model) and localized views of it, instead of five
+  separate models that can drift apart.</p>
 
   <h3>7.6 An honest limit</h3>
   <p>The test letters are synthetic and hand-written. They show that the mechanisms work; they do not prove how the system

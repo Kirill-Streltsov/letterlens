@@ -374,6 +374,7 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
 
     scores: dict[str, list[float]] = defaultdict(list)
     low: list[dict[str, Any]] = []  # judge reasons for scores below 4, to see what goes wrong
+    aligned = translations = 0  # translations with exactly one sentence per English sentence
     for letter in picked:
         state = run_letter(ctx, letter, ("classify", "extract", "verify", "retrieve"))
         state = explain(state, ctx.deps, "en")
@@ -383,6 +384,8 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
                 continue
             state = explain(state, ctx.deps, code)
             target = " ".join(s.text for s in state.explanations[code].summary)
+            translations += 1
+            aligned += len(state.explanations[code].summary) == len(state.explanations["en"].summary)
             back = gw.generate(
                 Task.BACKTRANSLATE,
                 _BackText,
@@ -410,6 +413,7 @@ def suite_faithfulness(ctx: Context, letters: list[SyntheticLetter], sample: int
         "letters": len(picked),
         "per_language": {k: round(sum(v) / len(v), 4) for k, v in scores.items()},
         "min_language_score": round(min((sum(v) / len(v) for v in scores.values()), default=0.0), 4),
+        "aligned_share": round(aligned / translations, 4) if translations else 0.0,
         "low_scores": low,
     }
 
@@ -563,7 +567,13 @@ def main(argv: list[str] | None = None) -> int:
     report: dict[str, Any] = {
         "profile": args.profile,
         "provider": ctx.provider_name,
-        "prompt_versions": [P.EXTRACT_VERSION, P.EXPLAIN_VERSION, P.GUARD_VERSION],
+        "prompt_versions": [
+            P.EXTRACT_VERSION,
+            P.EXPLAIN_VERSION,
+            P.TRANSLATE_EXPLANATION_VERSION,
+            P.GUARD_VERSION,
+            P.BACKTRANSLATE_VERSION,
+        ],
         "golden_letters": len(letters),
         "suites": {},
     }

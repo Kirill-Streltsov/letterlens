@@ -19,6 +19,7 @@ from aws_cdk import (
     Stack,
 )
 from aws_cdk import aws_budgets as budgets
+from aws_cdk import aws_certificatemanager as acm
 from aws_cdk import aws_cloudfront as cloudfront
 from aws_cdk import aws_cloudfront_origins as origins
 from aws_cdk import aws_cloudwatch as cw
@@ -353,10 +354,23 @@ class LetterLensStack(Stack):
                 ),
             ),
         )
+        # Optional own domain (docs/operations/custom-domain.md). CloudFront needs the certificate in
+        # us-east-1; it is requested once with the CLI and its ARN goes into cdk.json.
+        domain_names: list[str] = list(config.get("domainNames") or [])
+        certificate_arn: str = config.get("certificateArn") or ""
+        if bool(domain_names) != bool(certificate_arn):
+            raise ValueError("domainNames and certificateArn must be set together")
         distribution = cloudfront.Distribution(
             self,
             "Edge",
             comment=f"LetterLens {stage}",
+            domain_names=domain_names or None,
+            certificate=acm.Certificate.from_certificate_arn(self, "SiteCertificate", certificate_arn)
+            if certificate_arn
+            else None,
+            minimum_protocol_version=cloudfront.SecurityPolicyProtocol.TLS_V1_2_2021
+            if certificate_arn
+            else None,
             price_class=cloudfront.PriceClass.PRICE_CLASS_100,
             http_version=cloudfront.HttpVersion.HTTP2_AND_3,
             default_root_object="index.html",
@@ -388,10 +402,11 @@ class LetterLensStack(Stack):
                 )
             ],
         )
-        site_url = f"https://{distribution.distribution_domain_name}"
+        default_url = f"https://{distribution.distribution_domain_name}"
+        site_url = f"https://{domain_names[0]}" if domain_names else default_url
         letters_bucket.add_cors_rule(
             allowed_methods=[s3.HttpMethods.POST, s3.HttpMethods.GET],
-            allowed_origins=[site_url, "http://localhost:3000"],
+            allowed_origins=list(dict.fromkeys([site_url, default_url, "http://localhost:3000"])),
             allowed_headers=["*"],
             max_age=3000,
         )
@@ -540,6 +555,8 @@ class LetterLensStack(Stack):
             )
 
         CfnOutput(self, "SiteUrl", value=site_url)
+        # DNS target for an own domain: CNAME www (and the apex via ALIAS or CNAME flattening) to this name.
+        CfnOutput(self, "CloudFrontDomain", value=distribution.distribution_domain_name)
         CfnOutput(self, "ApiFunctionName", value=api.function_name)
         CfnOutput(self, "UserPoolId", value=user_pool.user_pool_id)
         CfnOutput(self, "WebClientId", value=web_client.user_pool_client_id)

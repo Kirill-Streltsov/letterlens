@@ -76,6 +76,67 @@ def test_second_language_run() -> None:
     assert set(store.load_state(lid).explanations) == {"en", "de"}
 
 
+def test_other_languages_translate_the_checked_english_text() -> None:
+    provider = FakeProvider()
+    runner, store = make_runner(provider)
+    lid = submit(store)
+    runner.start(lid)
+    runner.start(lid, EXPLAIN_ONLY, "tr")
+    state = store.load_state(lid)
+    en, tr = state.explanations["en"], state.explanations["tr"]
+    # Same content in the same order: every sentence keeps its line links, every step its citations.
+    assert [s.line_ids for s in tr.summary] == [s.line_ids for s in en.summary]
+    assert [s.citation_ids for s in tr.next_steps] == [s.citation_ids for s in en.next_steps]
+    assert tr.citations == en.citations
+    assert tr.deadline_labels.keys() == en.deadline_labels.keys()
+    assert all(s.text.startswith("[tr] ") for s in tr.summary)
+    assert tr.counselling_hint != en.counselling_hint  # localized texts, not translated by the model
+    translate_calls = [c for c in provider.calls if c.task is Task.TRANSLATE_EXPLANATION]
+    assert len(translate_calls) == 1
+    explain_calls = [c for c in provider.calls if c.task is Task.EXPLAIN]
+    assert len(explain_calls) == 1  # the letter is explained once
+
+
+def test_translation_never_sees_recipient_name() -> None:
+    provider = FakeProvider()
+    runner, store = make_runner(provider)
+    lid = submit(store)
+    name = next(x for x in store.load_state(lid).document.lines if x.text == "Yusuf Öztürk").text
+    state = store.load_state(lid)
+    state.language = "ar"
+    store.save_state(state)
+    runner.start(lid)
+    calls = [c for c in provider.calls if c.task is Task.TRANSLATE_EXPLANATION]
+    assert calls
+    for request in calls:
+        assert name not in request.user and "Öztürk" not in request.user
+
+
+class _DroppingTranslator(FakeProvider):
+    """Returns one summary item too few, like a model that merges two sentences."""
+
+    @staticmethod
+    def _translate_explanation(ctx: dict[str, object]) -> dict[str, object]:
+        out = FakeProvider._translate_explanation(ctx)  # type: ignore[arg-type]
+        out["summary"] = out["summary"][:-1]
+        return out
+
+
+def test_incomplete_translation_falls_back_to_direct_writing() -> None:
+    provider = _DroppingTranslator()
+    runner, store = make_runner(provider)
+    lid = submit(store)
+    runner.start(lid)
+    runner.start(lid, EXPLAIN_ONLY, "uk")
+    state = store.load_state(lid)
+    uk = state.explanations["uk"]
+    assert len(uk.summary) > 0
+    assert not any(
+        s.text.startswith("[uk]") for s in uk.summary
+    )  # written directly, not the broken translation
+    assert [c.task for c in provider.calls].count(Task.EXPLAIN) == 2
+
+
 def test_failure_marks_letter_failed() -> None:
     runner, store = make_runner(FakeProvider())
     store.save_state(PipelineState(letter_id="x", owner_id="u1", document=to_document(generate_corpus(1)[0])))
@@ -116,3 +177,16 @@ def test_sanitizer_drops_advice_invented_numbers_and_uncited_steps(ready_state: 
     assert set(exp.deadline_labels) == {"d1"}
     assert stats == {"dropped_advisory": 1, "dropped_numbers": 1, "dropped_uncited": 1}
     assert [c.id for c in exp.citations] == ["c1"]
+
+
+def test_amounts_with_space_thousands_separator_are_recognized() -> None:
+    from letterlens.pipeline.steps import unsupported_numbers
+
+    allowed = {"1.092,50", "1092,50", "1092.50", "1092", "2026"}
+    for text in [
+        "Ви отримуватимете 1 092,50 євро.",
+        "Вы получите 1\u00a0092,50 €.",
+        "Montant : 1\u202f092,50 €",
+    ]:
+        assert unsupported_numbers(text, allowed) == [], text
+    assert unsupported_numbers("Вы получите 1 093,50 €.", allowed) == ["1093,50"]

@@ -52,9 +52,9 @@ passages without any lexical or dense match. Result: up to 4 passages `c1`…`c4
 
 ### 2.5 Explain
 
-The model writes, in the reader's language: a headline, the kind of letter, 3 to 6
-summary sentences with line ids, 1 to 4 "next steps" with passage ids, and short
-labels for each deadline and amount. Then the sanitizer enforces the contract:
+The model writes in English: a headline, the kind of letter, 3 to 10 summary
+sentences with line ids, 1 to 4 "next steps" with passage ids, and short labels for
+each deadline and amount. Then the sanitizer enforces the contract:
 
 | Rule | Action |
 |---|---|
@@ -65,6 +65,24 @@ labels for each deadline and amount. Then the sanitizer enforces the contract:
 | A URL | remove it |
 
 Counters of dropped items go to the log (`explanation sanitized`).
+
+### 2.6 Translate
+
+Other languages translate the checked English explanation (task
+`translate_explanation`); they are not written again from the letter. The model
+returns each summary sentence and next step with its index, and each label with its
+fact id. Code puts the line ids, passage ids and citations back from the English
+source, so every language shows the same content with the same links.
+
+| Rule | Action |
+|---|---|
+| Names and addresses | hidden again with the letter's placeholders before the call (`PiiVault.reapply`) |
+| An item is missing, or an extra item appears | write the explanation directly in the target language |
+| A translated item fails the advice or number check | drop it (log `translation sanitized`) |
+| Amounts with a space as thousands separator ("1 092,50", uk, ru) | count as the same number |
+
+The evaluation gate `aligned_share` (min 0.95) checks that translations keep one
+sentence per English sentence.
 
 ## 3. Questions
 
@@ -80,7 +98,7 @@ and the app offers "Talk to a counsellor".
 ## 4. Prompts
 
 Prompts live in `llm/prompts.py`. Each prompt has a version string
-(`extract-v4`, `explain-v5`, `answer-v2`, `guard-v2`). The cost ledger and every
+(`extract-v4`, `explain-v5`, `translate-explanation-v1`, `answer-v2`, `guard-v2`, `backtranslate-v2`). The cost ledger and every
 evaluation report record the version. Rules for prompt changes:
 
 1. Change the prompt and its version string in the same commit.

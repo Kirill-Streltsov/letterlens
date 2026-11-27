@@ -7,6 +7,7 @@ practical: short sentences, active voice, one instruction per step, one term per
 |---|---|
 | [LetterLens-Guide.pdf](LetterLens-Guide.pdf) | Understand everything in one illustrated guide (rebuild: `python3 docs/guide/build.py`) |
 | [operations/deployment.md](operations/deployment.md) | Deploy to production (manual steps) |
+| [operations/custom-domain.md](operations/custom-domain.md) | Use an own domain instead of the CloudFront address |
 | [development.md](development.md) | Run, test and change the code locally |
 | [architecture/overview.md](architecture/overview.md) | Understand the system |
 | [architecture/adr/](architecture/adr/) | Understand why each main decision was made |

@@ -30,6 +30,7 @@ from letterlens.grounding.verifier import verify
 from letterlens.i18n import COUNSELLING_HINT, DISCLAIMER, languages, localized
 from letterlens.llm import Gateway, Task
 from letterlens.llm import prompts as P
+from letterlens.llm.outputs import ExplanationTranslation
 from letterlens.llm.providers.fake import FakeProvider
 from letterlens.llm.types import LLMError
 from letterlens.ml.classifier import LinearModel
@@ -40,6 +41,7 @@ from letterlens.safety.pii import PiiVault
 
 log = logging.getLogger(__name__)
 
+_SPACE_GROUPED = re.compile(r"(?<![\d.,])\d{1,3}(?:[ \u00a0\u202f\u2009]\d{3})+(?!\d)")
 _URL = re.compile(r"https?://\S+|www\.\S+")
 _EASTERN_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "01234567890123456789")
 _NUMBER = re.compile(r"\d[\d.,]*\d|\d")
@@ -159,6 +161,8 @@ def allowed_numbers(state: PipelineState) -> set[str]:
 def unsupported_numbers(text: str, allowed: set[str]) -> list[str]:
     """Numbers in generated text that occur neither in the letter nor in the verified facts."""
     normalized = text.translate(_EASTERN_DIGITS).replace("\u066b", ",").replace("\u066c", ".")
+    # "1 092,50" (space, no-break space or thin space as thousands separator, as in uk, ru, fr).
+    normalized = _SPACE_GROUPED.sub(lambda m: re.sub(r"\s", "", m[0]), normalized)
     return [tok for tok in _NUMBER.findall(normalized) if not number_forms(tok) & allowed]
 
 
@@ -238,10 +242,136 @@ def sanitize_explanation(
     return explanation, stats
 
 
+CANONICAL_LANGUAGE = "en"
+
+
+class TranslationMismatchError(Exception):
+    """The translation did not return exactly one item for each source item."""
+
+
 def explain(state: PipelineState, deps: PipelineDeps, language: str | None = None) -> PipelineState:
+    """Explain the letter in English, check it, then translate the checked text.
+
+    Every language shows the same content: the English explanation is grounded and sanitized once,
+    and the translation maps item by item, so line links, citations and fact ids stay identical.
+    If the translation fails, the explanation is written directly in the target language.
+    """
     assert state.facts is not None
     language = language or state.language
-    lang = languages().get(language) or languages()["en"]
+    lang = languages().get(language) or languages()[CANONICAL_LANGUAGE]
+    if lang.code == CANONICAL_LANGUAGE:
+        return _explain_direct(state, deps, lang.code)
+    if CANONICAL_LANGUAGE not in state.explanations:
+        state = _explain_direct(state, deps, CANONICAL_LANGUAGE)
+    source = state.explanations[CANONICAL_LANGUAGE]
+    if source.model == "template":
+        return state  # The model is not available; the English template is the result.
+    try:
+        state.explanations[lang.code] = _translate_explanation(state, deps, source, lang.code)
+    except (LLMError, TranslationMismatchError) as exc:
+        log.warning(
+            "translation failed, writing directly",
+            extra={"letter_id": state.letter_id, "language": lang.code, "error": type(exc).__name__},
+        )
+        state = _explain_direct(state, deps, lang.code)
+    return state
+
+
+def _translate_explanation(
+    state: PipelineState, deps: PipelineDeps, source: Explanation, language: str
+) -> Explanation:
+    lang = languages()[language]
+    vault = PiiVault()
+    cleaned, _ = neutralize_injections(state.document)
+    vault.redact_document(cleaned)  # Learns the names and addresses of this letter.
+    hide = vault.reapply
+    headline, kind = hide(source.headline), hide(source.letter_kind)
+    summary_src = [hide(x.text) for x in source.summary]
+    steps_src = [hide(x.text) for x in source.next_steps]
+    deadline_src = {k: hide(v) for k, v in source.deadline_labels.items()}
+    amount_src = {k: hide(v) for k, v in source.amount_labels.items()}
+    numbered = {
+        "headline": headline,
+        "letter_kind": kind,
+        "summary": [{"index": i, "text": t} for i, t in enumerate(summary_src)],
+        "next_steps": [{"index": i, "text": t} for i, t in enumerate(steps_src)],
+        "deadline_labels": [{"id": k, "label": v} for k, v in deadline_src.items()],
+        "amount_labels": [{"id": k, "label": v} for k, v in amount_src.items()],
+    }
+    flat = {
+        "headline": headline,
+        "letter_kind": kind,
+        "summary": summary_src,
+        "next_steps": steps_src,
+        "deadline_labels": deadline_src,
+        "amount_labels": amount_src,
+    }
+    out = deps.gateway.generate(
+        Task.TRANSLATE_EXPLANATION,
+        ExplanationTranslation,
+        P.translate_explanation_system(lang.name),
+        f"<explanation>\n{json.dumps(numbered, ensure_ascii=False)}\n</explanation>",
+        P.TRANSLATE_EXPLANATION_VERSION,
+        context={"source": flat, "language": language},
+        user_id=state.owner_id,
+        letter_id=state.letter_id,
+        max_tokens=6000,
+    )
+    summary_t = {x.index: x.text for x in out.summary}
+    steps_t = {x.index: x.text for x in out.next_steps}
+    if set(summary_t) != set(range(len(source.summary))) or set(steps_t) != set(
+        range(len(source.next_steps))
+    ):
+        raise TranslationMismatchError("item count differs")
+
+    allowed = allowed_numbers(state)
+    dropped = 0
+
+    def clean(text: str) -> str:
+        restored = vault.restore(text)
+        assert isinstance(restored, str)
+        return _URL.sub("", restored).strip()
+
+    def safe(text: str) -> bool:
+        return not is_advisory_output(text) and not unsupported_numbers(text, allowed)
+
+    summary: list[SummarySentence] = []
+    for i, sentence in enumerate(source.summary):
+        text = clean(summary_t[i])
+        if safe(text):
+            summary.append(SummarySentence(text=text, line_ids=sentence.line_ids))
+        else:
+            dropped += 1
+    steps: list[NextStep] = []
+    for i, step in enumerate(source.next_steps):
+        text = clean(steps_t[i])
+        if safe(text):
+            steps.append(NextStep(text=text, citation_ids=step.citation_ids))
+        else:
+            dropped += 1
+    if dropped:
+        log.info("translation sanitized", extra={"letter_id": state.letter_id, "dropped": dropped})
+    deadline_t = {x.id: clean(x.label) for x in out.deadline_labels}
+    amount_t = {x.id: clean(x.label) for x in out.amount_labels}
+    return Explanation(
+        language=language,
+        headline=clean(out.headline),
+        letter_kind=clean(out.letter_kind),
+        summary=summary,
+        next_steps=steps,
+        deadline_labels={k: deadline_t.get(k) or v for k, v in source.deadline_labels.items()},
+        amount_labels={k: amount_t.get(k) or v for k, v in source.amount_labels.items()},
+        citations=source.citations,
+        counselling_hint=localized(COUNSELLING_HINT, language),
+        disclaimer=localized(DISCLAIMER, language),
+        model=deps.gateway.models_for(Task.TRANSLATE_EXPLANATION)[0],
+    )
+
+
+def _explain_direct(state: PipelineState, deps: PipelineDeps, language: str) -> PipelineState:
+    """Write the explanation in one language directly from the letter, facts and passages."""
+    assert state.facts is not None
+    lang = languages().get(language) or languages()[CANONICAL_LANGUAGE]
     passages = state.passages or []
     letter_type = state.classification.letter_type if state.classification else LetterType.OTHER
     vault = PiiVault()

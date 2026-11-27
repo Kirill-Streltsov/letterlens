@@ -138,3 +138,42 @@ def test_api_may_delete_cognito_users_for_account_deletion(template: Template) -
     deletes = [st for st in statements if st["Action"] == "cognito-idp:AdminDeleteUser"]
     assert len(deletes) == 1
     assert "Fn::GetAtt" in deletes[0]["Resource"]  # this pool only, not "*"
+
+
+def test_own_domain_is_optional_and_needs_a_certificate() -> None:
+    app = cdk.App()
+    arn = "arn:aws:acm:us-east-1:123456789012:certificate/abc"
+    stack = LetterLensStack(
+        app,
+        "D",
+        stage="prod",
+        config={
+            **CONFIG,
+            "originVerifySecret": "x",
+            "alarmEmail": "",
+            "domainNames": ["letterlens.de", "www.letterlens.de"],
+            "certificateArn": arn,
+        },
+    )
+    t = Template.from_stack(stack)
+    t.has_resource_properties(
+        "AWS::CloudFront::Distribution",
+        {
+            "DistributionConfig": Match.object_like(
+                {
+                    "Aliases": ["letterlens.de", "www.letterlens.de"],
+                    "ViewerCertificate": Match.object_like(
+                        {"AcmCertificateArn": arn, "MinimumProtocolVersion": "TLSv1.2_2021"}
+                    ),
+                }
+            )
+        },
+    )
+    t.has_output("SiteUrl", {"Value": "https://letterlens.de"})
+    with pytest.raises(ValueError):
+        LetterLensStack(
+            cdk.App(),
+            "E",
+            stage="prod",
+            config={**CONFIG, "originVerifySecret": "x", "domainNames": ["a.de"]},
+        )

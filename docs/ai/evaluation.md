@@ -29,7 +29,7 @@ The synthetic generator (`letterlens/synthetic/generator.py`) is deterministic.
 | extraction | letter date accuracy, relative deadline recall, amount recall, direction accuracy | Completeness of the facts |
 | retrieval | recall@4, MRR | Is a relevant passage in the context? |
 | guardrail | advice catch rate (rules only and combined), benign false-positive rate, injection catch rate, per language | Does the legal boundary hold without blocking normal questions? |
-| faithfulness (live) | judge accuracy on the calibration set; mean judge score per language; judge issues for scores below 4 | Does the translation keep the facts? |
+| faithfulness (live) | judge accuracy on the calibration set; mean judge score per language; share of translations with one sentence per English sentence; judge issues for scores below 4 | Does the translation keep the facts and every sentence? |
 | completeness (live) | key-point recall on hand-written letters; judge false-positive rate on an empty summary | Does the summary contain what matters most (decision, conditions, consequences, actions, permissions)? |
 
 ## 3. Profiles
@@ -63,41 +63,45 @@ Classifier training report (`backend/evals/reports/classifier.json`):
 leave-one-template-out accuracy 0.978; ECE 0.322 before and 0.010 after temperature scaling.
 
 Live profile (Mistral: `mistral-small-latest` for extraction and the guard,
-`mistral-medium-latest` for explanations; prompt `explain-v5`; 25 November 2026; 515 calls; 0.14 USD
+`mistral-medium-latest` for explanations and translations; prompts `explain-v5`, `translate-explanation-v1`; 25 November 2026; 514 calls; 0.11 USD
 list price; report `backend/evals/reports/live.md`):
 
 | Metric | Value | Gate |
 |---|---|---|
 | unsafe verified dates / amounts | 0 / 0 | max 0 |
 | degraded letters (model failed, rules used) | 0 | max 0 |
-| explicit deadline recall / precision | 0.990 / 0.990 | min 0.95 / 0.95 |
-| letters with every deadline exact | 0.984 | – |
-| letter date accuracy / amount recall / direction | 0.992 / 1.000 / 0.971 | min 0.97 / 0.95 / 0.90 |
+| explicit deadline recall / precision | 1.000 / 0.990 | min 0.95 / 0.95 |
+| letters with every deadline exact | 0.992 | – |
+| letter date accuracy / amount recall / direction | 0.992 / 1.000 / 0.978 | min 0.97 / 0.95 / 0.90 |
 | advice catch rate (rules + model) / false positives | 1.000 / 0.029 | min 0.95 / max 0.10 |
 | injection catch rate | 1.000 | min 0.95 |
 | judge accuracy on the calibration set | 0.95 | min 0.90 |
-| faithfulness de / tr / ar / uk / ru | 0.825 / 0.90 / 0.875 / 0.75 / 0.80 | min 0.80 to enable |
-| key-point recall / judge false positives | 0.947 / 0.000 | min 0.80 / max 0.10 |
+| faithfulness de / tr / ar / uk / ru | 0.975 / 0.95 / 1.00 / 1.00 / 0.95 | min 0.80 to enable |
+| translations aligned (one sentence per English sentence) | 1.000 | min 0.95 |
+| key-point recall / judge false positives | 0.895 / 0.000 | min 0.80 / max 0.10 |
 
-Prompt `explain-v5` writes longer summaries (up to 10 sentences). Key-point recall
-rose from 0.89 (`explain-v4`) to 0.95; the hand-written study-warning letter went
-from 4 of 6 to 6 of 6 points. Faithfulness fell in every language (v4: 0.90 to
-0.975). Ukrainian is below 0.80 in this run, so `languages.yaml` marks it
-`experimental` and the clients show "beta".
+History of the translation results:
 
-Two repeated runs of the faithfulness suite gave uk 0.80 and 0.80, so part of the
-drop is noise in an 8-letter sample. The judge reasons (`low_scores` in the report)
-show two causes:
+| Design | Faithfulness (de / tr / ar / uk / ru) | Aligned |
+|---|---|---|
+| `explain-v4`, each language written from the letter | 0.95 / 0.925 / 0.95 / 0.90 / 0.975 | – |
+| `explain-v5`, each language written from the letter | 0.825 / 0.90 / 0.875 / 0.75 / 0.80 | – |
+| `explain-v5` + translation of the checked English text | 0.975 / 0.95 / 1.00 / 1.00 / 0.95 | 1.000 |
 
-- Back-translation artefacts: Ukrainian "перерахувати" means both "transfer (money)"
-  and "recalculate"; the back-translation chose "recalculate", and the judge
-  counted a changed action.
-- Real omissions: the reference and the translated summary are generated
-  separately, and a longer summary can leave out a point that the other contains
-  (for example a total amount, which the Amounts card still shows).
+With `explain-v5`, every language was written separately from the letter, so the
+languages could differ in content, and the judge counted these differences. Now the
+English explanation is checked once and translated item by item (`docs/ai/pipeline.md`,
+section 2.6). The judge reasons (`low_scores`) also showed two measurement and safety
+defects, both fixed:
 
-Next step: keep German official terms in the back-translation, add a per-language
-key-point check, and enlarge the sample. Do not lower the threshold.
+- The number check split amounts like "1 092,50" (space as thousands separator in
+  Ukrainian and Russian) and dropped correct sentences. 6 of 40 translations lost a
+  sentence with an amount. The new `aligned_share` gate finds such losses.
+- The back-translation chose "recalculate" for Ukrainian "перерахувати" (also
+  "transfer money"). `backtranslate-v2` chooses the meaning that fits official letters.
+
+Key-point recall varies between runs of the same prompt (0.895 and 0.947): the English
+summary sometimes leaves out the general work permission in the study letter.
 Other weaknesses: the model guard refuses about 3 % of normal questions.
 
 ## 5. The gate blocks bad changes

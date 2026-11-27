@@ -14,6 +14,7 @@ class Task(StrEnum):
     GUARD = "guard"
     BACKTRANSLATE = "backtranslate"
     TRANSLATE_REPLY = "translate_reply"
+    TRANSLATE_EXPLANATION = "translate_explanation"
 
 
 @dataclass(frozen=True)

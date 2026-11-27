@@ -368,11 +368,11 @@ def eval_flow() -> str:
 
 def results_chart() -> str:
     metrics = [
-        ("Deadline recall", 99.0, 98.0),
+        ("Deadline recall", 100.0, 98.0),
         ("Deadline precision", 99.0, 94.1),
-        ("Every deadline exact", 98.4, 93.7),
+        ("Every deadline exact", 99.2, 93.7),
         ("Amount recall", 100.0, 100.0),
-        ("Amount direction", 97.1, 93.4),
+        ("Amount direction", 97.8, 93.4),
         ("Advice requests caught", 100.0, 85.2),
         ("Injections caught", 100.0, 100.0),
     ]
@@ -402,7 +402,7 @@ def test_pyramid() -> str:
     ]
     for x, y, w, t, sub, k in tiers:
         b.append(box(x, y, w, 55, t, [sub], k, 13))
-    b.append(text(450, 360, "163 Python tests + 11 infra + 21 web + 11 Swift tests; gates run on every pull request.", 12.5, weight=600))
+    b.append(text(450, 360, "168 Python tests + 12 infra + 21 web + 11 Swift tests; gates run on every pull request.", 12.5, weight=600))
     return svg(900, 375, "".join(b), "Figure 14. The test pyramid: many fast unit tests, fewer slow tests, one release gate.")
 
 
@@ -410,7 +410,7 @@ def ci_cd() -> str:
     b = []
     b.append(box(10, 100, 120, 60, "git push", ["main or PR"], "ink", 12))
     b.append(region(160, 10, 340, 240, "CI workflow (parallel jobs)", BLUE))
-    for i, (t, s) in enumerate([("backend", "ruff, mypy, 163 tests"), ("eval-gate", "offline + chaos"),
+    for i, (t, s) in enumerate([("backend", "ruff, mypy, 168 tests"), ("eval-gate", "offline + chaos"),
                                 ("infra", "bundle, tests, cdk-nag"), ("web", "lint, tests, build")]):
         b.append(box(180, 40 + i * 52, 300, 44, t, [s], "blue", 12))
     b.append(box(540, 30, 160, 60, "iOS workflow", ["only if ios/** changed"], "default", 12))

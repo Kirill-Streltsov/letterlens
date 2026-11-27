@@ -39,6 +39,7 @@ class FakeProvider:
             Task.GUARD: self._guard,
             Task.BACKTRANSLATE: self._echo,
             Task.TRANSLATE_REPLY: self._translate,
+            Task.TRANSLATE_EXPLANATION: self._translate_explanation,
         }[request.task]
         payload = handler(request.context)
         text = json.dumps(payload, ensure_ascii=False)
@@ -126,6 +127,19 @@ class FakeProvider:
     @staticmethod
     def _echo(ctx: dict[str, Any]) -> dict[str, Any]:
         return {"text": ctx.get("text", "")}
+
+    @staticmethod
+    def _translate_explanation(ctx: dict[str, Any]) -> dict[str, Any]:
+        """Marks each item with the language code, so tests can see what was translated."""
+        src, tag = ctx["source"], f"[{ctx.get('language', 'xx')}]"
+        return {
+            "headline": f"{tag} {src['headline']}",
+            "letter_kind": f"{tag} {src['letter_kind']}",
+            "summary": [{"index": i, "text": f"{tag} {t}"} for i, t in enumerate(src["summary"])],
+            "next_steps": [{"index": i, "text": f"{tag} {t}"} for i, t in enumerate(src["next_steps"])],
+            "deadline_labels": [{"id": k, "label": f"{tag} {v}"} for k, v in src["deadline_labels"].items()],
+            "amount_labels": [{"id": k, "label": f"{tag} {v}"} for k, v in src["amount_labels"].items()],
+        }
 
     @staticmethod
     def _translate(ctx: dict[str, Any]) -> dict[str, Any]:

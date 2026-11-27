@@ -81,6 +81,7 @@ class PiiVault:
     _forward: dict[str, str] = field(default_factory=dict)
     _reverse: dict[str, str] = field(default_factory=dict)
     _counters: dict[str, int] = field(default_factory=dict)
+    _name_res: list[tuple[re.Pattern[str], str]] = field(default_factory=list)
 
     def placeholder(self, kind: str, value: str) -> str:
         if value in self._forward:
@@ -108,6 +109,7 @@ class PiiVault:
         address_lines, names = _address_block(texts)
         names += [n for n in _greeting_names(texts) if n not in names]
         name_patterns = self._name_patterns(names)
+        self._name_res.extend(name_patterns)
         new_lines: list[OcrLine] = []
         for i, line in enumerate(doc.lines):
             if i in address_lines:
@@ -130,6 +132,18 @@ class PiiVault:
             if len(parts) > 1 and len(parts[-1]) >= 4:
                 patterns.append((re.compile(rf"(?<!\w){re.escape(parts[-1])}(?!\w)"), token))
         return patterns
+
+    def reapply(self, text: str) -> str:
+        """Pseudonymize text that was restored earlier (for a second model call on the same letter).
+
+        Uses the values this vault saw in redact_document: address lines, names (also the surname
+        alone) and identifiers. Longest values first, so "Max Mustermann" wins over "Mustermann".
+        """
+        for value, token in sorted(self._forward.items(), key=lambda kv: len(kv[0]), reverse=True):
+            text = re.sub(rf"(?<!\w){re.escape(value)}(?!\w)", token, text)
+        for pattern, token in self._name_res:
+            text = pattern.sub(token, text)
+        return self.redact_text(text)
 
     def restore(self, value: Any) -> Any:
         """Replace placeholders in strings, lists, dicts and pydantic models."""

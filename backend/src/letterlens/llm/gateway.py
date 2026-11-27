@@ -91,6 +91,7 @@ class Gateway:
             Task.EXPLAIN: s.llm_model_explain,
             Task.ANSWER: s.llm_model_explain,
             Task.TRANSLATE_REPLY: s.llm_model_explain,
+            Task.TRANSLATE_EXPLANATION: s.llm_model_explain,
             Task.GUARD: s.llm_model_guard,
             Task.BACKTRANSLATE: s.llm_model_guard,
         }[task]
