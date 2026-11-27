@@ -71,22 +71,22 @@ def test_scrub_for_logs() -> None:
 
 
 def test_name_with_ocr_noise_and_greeting_is_hidden_everywhere() -> None:
-    # Regression from a real letter: OCR appended "c 030" to the name line, and the
+    # Regression: OCR appended "c 030" to the name line, and the
     # name appeared again in the greeting. Both must be replaced.
     vault = PiiVault()
     redacted = vault.redact_document(
         doc(
-            "Stadt Dortmund 38/2-2 44122 Dortmund",
+            "Stadt Kleinhausen 32/4 59999 Kleinhausen",
             "Max Mustermann c 030",
-            "Saarbrücker Straße 21",
-            "44135 Dortmund Herr Beispiel",
+            "Birkenweg 12",
+            "59999 Kleinhausen Herr Beispiel",
             "Guten Tag Max Mustermann, |",
             "Sie haben die Verlängerung beantragt. Herr Mustermann, bitte beachten Sie:",
         )
     ).plain_text()
     assert "Mustermann" not in redacted
-    assert "Saarbrücker" not in redacted
-    assert "Stadt Dortmund" in redacted  # the sender stays
+    assert "Birkenweg" not in redacted
+    assert "Stadt Kleinhausen" in redacted  # the sender stays
     assert vault.restore("[NAME_1]") == "Max Mustermann"
 
 

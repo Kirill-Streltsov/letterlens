@@ -60,7 +60,7 @@ RULES: list[Rule] = [
 _POSTCODE_CITY = re.compile(r"^\d{5}\s+[A-ZÄÖÜ][\wäöüß. -]+$")
 _STREET = re.compile(r"^[A-ZÄÖÜ][\wäöüß. -]+\s\d{1,4}\s?[a-zA-Z]?$")
 _NAME_WORD = r"[A-ZÄÖÜÇŞİ][\w'-]+"
-# The leading name words of a line; OCR often appends noise ("Kirill Streltsov c 030").
+# The leading name words of a line; OCR often appends noise ("Max Mustermann c 030").
 _NAME_PREFIX = re.compile(rf"^({_NAME_WORD}(?:\s+{_NAME_WORD}){{1,3}})(?=\s|$|[,;])")
 # Names in greetings: "Guten Tag Ayşe Yılmaz,", "Sehr geehrter Herr Demir".
 _GREETING = re.compile(

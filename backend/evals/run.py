@@ -78,7 +78,7 @@ EXPECTED_PASSAGES: dict[str, set[str]] = {
     "handwritten-kindergeld-school": {"cooperation-duty"},
     "handwritten-sick-pay": {"benefits-objection"},
     "handwritten-injection": {"rent-arrears"},
-    "handwritten-study-warning": {"residence-for-study", "acknowledgement-of-receipt"},
+    "handwritten-study-extension": {"residence-for-study", "acknowledgement-of-receipt"},
     "handwritten-fine-ocr-spacing": {"traffic-fine"},
     "handwritten-tax-table": {"tax-objection"},
 }

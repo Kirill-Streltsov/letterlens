@@ -239,34 +239,31 @@ HANDWRITTEN: list[SyntheticLetter] = [
         [AmountLabel("87.00", "to_pay"), AmountLabel("2.50", "to_pay"), AmountLabel("89.50", "to_pay")],
     ),
     _l(
-        "study-warning",
+        "study-extension",  # no date in the header; the signed receipt form and the conditions matter
         "immigration",
-        "Stadt Bochum - Ausländerbehörde",
-        "",  # like the real letter it mirrors: no date in the header
+        "Stadt Kleinhausen - Ausländerbehörde",
+        "",
         """
-        Stadt Bochum Der Oberbürgermeister
-        Abteilung Ausbildungs- und Arbeitsmigration
-        Stadt Bochum 30/1 44777 Bochum
+        Stadt Kleinhausen Die Bürgermeisterin
+        Fachbereich Bürgerdienste - Ausländerangelegenheiten
+        Stadt Kleinhausen 32/4 59999 Kleinhausen
         Gegen Empfangsbekenntnis
-        Max Mustermann
-        Lindenallee 7
-        44787 Bochum
-        Mein Zeichen: 30/1-S-221-4567/2021
-        Ihr Aufenthalt im Bundesgebiet
-        Guten Tag Max Mustermann,
-        Sie haben die Verlängerung Ihrer Aufenthaltserlaubnis zu Studienzwecken beantragt.
-        Sie befinden sich derzeit im 11. Fachsemester des Studiengangs Maschinenbau (Bachelor). Die Regelstudienzeit beträgt 7 Semester.
-        Laut Prüfbescheinigung haben Sie bisher 95 Leistungspunkte erzielt und benötigen noch 115 Leistungspunkte.
-        Seit dem 01.03.2024 ist es ausländischen Studierenden erlaubt, bis zu 140 Tage im Jahr beschäftigt zu sein. Studentische Nebentätigkeiten sind gestattet.
-        Der Hauptzweck des Aufenthalts muss jedoch das Studium sein.
-        Ein angemessener Zeitraum ist in der Regel nicht mehr gegeben, wenn das Studium innerhalb einer Gesamtaufenthaltsdauer von zehn Jahren nicht abgeschlossen werden kann.
-        Die durchschnittliche Studiendauer soll nicht um mehr als 3 Semester überschritten werden.
-        Ich nehme dies zum Anlass, Sie ausländerrechtlich zu verwarnen.
-        Vorerst sehe ich von der Einleitung aufenthaltsbeendender Maßnahmen ab, um Ihnen die Gelegenheit zu geben, Ihr Studium zu beenden.
-        Sollten sich Ihre Studienleistungen nicht verbessern, müssen Sie damit rechnen, dass Ihre Aufenthaltserlaubnis nicht weiter verlängert wird.
+        Lena Nowak
+        Birkenweg 12
+        59999 Kleinhausen
+        Mein Zeichen: 32/4-S-118-2093/2025
+        Ihre Aufenthaltserlaubnis zum Zweck des Studiums
+        Guten Tag Frau Nowak,
+        Ihre Aufenthaltserlaubnis nach § 16b AufenthG wurde um zwei Jahre verlängert.
+        Sie studieren im 3. Fachsemester des Studiengangs Chemie (Master). Die Regelstudienzeit beträgt 4 Semester.
+        Die Verlängerung setzt voraus, dass Sie Ihr Studium ordnungsgemäß fortsetzen.
+        Bitte legen Sie bei der nächsten Verlängerung eine aktuelle Immatrikulationsbescheinigung und einen Leistungsnachweis vor.
+        Eine Beschäftigung ist bis zu 140 Tage im Jahr erlaubt. Studentische Nebentätigkeiten sind gestattet.
+        Der Hauptzweck des Aufenthalts muss jedoch das Studium bleiben.
+        Ihr bisheriger Studienverlauf entspricht dem üblichen Verlauf. Weitere Schritte sind derzeit nicht erforderlich.
         Empfangsbekenntnis
         Das vorstehende Schriftstück habe ich heute erhalten und zur Kenntnis genommen.
-        Bochum, den 12.03.2026
+        Kleinhausen, den 04.05.2026
     """,
         [],
         [],
@@ -387,13 +384,12 @@ HANDWRITTEN: list[SyntheticLetter] = [
 
 # Points a complete summary must contain (checked by the live completeness suite).
 KEY_POINTS: dict[str, list[str]] = {
-    "hw-study-warning": [
-        "The reader received a formal warning (Verwarnung) about slow study progress.",
-        "For now, the office takes no steps to end the stay, so the reader can finish the studies.",
-        "If study performance does not improve, the residence permit may not be extended again.",
-        "Studies should be completed within a total stay of ten years, or the average duration "
-        "should not be exceeded by more than 3 semesters.",
+    "hw-study-extension": [
+        "The residence permit for study was extended by two years.",
+        "The extension requires that the reader continues the studies properly.",
+        "For the next extension, the reader must bring a current enrolment certificate and proof of study progress.",
         "Employment of up to 140 days per year (plus student jobs) is allowed.",
+        "The study progress is normal so far; no further steps are needed now.",
         "The reader must sign and return the acknowledgement of receipt (Empfangsbekenntnis).",
     ],
     "hw-court-order": [

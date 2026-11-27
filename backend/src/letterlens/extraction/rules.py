@@ -73,6 +73,8 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
     letter_date = ExtractedDate(value=None, line_ids=[])
     date_index = 0
     for i, line in enumerate(lines[:20]):
+        if line.text.strip().lower() == "empfangsbekenntnis":
+            break  # the receipt form below has the reader's date, not the letter date
         dates = find_dates(line.text)
         if dates and _LETTER_DATE.match(normalize(line.text)):
             letter_date = ExtractedDate(value=dates[0].isoformat(), line_ids=[line.id])

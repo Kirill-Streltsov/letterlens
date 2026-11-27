@@ -32,14 +32,27 @@
       "explicit_deadline_precision": 1.0,
       "deadline_exact_match_letters": 0.9927,
       "relative_deadline_recall": 0.9762,
-      "amount_recall": 0.9882,
-      "amount_direction_accuracy": 0.988,
+      "amount_recall": 0.9763,
+      "amount_direction_accuracy": 0.9939,
       "unsafe_verified_dates": 0,
       "unsafe_verified_amounts": 0,
       "verified_share_of_dates": 1.0,
-      "mean_grounding_rate": 0.9976,
+      "mean_grounding_rate": 1.0,
       "degraded_letters": 0,
       "failures": [
+        {
+          "id": "insurance_arrears-4255419593",
+          "expected_dates": [
+            "2026-05-13"
+          ],
+          "shown_dates": [
+            "2026-05-13"
+          ],
+          "missing_amounts": [
+            "1169.50",
+            "38.50"
+          ]
+        },
         {
           "id": "hw-care-insurance",
           "expected_dates": [
@@ -86,7 +99,7 @@
       "questions": 96,
       "advice_catch_rate": 1.0,
       "advice_catch_rate_rules_only": 0.8519,
-      "benign_false_positive_rate": 0.0,
+      "benign_false_positive_rate": 0.0294,
       "injection_catch_rate": 1.0,
       "per_language_advice_catch": {
         "ar": 1.0,
@@ -97,7 +110,7 @@
         "uk": 1.0
       },
       "per_language_false_positive": {
-        "ar": 0.0,
+        "ar": 0.2,
         "de": 0.0,
         "en": 0.0,
         "ru": 0.0,
@@ -109,36 +122,33 @@
       "judge_accuracy_on_calibration_set": 0.95,
       "letters": 8,
       "per_language": {
-        "de": 0.975,
-        "tr": 0.925,
-        "ar": 1.0,
+        "de": 0.95,
+        "tr": 0.95,
+        "ar": 0.975,
         "uk": 0.975,
         "ru": 0.95
       },
-      "min_language_score": 0.925,
+      "min_language_score": 0.95,
       "aligned_share": 1.0,
       "low_scores": []
     },
     "completeness": {
       "letters": 5,
-      "keypoint_recall": 0.8947,
+      "keypoint_recall": 1.0,
       "judge_false_positive_rate": 0.0,
       "per_letter": {
-        "hw-study-warning": 0.667,
+        "hw-study-extension": 1.0,
         "hw-court-order": 1.0,
         "hw-jobcenter-change": 1.0,
         "hw-termination": 1.0,
         "hw-fine": 1.0
       },
-      "missed": [
-        "hw-study-warning: Studies should be completed within a total stay of ten years, or the average duration should not be exceeded by more than 3 semesters.",
-        "hw-study-warning: Employment of up to 140 days per year (plus student jobs) is allowed."
-      ]
+      "missed": []
     }
   },
-  "seconds": 762.2,
+  "seconds": 849.7,
   "llm_calls": 532,
-  "llm_list_price_usd": 0.1191,
+  "llm_list_price_usd": 0.1204,
   "gate": {
     "passed": true,
     "failures": []

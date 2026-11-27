@@ -74,6 +74,8 @@ def _verify_letter_date(
     # Fallback: a header line with a date hint, for example "Datum: 03.11.2026".
     for line in doc.lines[:_HEADER_LINES]:
         lowered = line.text.lower()
+        if lowered.strip() == "empfangsbekenntnis":
+            break  # the receipt form below has the reader's date, not the letter date
         dates = find_dates(line.text)
         if dates and (_LETTER_DATE_HINT.search(lowered) or _PLACE_DATE.match(line.text)):
             return dates[0], FactStatus.NEEDS_CHECK
