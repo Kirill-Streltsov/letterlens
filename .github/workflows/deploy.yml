@@ -18,7 +18,8 @@ concurrency:
 jobs:
   deploy:
     # Automatic deploys start only after setup (deployment guide, step 7: variable DEPLOY_ENABLED=true).
-    if: ${{ github.event_name == 'workflow_dispatch' || (vars.DEPLOY_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success') }}
+    # Deploys only for CI runs of this repository itself, never for pull requests from forks.
+    if: ${{ github.event_name == 'workflow_dispatch' || (vars.DEPLOY_ENABLED == 'true' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_repository.full_name == github.repository && github.event.workflow_run.event == 'push') }}
     runs-on: ubuntu-latest
     environment: production
     env:
