@@ -148,7 +148,7 @@ def life_of_letter() -> str:
         (590, 295, 760, 295, "7  extract facts (pseudonymized text)", None),
         (590, 335, 590, 335, "8  verify every date and amount in code", None),
         (590, 375, 590, 375, "9  retrieve explanation passages", None),
-        (590, 415, 760, 415, "10  explain in the reader's language", None),
+        (590, 415, 760, 415, "10  explain in English, then translate", None),
         (590, 455, 420, 455, "11  save encrypted result, status ready", "back"),
         (80, 500, 250, 500, "12  GET /v1/letters/{id} (polling)", None),
         (250, 535, 80, 535, "13  facts + explanation + original lines", "back"),
@@ -167,24 +167,29 @@ def life_of_letter() -> str:
 def pipeline() -> str:
     b = []
     steps = [
-        ("classify", ["letter type", "scikit-learn model"], "default"),
+        ("classify", ["letter type", "local model"], "default"),
         ("extract", ["facts + line ids", "LLM"], "ai"),
         ("verify", ["check each fact", "plain code"], "ok"),
         ("retrieve", ["sourced passages", "BM25 search"], "default"),
-        ("explain", ["reader's language", "LLM"], "ai"),
+        ("explain", ["English text", "LLM"], "ai"),
         ("sanitize", ["remove unsafe text", "plain code"], "ok"),
+        ("translate", ["other languages", "LLM + code"], "ai"),
     ]
-    x = 10
+    x = 8
     for i, (title, lines, kind) in enumerate(steps):
-        b.append(box(x, 60, 130, 90, title, lines, kind))
+        b.append(box(x, 60, 112, 90, title, lines, kind, 12.5))
         if i < len(steps) - 1:
-            b.append(arrow(x + 130, 105, x + 150, 105))
-        x += 150
+            b.append(arrow(x + 112, 105, x + 128, 105))
+        x += 128
     b.append(text(450, 30, "The model proposes (purple). Code verifies (green).", 14, weight=700))
-    b.append(box(160, 185, 290, 60, "If the model fails or the budget is spent:", ["rules extractor + template explanation, marked degraded"], "check", 12))
-    b.append(path("M225,150 L225,185", CHECK, dashed=True, marker="a"))
-    b.append(path("M680,150 L680,175 L450,200", CHECK, dashed=True, marker="a"))
-    return svg(910, 260, "".join(b), "Figure 3. The six pipeline steps. Two steps use the language model; the steps after them check its work.")
+    b.append(box(150, 190, 330, 60, "If the model fails or the budget is spent:",
+                 ["rules extractor + template explanation, marked degraded"], "check", 12))
+    b.append(path("M200,150 L200,190", CHECK, dashed=True, marker="a"))
+    b.append(path("M584,150 L584,175 L480,205", CHECK, dashed=True, marker="a"))
+    b.append(box(560, 190, 330, 60, "translate keeps the checked content:",
+                 ["line links and sources come back from the English items"], "blue", 12))
+    return svg(900, 265, "".join(b), "Figure 3. The seven pipeline steps. Three steps use the language model; "
+               "plain code checks the result of each one.")
 
 
 def grounding() -> str:
@@ -337,22 +342,23 @@ def classifier() -> str:
     b.append(box(10, 30, 160, 80, "Letter text", ["“Finanzamt…", "Einkommensteuer…”"], "default", 12))
     b.append(box(210, 30, 170, 80, "Features", ["words, word pairs,", "4-letter pieces"], "default", 12))
     b.append(box(420, 30, 170, 80, "TF-IDF + weights", ["one score per type"], "blue", 12))
-    b.append(box(630, 30, 120, 80, "softmax(z / T)", ["T = 0.155"], "marker", 12))
+    b.append(box(630, 30, 120, 80, "softmax(z / T)", ["T = 0.080"], "marker", 12))
     b.append(box(780, 30, 110, 80, "tax 0.97", ["or abstain", "< 0.50"], "ok", 12))
     for x in (170, 380, 590, 750):
         b.append(arrow(x, 70, x + 30 if x != 750 else x + 30, 70))
-    b.append(text(450, 150, "Trained offline with scikit-learn. Served with 80 lines of plain Python (no numpy in Lambda).", 12.5, weight=600))
+    b.append(text(450, 150, "Trained offline with scikit-learn. Served with plain Python (no numpy in the Lambda bundle).", 12.5, weight=600))
     return svg(900, 165, "".join(b), "Figure 11. The letter-type classifier: classic machine learning where an LLM is not needed.")
 
 
 def eval_flow() -> str:
     b = []
-    b.append(box(10, 20, 200, 70, "Golden letters", ["126 with exact labels"], "marker", 12))
+    b.append(box(10, 20, 200, 70, "Golden letters", ["137 with exact labels"], "marker", 12))
     b.append(box(10, 110, 200, 70, "Red-team questions", ["96 in 6 languages"], "marker", 12))
     b.append(box(10, 200, 200, 70, "Judge calibration", ["20 known pairs"], "marker", 12))
     b.append(box(270, 20, 230, 250, "evals/run.py", [], "default", 13, top=True))
-    for i, s in enumerate(["classification", "extraction", "retrieval", "guardrail", "faithfulness (live)"]):
-        b.append(text(385, 80 + i * 38, s, 12.5, weight=600))
+    for i, s in enumerate(["classification", "extraction", "retrieval", "guardrail", "faithfulness (live)",
+                           "completeness (live)"]):
+        b.append(text(385, 75 + i * 33, s, 12.5, weight=600))
     b.append(box(560, 30, 150, 70, "offline", ["rules, every PR"], "blue", 12))
     b.append(box(560, 115, 150, 70, "chaos", ["injected errors"], "check", 12))
     b.append(box(560, 200, 150, 70, "live", ["real model"], "ai", 12))
@@ -369,10 +375,10 @@ def eval_flow() -> str:
 def results_chart() -> str:
     metrics = [
         ("Deadline recall", 99.0, 98.0),
-        ("Deadline precision", 100.0, 94.1),
+        ("Deadline precision", 100.0, 94.2),
         ("Every deadline exact", 99.3, 94.2),
-        ("Amount recall", 98.8, 98.2),
-        ("Amount direction", 98.8, 93.4),
+        ("Amount recall", 97.6, 98.2),
+        ("Amount direction", 99.4, 93.4),
         ("Advice requests caught", 100.0, 85.2),
         ("Injections caught", 100.0, 100.0),
     ]
@@ -388,7 +394,7 @@ def results_chart() -> str:
         b.append(text(x0 + w * live / 100 + 6, y + 16, f"{live:.1f} %", 11, "start", 700, AI))
         b.append(text(x0 + w * rules / 100 + 6, y + 34, f"{rules:.1f} %", 11, "start", 400, SOFT))
     b.append(f'<line x1="{x0}" y1="{top - 4}" x2="{x0}" y2="{top + 7 * 46}" stroke="{LINE}"/>')
-    return svg(900, 370, "".join(b), "Figure 13. Measured results on the golden set (25 November 2026). Unsafe verified facts: 0 in both.")
+    return svg(900, 370, "".join(b), "Figure 13. Measured results on the golden set of 137 letters (27 November 2026). Unsafe verified facts: 0 in both.")
 
 
 def test_pyramid() -> str:
@@ -402,7 +408,7 @@ def test_pyramid() -> str:
     ]
     for x, y, w, t, sub, k in tiers:
         b.append(box(x, y, w, 55, t, [sub], k, 13))
-    b.append(text(450, 360, "173 Python tests + 12 infra + 21 web + 11 Swift tests; gates run on every pull request.", 12.5, weight=600))
+    b.append(text(450, 360, "176 Python tests + 12 infra + 21 web + 11 Swift tests; the gates run on every pull request.", 12.5, weight=600))
     return svg(900, 375, "".join(b), "Figure 14. The test pyramid: many fast unit tests, fewer slow tests, one release gate.")
 
 
@@ -410,11 +416,11 @@ def ci_cd() -> str:
     b = []
     b.append(box(10, 100, 120, 60, "git push", ["main or PR"], "ink", 12))
     b.append(region(160, 10, 340, 240, "CI workflow (parallel jobs)", BLUE))
-    for i, (t, s) in enumerate([("backend", "ruff, mypy, 173 tests"), ("eval-gate", "offline + chaos"),
+    for i, (t, s) in enumerate([("backend", "ruff, mypy, 176 tests"), ("eval-gate", "offline + chaos"),
                                 ("infra", "bundle, tests, cdk-nag"), ("web", "lint, tests, build")]):
         b.append(box(180, 40 + i * 52, 300, 44, t, [s], "blue", 12))
     b.append(box(540, 30, 160, 60, "iOS workflow", ["only if ios/** changed"], "default", 12))
-    b.append(box(540, 140, 160, 90, "Deploy workflow", ["if CI green and", "DEPLOY_ENABLED"], "aws", 12))
+    b.append(box(540, 130, 160, 110, "Deploy workflow", ["CI passed", "push to main", "this repository", "DEPLOY_ENABLED"], "aws", 12))
     b.append(box(740, 100, 150, 140, "Deploy job", ["migrate Neon", "build web + Lambda", "OIDC → AWS role", "cdk deploy", "smoke test"], "ok", 12))
     b.append(arrow(130, 130, 160, 130))
     b.append(arrow(500, 130, 540, 180))
@@ -425,7 +431,7 @@ def ci_cd() -> str:
 
 def ios_arch() -> str:
     b = []
-    b.append(box(10, 20, 880, 60, "Views (SwiftUI)", ["SignInView · LettersView · NewLetterView · LetterDetailView · SettingsView · Theme"], "blue", 13))
+    b.append(box(10, 14, 880, 66, "Views (SwiftUI)", ["SignInView · LettersView · NewLetterView · LetterDetailView · SettingsView", "Theme · Components · Illustrations (shared look with the web)"], "blue", 13))
     b.append(box(10, 110, 300, 70, "AppModel (@Observable, @MainActor)", ["phase, me, languages, errors"], "ink", 12))
     b.append(box(340, 110, 550, 70, "Services", ["AuthService (actor, PKCE, Keychain) · TextRecognizer (Vision) · DocumentScanner", "ReminderService (EventKit, notifications) · StoreService (StoreKit 2)"], "default", 12))
     b.append(box(10, 210, 880, 70, "LetterLensCore (Swift package, tested on macOS)", ["Models (Codable) · APIClient · PKCE · DocumentBuilder (OCR line order) · Deadlines"], "marker", 13))
@@ -443,7 +449,7 @@ def ios_arch() -> str:
 def aws_infra() -> str:
     b = []
     b.append(region(10, 10, 880, 330, "CDK stack LetterLens-prod (infra/letterlens_infra/stack.py)", AWS))
-    b.append(box(30, 50, 170, 70, "CloudFront", ["security headers, CSP", "index rewrite function"], "aws", 12))
+    b.append(box(30, 50, 170, 70, "CloudFront", ["security headers, CSP", "optional own domain"], "aws", 12))
     b.append(box(30, 150, 170, 60, "S3 web bucket", ["static Next.js export"], "aws", 12))
     b.append(box(30, 240, 170, 70, "Cognito Lite", ["web + iOS clients", "groups"], "aws", 12))
     b.append(box(260, 50, 170, 70, "API Lambda", ["function URL", "X-Origin-Verify check"], "aws", 12))
@@ -477,3 +483,159 @@ def cost_chart() -> str:
         b.append(text(200 + 6 * max(v, 0.6) + (-8 if inside else 8), y + 17, f"{v:g} %", 11.5,
                       "end" if inside else "start", 700, CARD if inside else color))
     return svg(900, 225, "".join(b), "Figure 18. Step Functions is the first free limit (about 400 letters per month). CloudWatch uses 9 of 10 free metrics.")
+
+
+# ---------------------------------------------------------------------------
+# New in the version of 27 November 2026
+# ---------------------------------------------------------------------------
+
+SERIF = "Iowan Old Style, Palatino, Georgia, serif"
+
+
+def _t(x: float, y: float, s: str, size: float = 10, color: str = INK, weight: int = 400,
+       anchor: str = "start", serif: bool = False) -> str:
+    fam = f' font-family="{SERIF}"' if serif else ""
+    return (f'<text x="{x}" y="{y}" font-size="{size}" fill="{color}" font-weight="{weight}" '
+            f'text-anchor="{anchor}"{fam}>{escape(s)}</text>')
+
+
+def _r(x: float, y: float, w: float, h: float, fill: str, rx: float = 4, stroke: str = "none", sw: float = 1) -> str:
+    return f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" fill="{fill}" stroke="{stroke}" stroke-width="{sw}"/>'
+
+
+def _card(x: float, y: float, w: float, h: float, fill: str = CARD) -> str:
+    return (f'<rect x="{x}" y="{y + 3}" width="{w}" height="{h}" rx="12" fill="{INK}" fill-opacity="0.06"/>'
+            + _r(x, y, w, h, fill, 12, LINE if fill == CARD else fill))
+
+
+def _phone(x: float, title: str, body: str) -> str:
+    w, h = 260, 520
+    clip = f"ph{int(x)}"
+    out = [f'<defs><clipPath id="{clip}"><rect x="{x}" y="10" width="{w}" height="{h}" rx="38"/></clipPath>'
+           f'<radialGradient id="g{clip}" cx="1" cy="0" r="0.75"><stop offset="0" stop-color="{MARKER}" stop-opacity="0.45"/>'
+           f'<stop offset="1" stop-color="{MARKER}" stop-opacity="0"/></radialGradient></defs>',
+           f'<g clip-path="url(#{clip})">', _r(x, 10, w, h, PAPER, 38),
+           f'<rect x="{x}" y="10" width="{w}" height="{h * 0.55}" fill="url(#g{clip})"/>',
+           _t(x + 26, 34, "9:41", 10, INK, 700), _r(x + w / 2 - 40, 20, 80, 22, INK, 11),
+           _t(x + 20, 76, title, 22, INK, 600, serif=True), body, "</g>",
+           f'<rect x="{x}" y="10" width="{w}" height="{h}" rx="38" fill="none" stroke="{INK}" stroke-width="5"/>',
+           _r(x + w / 2 - 50, h - 2, 100, 4, INK, 2)]
+    return "".join(out)
+
+
+def _bars(x: float, y: float, widths: list[float], color: str = LINE, gap: float = 11, h: float = 5) -> str:
+    return "".join(_r(x, y + i * gap, wd, h, color, h / 2) for i, wd in enumerate(widths))
+
+
+def _badge(cx: float, cy: float, letter: str) -> str:
+    return (f'<circle cx="{cx}" cy="{cy}" r="13" fill="{MARKER}"/>' + _t(cx, cy + 4, letter, 11, INK, 800, "middle"))
+
+
+def _pill(x: float, y: float, label: str, fg: str, bg: str) -> str:
+    w = 8 + len(label) * 5.4
+    return _r(x, y, w, 16, bg, 8) + _t(x + w / 2, y + 11.5, label, 8.5, fg, 700, "middle")
+
+
+def ios_screens() -> str:
+    b = []
+    # 1. Letters
+    x = 10
+    s = [_t(x + 20, 96, "Your letters are deleted after 30 days.", 8.5, SOFT)]
+    s.append(_card(x + 16, 110, 228, 84, INK))
+    s.append(_t(x + 30, 130, "NEXT DEADLINE", 8, MARKER, 800))
+    s.append(_t(x + 30, 150, "Pay the tax arrears", 12, CARD, 700))
+    s.append(_t(x + 30, 168, "Thu, 12 February 2026", 9.5, CARD))
+    s.append(_t(x + 30, 184, "Finanzamt Bochum-Mitte", 8.5, FAINT))
+    s.append(f'<circle cx="{x + 210}" cy="152" r="22" fill="{MARKER}"/>')
+    s.append(_t(x + 210, 152, "5", 15, INK, 800, "middle") + _t(x + 210, 164, "days", 7.5, INK, 700, "middle"))
+    s.append(_card(x + 16, 206, 228, 46))
+    s.append(_t(x + 30, 224, "2 of 3 letters this month", 9.5, INK, 600))
+    s.append(_r(x + 30, 234, 200, 7, DEEP, 3.5) + _r(x + 30, 234, 133, 7, MARKER, 3.5))
+    rows = [("€", "Tax assessment 2025", "verified", OK, OKBG), ("J", "Invitation, Jobcenter", "please check", CHECK, CHECKBG),
+            ("H", "Rent increase", "reading …", SOFT, DEEP)]
+    for i, (badge, title, pill, fg, bg) in enumerate(rows):
+        y = 266 + i * 60
+        s.append(_card(x + 16, y, 228, 50))
+        s.append(_badge(x + 38, y + 25, badge))
+        s.append(_t(x + 58, y + 22, title, 10, INK, 700))
+        s.append(_pill(x + 58, y + 28, pill, fg, bg))
+    s.append(_r(x + 150, 456, 96, 40, INK, 20))
+    s.append(f'<circle cx="{x + 172}" cy="476" r="7" fill="none" stroke="{CARD}" stroke-width="2"/>')
+    s.append(_t(x + 186, 480, "Scan", 11, CARD, 700))
+    b.append(_phone(x, "Letters", "".join(s)))
+    b.append(_t(x + 130, 556, "Letter list", 12, INK, 700, "middle"))
+    b.append(_t(x + 130, 572, "next deadline, usage bar, scan button", 10, SOFT, 400, "middle"))
+
+    # 2. New letter
+    x = 320
+    s = [_t(x + 20, 104, "Where is the letter?", 10, SOFT, 600)]
+    for i, (label, sub) in enumerate([("Scan", "camera"), ("Photos", "library"), ("Files", "PDF")]):
+        tx = x + 16 + i * 78
+        s.append(_card(tx, 114, 72, 74))
+        s.append(f'<circle cx="{tx + 36}" cy="140" r="13" fill="{MARKER}"/>')
+        s.append(_t(tx + 36, 168, label, 10, INK, 700, "middle") + _t(tx + 36, 180, sub, 8, SOFT, 400, "middle"))
+    s.append(_t(x + 20, 214, "Explain in", 10, SOFT, 600))
+    chips = [("English", True), ("Türkçe", False), ("العربية", False), ("Українська", False), ("Русский", False),
+             ("Einfach", False)]
+    cx, cy = x + 16, 224
+    for label, on in chips:
+        w = 16 + len(label) * 6.3
+        if cx + w > x + 246:
+            cx, cy = x + 16, cy + 26
+        s.append(_r(cx, cy, w, 20, INK if on else CARD, 10, INK if on else LINE))
+        s.append(_t(cx + w / 2, cy + 14, label, 9, CARD if on else INK, 600, "middle"))
+        cx += w + 6
+    s.append(_card(x + 16, 290, 228, 134))
+    s.append(_t(x + 30, 308, "Recognized text (page 1)", 9, SOFT, 700))
+    s.append(_bars(x + 30, 318, [150, 190, 120, 170, 140, 185, 100, 160, 130]))
+    s.append(_r(x + 26, 340, 196, 9, MARKER, 3, ) + _r(x + 30, 342, 170, 5, INK, 2.5))
+    s.append(_r(x + 16, 446, 228, 44, INK, 22) + _t(x + 130, 473, "Explain this letter", 12, CARD, 700, "middle"))
+    b.append(_phone(x, "New letter", "".join(s)))
+    b.append(_t(x + 130, 556, "New letter", 12, INK, 700, "middle"))
+    b.append(_t(x + 130, 572, "source tiles, language chips, preview", 10, SOFT, 400, "middle"))
+
+    # 3. Letter detail
+    x = 630
+    s = [_badge(x + 30, 100, "€"), _t(x + 50, 104, "Tax · Finanzamt", 9, SOFT, 600)]
+    s.append(_card(x + 16, 118, 228, 124))
+    s.append(_t(x + 30, 138, "Summary", 13, INK, 600, serif=True))
+    s.append(_r(x + 26, 148, 208, 30, MARKER, 4))
+    s.append(_t(x + 30, 160, "You must pay 1,523.00 € more", 9.5, INK, 600))
+    s.append(_t(x + 30, 173, "income tax for 2025.  [p1-l12]", 9.5, INK, 600))
+    s.append(_bars(x + 30, 188, [190, 160, 175, 120], LINE, 12))
+    s.append(_card(x + 16, 254, 228, 90))
+    s.append(_t(x + 30, 274, "PAY BY", 8, SOFT, 800))
+    s.append(_t(x + 30, 294, "Thu, 12 February 2026", 13, INK, 700, serif=True))
+    s.append(_pill(x + 30, 304, "verified", OK, OKBG))
+    s.append(_r(x + 30, 326, 104, 12, DEEP, 6) + _t(x + 82, 335, "Add to calendar", 8, INK, 700, "middle"))
+    s.append(f'<circle cx="{x + 214}" cy="290" r="18" fill="none" stroke="{DEEP}" stroke-width="5"/>')
+    s.append(f'<path d="M{x + 214},272 A18,18 0 0,1 {x + 231},295" fill="none" stroke="{MARKER}" stroke-width="5"/>')
+    s.append(_t(x + 214, 294, "5d", 10, INK, 800, "middle"))
+    s.append(_card(x + 16, 356, 228, 54))
+    s.append(_t(x + 30, 376, "1,523.00 €", 14, INK, 700, serif=True))
+    s.append(_pill(x + 30, 384, "to pay", CHECK, CHECKBG))
+    s.append(_card(x + 16, 422, 228, 70))
+    s.append(_t(x + 30, 442, "Ask about this letter", 10, INK, 700))
+    s.append(_r(x + 30, 452, 200, 26, PAPER, 13, LINE) + _t(x + 42, 469, "What does Nachzahlung mean?", 9, FAINT))
+    b.append(_phone(x, "Tax assessment", "".join(s)))
+    b.append(_t(x + 130, 556, "Letter detail", 12, INK, 700, "middle"))
+    b.append(_t(x + 130, 572, "marked summary, deadline and amount cards", 10, SOFT, 400, "middle"))
+    return svg(900, 585, "".join(b), "Figure 19. The iOS app after the redesign (drawn from the SwiftUI code; "
+               "the texts are examples). Paper, ink and the highlighter yellow are the same as on the web.")
+
+
+def translation() -> str:
+    b = []
+    b.append(box(8, 40, 140, 80, "explain", ["English, once", "model"], "ai", 12.5))
+    b.append(box(178, 40, 140, 80, "sanitize", ["advice, numbers,", "sources: code"], "ok", 12.5))
+    b.append(box(348, 40, 170, 80, "hide names again", ["PiiVault.reapply", "code"], "check", 12.5))
+    b.append(box(548, 40, 160, 80, "translate items", ["by index or fact id", "model"], "ai", 12.5))
+    b.append(box(738, 40, 154, 80, "re-attach", ["line ids, citations", "from English: code"], "ok", 12.5))
+    for x in (148, 318, 518, 708):
+        b.append(arrow(x, 80, x + 30, 80))
+    b.append(box(548, 160, 344, 60, "Checks on each translated item", ["advice check · number check · item count must match"], "blue", 12))
+    b.append(arrow(815, 120, 815, 160, "", dashed=True))
+    b.append(box(8, 160, 510, 60, "If an item is missing or extra:", ["write the explanation directly in the target language (fallback)"], "check", 12))
+    b.append(arrow(548, 190, 518, 190, "", dashed=True))
+    return svg(900, 235, "".join(b), "Figure 20. How the other five languages are made: one checked English text, "
+               "translated item by item. Every language shows the same facts with the same links.")

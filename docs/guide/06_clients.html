@@ -1,0 +1,194 @@
+<section id="p13">
+  <h2><span class="num">13</span> Design: paper, ink and the new icon</h2>
+  <div class="summary">LetterLens looks like a letter on a desk: warm paper, dark-blue ink, and a yellow highlighter
+  that marks the source of each fact. The iOS app and the web app use the same colours, the same serif headings and the same
+  drawings. The new app icon shows the product in one picture: a letter comes out of its envelope, and a lens reads the marked line.</div>
+
+  <h3>13.1 The idea</h3>
+  <p>The design has one metaphor. The <strong>paper</strong> is the letter. The <strong>ink</strong> is the plain-language
+  explanation. The <strong>highlighter</strong> connects them: when the reader selects a sentence, the source line in the
+  original letter gets a yellow mark. The same yellow marks the most important item on each screen, for example the next deadline.
+  The colours are calm on purpose. Many readers open a letter with fear; the screen must not add stress.</p>
+
+  <h3>13.2 The app icon</h3>
+  [[icons]]
+  <p>The icon has four parts, from back to front:</p>
+  <ol>
+    <li>A paper background with a soft highlighter glow in the top right corner, as on the web sign-in panel.</li>
+    <li>An open envelope. Its front pocket has a V cut, and its outline continues the outline of the back.</li>
+    <li>A letter that rises out of the envelope, tilted by 5°. One text line has a yellow mark.</li>
+    <li>A lens with an opaque yellow glass. Two text lines show through it, magnified.</li>
+  </ol>
+  <p><strong>Why it was redrawn.</strong> In the old icon, the envelope flap started inside the rounded corners. This left
+  white wedges at the top left and the top right. The new drawing closes every shape and joins all lines with round joins,
+  so no white fill shows outside an outline. The lens glass is opaque, so nothing shows through it.</p>
+  <p><strong>How it is made.</strong> <code>ios/scripts/make_icon.swift</code> draws the icon with Core Graphics. It writes
+  three 1024 × 1024 PNG files: light, dark and tinted. iOS 18 and later selects the variant that agrees with the home screen.
+  The files are opaque RGB without an alpha channel, because App Store Connect requires this.</p>
+  <pre><code>swift ios/scripts/make_icon.swift ios/LetterLens/Resources/Assets.xcassets/AppIcon.appiconset</code></pre>
+  <p>The small logo (an envelope with a lens) appears in the navigation bar, in the web header and on the launch screen. The
+  web draws it in <code>web/src/components/Brand.tsx</code>; iOS draws it in <code>LogoMark</code>
+  (<code>Views/Illustrations.swift</code>). Both use vector drawing, so the logo is sharp at every size and in both colour schemes.</p>
+
+  <h3>13.3 Colours</h3>
+  <p>The colour tokens have the same names and values on both platforms: CSS custom properties in
+  <code>web/src/app/globals.css</code>, and the <code>Theme</code> enum in <code>ios/LetterLens/Views/Theme.swift</code>.
+  Each token has a light and a dark value. On iOS, a dynamic <code>UIColor</code> changes with the system appearance.</p>
+  <table class="small swatches">
+    <tr><th>Token</th><th>Light</th><th>Dark</th><th>Use</th></tr>
+    <tr><td><code>paper</code></td><td><span class="sw" style="background:#f4eee2"></span>#F4EEE2</td><td><span class="sw" style="background:#14192b"></span>#14192B</td><td>Background of every screen</td></tr>
+    <tr><td><code>paper-deep</code></td><td><span class="sw" style="background:#ebe2cf"></span>#EBE2CF</td><td><span class="sw" style="background:#10142a"></span>#10142A</td><td>The darker wash at the top left; envelope back</td></tr>
+    <tr><td><code>card</code></td><td><span class="sw" style="background:#fffdf8"></span>#FFFDF8</td><td><span class="sw" style="background:#1c2238"></span>#1C2238</td><td>Cards and sheets</td></tr>
+    <tr><td><code>ink</code></td><td><span class="sw" style="background:#1b2540"></span>#1B2540</td><td><span class="sw" style="background:#ece6d8"></span>#ECE6D8</td><td>Text, outlines, primary buttons, the next-deadline card</td></tr>
+    <tr><td><code>ink-soft</code></td><td><span class="sw" style="background:#4b5472"></span>#4B5472</td><td><span class="sw" style="background:#b9b7c4"></span>#B9B7C4</td><td>Secondary text</td></tr>
+    <tr><td><code>line</code></td><td><span class="sw" style="background:#e2d8c3"></span>#E2D8C3</td><td><span class="sw" style="background:#2d3550"></span>#2D3550</td><td>Borders and separators</td></tr>
+    <tr><td><code>marker</code></td><td><span class="sw" style="background:#ffe27a"></span>#FFE27A</td><td><span class="sw" style="background:#6b5a12"></span>#6B5A12</td><td>Highlighter marks, badges, countdown</td></tr>
+    <tr><td><code>ok</code> / <code>ok-bg</code></td><td><span class="sw" style="background:#2f6b55"></span>#2F6B55</td><td><span class="sw" style="background:#7fd1ad"></span>#7FD1AD</td><td>"verified"</td></tr>
+    <tr><td><code>check</code> / <code>check-bg</code></td><td><span class="sw" style="background:#b45a1f"></span>#B45A1F</td><td><span class="sw" style="background:#f0a66d"></span>#F0A66D</td><td>"please check", "to pay"</td></tr>
+    <tr><td><code>link</code></td><td><span class="sw" style="background:#2a4b98"></span>#2A4B98</td><td><span class="sw" style="background:#9db5ff"></span>#9DB5FF</td><td>Links, focus ring</td></tr>
+    <tr><td><code>danger</code></td><td><span class="sw" style="background:#a83434"></span>#A83434</td><td><span class="sw" style="background:#ff9b9b"></span>#FF9B9B</td><td>Delete actions, errors</td></tr>
+  </table>
+  <p>The iOS app adds one fixed colour, <code>highlighter</code> (#FFE27A in both modes), for glows and for the lens. In dark
+  mode the <code>marker</code> token is a dark olive, so a mark behind light text stays readable; the lens stays bright yellow.</p>
+
+  <h3>13.4 Type</h3>
+  <ul>
+    <li><strong>Headings:</strong> a serif face. The web uses "Iowan Old Style", with Palatino and Georgia as fallbacks. iOS uses
+      the system serif design (<code>Theme.title(_:)</code>, <code>.semibold</code>). Navigation titles on iOS are serif too.</li>
+    <li><strong>Body text:</strong> the system sans-serif face (San Francisco on Apple devices). The web lists Noto Sans Arabic for Arabic.</li>
+    <li><strong>Ids and codes:</strong> a monospaced face, for example for line ids like <code>p1-l13</code>.</li>
+  </ul>
+
+  <h3>13.5 Shared components</h3>
+  <p>Each iOS component has a web equivalent with the same look. The iOS components are in <code>Views/Components.swift</code>.</p>
+  <table class="small">
+    <tr><th>iOS (SwiftUI)</th><th>Web (CSS class)</th><th>Look and behaviour</th></tr>
+    <tr><td><code>InkButtonStyle</code></td><td><code>.btn</code></td><td>An ink capsule (or an outlined "ghost" capsule) that sinks a little when you press it</td></tr>
+    <tr><td><code>ChipButtonStyle</code></td><td>chips</td><td>A small paper capsule for secondary actions and the language choice</td></tr>
+    <tr><td><code>Pill</code></td><td>pills</td><td>A status label: neutral, ok ("verified"), check ("please check"), urgent</td></tr>
+    <tr><td><code>MarkerSweep</code></td><td><code>&lt;mark&gt;</code></td><td>A highlighter stroke that is drawn under words from left to right</td></tr>
+    <tr><td><code>CardStyle</code></td><td>cards</td><td>Paper card, 16 pt corner radius, a thin border and a soft shadow</td></tr>
+    <tr><td><code>Shimmer</code>, <code>SkeletonRow</code></td><td><code>.skeleton</code></td><td>Placeholder rows that shimmer while data loads</td></tr>
+    <tr><td><code>ProgressBar</code></td><td>usage bar</td><td>Letters used this month, filled with the highlighter yellow</td></tr>
+    <tr><td><code>Toast</code></td><td>toast</td><td>A short message that slides up from the bottom</td></tr>
+    <tr><td><code>TypeBadge</code></td><td>type badge</td><td>The SF Symbol for the letter type on a highlighter disc</td></tr>
+  </table>
+
+  <h3>13.6 Illustrations and motion</h3>
+  <table class="small">
+    <tr><th>Drawing</th><th>Where</th><th>What it does</th></tr>
+    <tr><td><code>EnvelopeArt</code></td><td>Empty states</td><td>The letter rises out of the envelope; the lens drifts in; a mark sweeps over one line</td></tr>
+    <tr><td><code>ReadingArt</code></td><td>While a letter is read</td><td>A lens reads a page line by line</td></tr>
+    <tr><td><code>LetterDemo</code></td><td>Sign-in screen</td><td>A made-up letter with one marked line and its explanation: the product in one picture</td></tr>
+    <tr><td><code>LaunchView</code></td><td>App start</td><td>The logo with a lens that "breathes" slowly, on a paper-coloured launch screen</td></tr>
+  </table>
+  <p>Motion uses springs (<code>Motion.spring</code>, <code>.snappy</code>, <code>.bouncy</code>). <code>Rise</code> fades and lifts
+  each view in one time; list rows come in as a short cascade (60 ms per row, maximum 8 rows). All animations obey
+  <em>Reduce Motion</em>: when it is on, the drawings show their final state and views only fade. The illustrations are hidden
+  from VoiceOver, because they repeat what the text says.</p>
+
+  [[ios_screens]]
+</section>
+
+<section id="p14">
+  <h2><span class="num">14</span> Code tour: the web app</h2>
+  <div class="summary">A Next.js app that is exported as static files: there is no server code. It gets its API types from the
+  OpenAPI contract. It reads letters in the browser with tesseract.js, has its own sign-in screens, and has the counsellor screens.</div>
+
+  <h3>14.1 Files</h3>
+  <table class="small">
+    <tr><th>File</th><th>Task</th></tr>
+    <tr><td><code>web/src/lib/api.ts</code>, <code>api-types.ts</code></td><td>Typed API client; the types come from <code>contracts/openapi.json</code> (<code>npm run gen:api</code>)</td></tr>
+    <tr><td><code>web/src/lib/cognito.ts</code></td><td>Calls to the Cognito user-pool API: sign-in, sign-up, codes, password reset, MFA, refresh, revoke</td></tr>
+    <tr><td><code>web/src/lib/auth.ts</code></td><td>Session: tokens in sessionStorage, refresh before expiry, sign-out</td></tr>
+    <tr><td><code>web/src/app/signin/page.tsx</code></td><td>The sign-in screens with the brand panel</td></tr>
+    <tr><td><code>web/src/lib/ocr.ts</code></td><td>OCR in the browser (tesseract.js, German model); the text layer of digital PDFs (pdf.js)</td></tr>
+    <tr><td><code>web/src/lib/ics.ts</code></td><td>Calendar file for a deadline, with a reminder 3 days before (RFC 5545)</td></tr>
+    <tr><td><code>web/src/components/LetterWorkspace.tsx</code></td><td>The main screen: the original letter on the left, summary and cards on the right. When you point to a sentence, its source line gets a mark.</td></tr>
+    <tr><td><code>web/src/components/Shell.tsx</code>, <code>Brand.tsx</code></td><td>Header, navigation, logo and illustrations</td></tr>
+    <tr><td><code>web/src/app/letters/new/page.tsx</code></td><td>Upload, recognition progress, preview of the recognized text, language choice</td></tr>
+    <tr><td><code>web/src/app/counsellor/…</code></td><td>Case inbox sorted by deadline; case view with German summary; translated replies; statistics with CSV export (<code>csv.ts</code>)</td></tr>
+  </table>
+
+  <h3>14.2 The own sign-in screens (ADR-9)</h3>
+  <p>Before, the web app sent people to the Cognito hosted UI. On the Lite plan, this is a plain white form in English with
+  technical error texts. Now the web app draws six screens itself: sign in, create account, confirm e-mail, forgot password,
+  authenticator code (MFA) and "new password required".</p>
+  <ol>
+    <li>The screen sends the e-mail address and the password to <code>cognito-idp.eu-central-1.amazonaws.com</code> over TLS
+      (<code>InitiateAuth</code> with <code>USER_PASSWORD_AUTH</code>).</li>
+    <li>Cognito checks the password, the lockout and the MFA. It returns tokens or a challenge.</li>
+    <li>The web app keeps the tokens in sessionStorage and sends the access token to the API.</li>
+    <li>On sign-out, <code>RevokeToken</code> makes the refresh token invalid on the server.</li>
+  </ol>
+  <p>The password never goes to the LetterLens API, the logs or the database. The screen shows one message for "wrong password"
+  and for "no such account", so nobody can find out which e-mail addresses have an account. The password rules exist two
+  times (in the user pool and in <code>passwordProblems()</code>); a test keeps them equal.</p>
+
+  <h3>14.3 Tests</h3>
+  <p>Vitest and Testing Library run 21 tests in four files. Examples: a summary sentence marks its source line, and Arabic
+  text goes from right to left; citations get the number of their position in the source list; MFA asks for the authenticator
+  code; the screen shows one message for a wrong password and an unknown account; the password rules agree with the user-pool
+  policy (10 characters and a digit).</p>
+</section>
+
+<section id="p15">
+  <h2><span class="num">15</span> Code tour: the iOS app</h2>
+  <div class="summary">SwiftUI with an <code>@Observable</code> app model and small services. All logic that does not need
+  UIKit is in the Swift package <code>LetterLensCore</code>, which <code>swift test</code> runs on a Mac without a simulator.
+  The tests decode real API responses, so a server change cannot break the app without a failed test.</div>
+
+  [[ios_arch]]
+
+  <h3>15.1 Screens</h3>
+  <table class="small">
+    <tr><th>File</th><th>Screen and what to look at</th></tr>
+    <tr><td><code>Views/LettersView.swift</code></td><td><code>SignInView</code>: the same brand panel as the web, with <code>LetterDemo</code> and a marked "plain words". <code>LettersView</code>: <code>NextDeadlineCard</code> (the soonest open deadline of all letters, in ink), <code>CountdownBadge</code> (a yellow circle that fills as the date comes closer), <code>UsageCard</code>, letter rows, a floating scan button. The list refreshes itself while letters are read.</td></tr>
+    <tr><td><code>Views/NewLetterView.swift</code></td><td><code>SourceTile</code>s for camera, photos and files; language chips; a preview of the recognized text; <code>WorkingOverlay</code> while the app reads photos or sends the letter</td></tr>
+    <tr><td><code>Views/LetterDetailView.swift</code></td><td><code>ProcessingCard</code> with <code>ReadingArt</code>; <code>SummaryCard</code> (tap a sentence to see its source line marked in <code>OriginalSheet</code>); <code>DeadlineCard</code>, <code>AmountsCard</code>, <code>NextStepsCard</code> (citation number = position in the source list); <code>QuestionCard</code> with <code>TypingDots</code>; <code>ShareSheet</code> with consent; <code>MessageBubble</code></td></tr>
+    <tr><td><code>Views/SettingsView.swift</code></td><td><code>ProfileHeader</code>, plan, language, data export, account deletion</td></tr>
+    <tr><td><code>Views/Theme.swift</code>, <code>Components.swift</code>, <code>Illustrations.swift</code></td><td>Colours, card and paper modifiers, motion, components and drawings (chapter 13)</td></tr>
+  </table>
+
+  <h3>15.2 App and services</h3>
+  <table class="small">
+    <tr><th>File</th><th>What to look at</th></tr>
+    <tr><td><code>App/AppModel.swift</code></td><td>App phases (loading, signed out, signed in). <code>AppConfig</code> reads the API address from <code>Info.plist</code>; the values come from <code>Config/*.xcconfig</code>.</td></tr>
+    <tr><td><code>App/LetterLensApp.swift</code></td><td><code>RootView</code> selects the screen for the phase; <code>LaunchView</code>; serif navigation titles</td></tr>
+    <tr><td><code>Services/AuthService.swift</code></td><td>An <code>actor</code> that conforms to <code>AuthHeaderProvider</code>. <code>ASWebAuthenticationSession</code> with PKCE and an ephemeral browser session. Tokens in the Keychain (this device only). Refresh 60 s before expiry.</td></tr>
+    <tr><td><code>Services/DeviceServices.swift</code></td><td><code>TextRecognizer</code> (<code>VNRecognizeTextRequest</code>, German, accurate level); <code>DocumentScanner</code>; <code>ReminderService</code> (write-only calendar access, a local notification 3 days before at 09:00); <code>StoreService</code> (StoreKit 2)</td></tr>
+  </table>
+
+  <h3>15.3 <code>LetterLensCore</code> (Swift package)</h3>
+  <ul>
+    <li><code>Models.swift</code>: <code>Codable</code> structs for every response. The decoder converts snake_case. It also
+      reads Python timestamps with 6 fractional digits (<code>APIClient.parseISODate</code>); <code>ISO8601DateFormatter</code> alone cannot.</li>
+    <li><code>APIClient.swift</code>: one <code>async</code> method per endpoint; <code>APIError</code> with the error code of the server.</li>
+    <li><code>Logic.swift</code>: <code>PKCE</code> (tested with the example in RFC 7636); <code>DocumentBuilder</code> (Vision boxes
+      start at the bottom left, so the builder turns them over and sorts the rows); <code>Deadlines</code> (days until, urgency, reminder date).</li>
+  </ul>
+
+  <h3>15.4 Sign-in on iOS</h3>
+  <p>iOS keeps the Cognito hosted UI (ADR-9). The app opens it in <code>ASWebAuthenticationSession</code> with PKCE: the app
+  makes a random secret, sends only its hash, and later proves that it has the secret. Thus a different app cannot use the
+  returned code. The ephemeral session shares no cookies with Safari.</p>
+
+  <h3>15.5 Purchases with StoreKit 2</h3>
+  <p>The app buys <code>app.letterlens.plus.monthly</code> with <code>.appAccountToken(userId)</code>. This connects the purchase
+  to the LetterLens account. The app sends the signed transaction (<code>jwsRepresentation</code>) to the server. The server
+  verifies the signature chain of Apple itself, and it refuses a transaction whose account token belongs to a different user.
+  App Store Server Notifications V2 keep the plan current after renewals and refunds.
+  <code>Resources/LetterLens.storekit</code> lets you test purchases in Xcode without App Store Connect.</p>
+
+  <h3>15.6 Build, configuration and tests</h3>
+  <ul>
+    <li>XcodeGen makes the Xcode project from <code>ios/project.yml</code>. Run <code>xcodegen generate</code> after you add a file.</li>
+    <li><code>Config/Debug.xcconfig</code> points to the local API. <code>Config/Release.xcconfig</code> now contains the production
+      values: the CloudFront address, the Cognito domain and the client id.</li>
+    <li><code>swift test</code> runs 11 tests (Swift Testing) on macOS, with the contract tests.</li>
+    <li><code>ios/scripts/typecheck.sh</code> compiles the whole app against the iOS simulator SDK with <code>swiftc</code>, for Macs
+      and CI runners without a simulator runtime.</li>
+    <li>The iOS workflow runs on a macOS runner only when <code>ios/**</code> or <code>contracts/**</code> changes, because macOS
+      minutes cost 10 times more than Linux minutes on private repositories.</li>
+  </ul>
+</section>

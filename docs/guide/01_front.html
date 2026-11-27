@@ -1,0 +1,129 @@
+<section class="cover">
+  <div class="cover-icon">[[cover_icon]]</div>
+  <h1>LetterLens</h1>
+  <p class="cover-sub">How it works, why it is built this way, and how the code is tested</p>
+  <p class="cover-meta">A guide for an iOS developer who is new to AI engineering<br>
+  Version of 27 November 2026 · replaces the version of 25 November 2026</p>
+  <div class="cover-box">
+    <p><strong>What you will learn</strong></p>
+    <ol>
+      <li>What changed since the last version of this guide.</li>
+      <li>The ten AI-engineering ideas behind LetterLens, compared with things that you know from iOS.</li>
+      <li>The architecture and the full tech stack, layer by layer, with the reason for each choice.</li>
+      <li>The life of one letter, and a tour of the important files and functions.</li>
+      <li>How the project is protected, tested and measured.</li>
+      <li>The new app icon and the shared design of the iOS app and the web app.</li>
+      <li>The infrastructure, the costs, the nine decision records and the open items.</li>
+    </ol>
+  </div>
+</section>
+
+<section class="toc">
+  <h2>Contents</h2>
+  <div class="toc-cols">
+  <div>
+    <p class="toc-part">Part A · The product</p>
+    <ol class="toc-list" start="1">
+      <li><a href="#p1">What is new in this version</a></li>
+      <li><a href="#p2">The product in one page</a></li>
+      <li><a href="#p3">AI engineering for an iOS developer</a></li>
+    </ol>
+    <p class="toc-part">Part B · Architecture</p>
+    <ol class="toc-list" start="4">
+      <li><a href="#p4">Architecture</a></li>
+      <li><a href="#p5">The tech stack, layer by layer</a></li>
+      <li><a href="#p6">The life of one letter</a></li>
+      <li><a href="#p7">The AI pipeline in detail</a></li>
+      <li><a href="#p8">Code tour: the backend</a></li>
+      <li><a href="#p9">Data model and API</a></li>
+    </ol>
+    <p class="toc-part">Part C · Safety and quality</p>
+    <ol class="toc-list" start="10">
+      <li><a href="#p10">Security and data protection</a></li>
+      <li><a href="#p11">How AI quality is measured</a></li>
+      <li><a href="#p12">Testing approach</a></li>
+    </ol>
+  </div>
+  <div>
+    <p class="toc-part">Part D · Clients and design</p>
+    <ol class="toc-list" start="13">
+      <li><a href="#p13">Design: paper, ink and the new icon</a></li>
+      <li><a href="#p14">Code tour: the web app</a></li>
+      <li><a href="#p15">Code tour: the iOS app</a></li>
+    </ol>
+    <p class="toc-part">Part E · Operations and decisions</p>
+    <ol class="toc-list" start="16">
+      <li><a href="#p16">Infrastructure, delivery and operations</a></li>
+      <li><a href="#p17">Cost</a></li>
+      <li><a href="#p18">Architecture decisions</a></li>
+      <li><a href="#p19">Status, limits and next steps</a></li>
+      <li><a href="#p20">Glossary</a></li>
+    </ol>
+  </div>
+  </div>
+  <div class="note">
+    <p><strong>How to read this guide.</strong> Each chapter starts with a short summary in a box. For a
+    10-minute overview, read only the boxes. File paths start at the repository root, for example
+    <code>backend/src/letterlens/grounding/verifier.py</code>. Boxes with the label <em>iOS analogy</em> compare an idea
+    with a thing that you know from Swift and iOS.</p>
+    <p><strong>Language.</strong> The text follows ASD-STE100 Simplified Technical English: short sentences, the active
+    voice, one instruction in one sentence, and one term for one thing. Names of products, code and laws stay as they are.
+    The guide uses these terms in all chapters: the <em>reader</em> is the person who receives a letter; the
+    <em>counsellor</em> works for a <em>counselling service</em>; the <em>model</em> is the large language model.</p>
+    <p><strong>Numbers.</strong> All results come from the reports in <code>backend/evals/reports/</code> of
+    27 November 2026. Some older documents in <code>docs/</code> show earlier numbers.</p>
+  </div>
+</section>
+
+<section id="p1">
+  <h2><span class="num">1</span> What is new in this version</h2>
+  <div class="summary">Since 25 November 2026, the iOS app has a new icon and a new design. The web app has its own sign-in
+  screens. Summaries are more complete, and the five other languages are now translations of one checked English text.
+  A review of 31 real and sample documents found nine defects; all have a fix and a test. Deploys now start only after
+  CI passes for a push to this repository.</div>
+
+  <h3>1.1 Changes in the product</h3>
+  <table>
+    <tr><th>Area</th><th>Change</th><th>Chapter</th></tr>
+    <tr><td><strong>App icon</strong></td><td>A new icon: a letter rises out of an open envelope, one line is marked in
+      highlighter yellow, and a yellow lens reads it. There are light, dark and tinted variants for iOS 18 and later. The
+      old icon had white corners outside its outline; the new drawing has closed, joined outlines.</td><td>13</td></tr>
+    <tr><td><strong>iOS design</strong></td><td>Shared components (ink capsule buttons, chips, pills, toasts, skeletons,
+      progress bars, highlighter marks), animated illustrations, and restyled screens. The letter list shows the next
+      deadline, a usage bar and a floating scan button.</td><td>13, 15</td></tr>
+    <tr><td><strong>Web sign-in</strong></td><td>The web app has its own screens for sign-in, sign-up, e-mail code,
+      password reset and MFA. They call the Cognito user-pool API directly (ADR-9).</td><td>14, 18</td></tr>
+    <tr><td><strong>Account deletion</strong></td><td>"Delete my account" now also deletes the sign-in account in Cognito,
+      not only the data in the database.</td><td>9, 10</td></tr>
+    <tr><td><strong>Complete summaries</strong></td><td>The summary names the decision, the conditions, the
+      consequences, the actions and the permissions. A signed receipt form (Empfangsbekenntnis) is a required action.</td><td>7, 11</td></tr>
+    <tr><td><strong>Translation</strong></td><td>The model writes the explanation once, in English. Code checks it. Then
+      the model translates it item by item, and code puts the line links back. Before, each language was written
+      separately, and the languages differed in content.</td><td>7</td></tr>
+    <tr><td><strong>Names</strong></td><td>The recipient's name is hidden also when OCR adds noise, and also when the name
+      is only in the greeting ("Sehr geehrte Frau …"). The surname alone is hidden too.</td><td>8, 10</td></tr>
+    <tr><td><strong>Own domain</strong></td><td>CloudFront can use an own domain name and certificate (optional).</td><td>16</td></tr>
+  </table>
+
+  <h3>1.2 Changes from tests and reviews</h3>
+  <table>
+    <tr><th>Finding</th><th>Result</th></tr>
+    <tr><td>31 real and sample documents were read with Apple Vision and run through the live pipeline. A person checked every result.</td>
+      <td>Nine defects found and fixed, each with a test. Examples: a placeholder date shown as a real date; a fine notice
+      classified as "benefits"; assessed tax shown as "to pay". Details in chapter 11.6.</td></tr>
+    <tr><td>Two test files reused details of a private letter.</td>
+      <td>They now use an invented office, person and situation. The shorter test letter found a real gap: the date on a
+      signed receipt form was taken as the letter date. The rules extractor and the verifier now stop at the heading of the receipt form.</td></tr>
+    <tr><td>The classifier had no vocabulary for fines and courts.</td>
+      <td>New vocabulary, a new letter family (traffic fine), and a retrained model: 99.1 % on unseen layouts.</td></tr>
+    <tr><td>The corpus had no passage for fines and hearing forms.</td><td>Passage 27 (OWiG, StVG). The corpus now has 27 passages.</td></tr>
+  </table>
+
+  <h3>1.3 Changes in delivery</h3>
+  <ul>
+    <li>The Deploy workflow starts only after CI passes for a <em>push</em> to <code>main</code> of <em>this</em> repository.
+      A pull request from a fork can never start a deploy.</li>
+    <li>The deploy role can read the Parameter Store path also with a trailing slash. A test in <code>infra/tests</code> proves it.</li>
+    <li>The iOS release configuration contains the production addresses of the API and of Cognito.</li>
+  </ul>
+</section>

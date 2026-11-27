@@ -1,0 +1,312 @@
+<section id="p16">
+  <h2><span class="num">16</span> Infrastructure, delivery and operations</h2>
+  <div class="summary">All AWS resources are Python code (AWS CDK) in <code>infra/</code>. GitHub Actions tests every change.
+  When CI passes for a push to <code>main</code> of this repository, a second workflow deploys it, without stored AWS keys.
+  Six alarms send an e-mail, and a runbook tells the operator what to do for each alarm.</div>
+
+  [[aws_infra]]
+
+  <h3>16.1 Infrastructure as code</h3>
+  <p><code>infra/letterlens_infra/stack.py</code> defines every resource of the stack <code>LetterLens-prod</code>.
+  <code>infra/letterlens_infra/ci.py</code> defines the stack <code>LetterLens-ci</code> with the deploy role. Important details:</p>
+  <ul>
+    <li>The Lambda functions use ARM processors (cheaper) and Python 3.13. <code>infra/scripts/build_lambda.sh</code> installs
+      Linux ARM wheels on a Mac without Docker.</li>
+    <li>The letters bucket has a fixed name. This prevents a dependency cycle (bucket → CloudFront → API → bucket) that
+      CloudFormation cannot solve. For the same reason, the Cognito client ids go to the API through Parameter Store.</li>
+    <li>CloudFront can use an own domain. Set <code>domainNames</code> and <code>certificateArn</code> in <code>infra/cdk.json</code>.
+      The certificate must be in <code>us-east-1</code>. The runbook is <code>docs/operations/custom-domain.md</code>.</li>
+    <li>cdk-nag checks the template against AWS security rules. Each exception has a written reason in <code>infra/app.py</code>.</li>
+    <li>Twelve assertion tests check the template. Examples: "every bucket blocks public access and is encrypted", "the API is
+      reachable only through CloudFront with the secret header", "the web client uses the password flow without the hosted UI",
+      "the API can delete Cognito users", "the functions can read their parameter path, also with a trailing slash", and
+      "an own domain needs a certificate".</li>
+  </ul>
+
+  <h3>16.2 Delivery</h3>
+  [[ci_cd]]
+  <p>Three workflows are in <code>.github/workflows/</code>:</p>
+  <table class="small">
+    <tr><th>Workflow</th><th>When</th><th>Jobs</th></tr>
+    <tr><td><code>ci.yml</code></td><td>Every pull request and push; manual with the option <code>live_eval</code></td><td><code>backend</code> (lint, types, tests with PostgreSQL), <code>eval-gate</code> (offline and chaos; live on request), <code>infra</code> (bundle, tests, cdk-nag), <code>web</code> (lint, types, tests, build)</td></tr>
+    <tr><td><code>deploy.yml</code></td><td>After CI, or manual</td><td>Migrations on Neon, web build, Lambda bundle, OIDC sign-in, <code>cdk deploy</code>, smoke test</td></tr>
+    <tr><td><code>ios.yml</code></td><td>Only when <code>ios/**</code> or <code>contracts/**</code> changes</td><td><code>swift test</code>, XcodeGen, simulator build (or the type check)</td></tr>
+  </table>
+  <p><strong>The deploy rule.</strong> An automatic deploy starts only when all these conditions are true:</p>
+  <ol>
+    <li>The repository variable <code>DEPLOY_ENABLED</code> is <code>true</code> (set at the end of the setup).</li>
+    <li>The CI run finished with success.</li>
+    <li>The CI run was for a <em>push</em> to <code>main</code>, not for a pull request.</li>
+    <li>The commit comes from this repository, not from a fork.</li>
+  </ol>
+  <p>The last two conditions are new. Without them, a pull request from a fork could start a deploy with the secrets of the
+  <code>production</code> environment. A manual run of the Deploy workflow is always possible.</p>
+  <p><strong>OIDC.</strong> The deploy job signs in to AWS with GitHub OIDC. GitHub proves the repository and the environment,
+  and AWS gives a temporary role. This role can only use the CDK deployment roles. No long-lived AWS keys exist.
+  The smoke test checks <code>/health</code>, the web page, and that the API refuses a request without a token (status 401).</p>
+
+  <h3>16.3 Configuration and secrets</h3>
+  <table class="small">
+    <tr><th>Where</th><th>What</th></tr>
+    <tr><td>SSM Parameter Store <code>/letterlens/prod/</code></td><td><code>database_url</code>, <code>kek_base64</code>, <code>llm_api_key</code>, <code>llm_training_opt_out_confirmed</code>. The Lambda functions read them at cold start.</td></tr>
+    <tr><td>GitHub environment <code>production</code></td><td><code>AWS_DEPLOY_ROLE_ARN</code>, <code>NEON_ADMIN_URL</code>, <code>NEON_APP_PASSWORD</code>, <code>ORIGIN_VERIFY_SECRET</code>, <code>ALARM_EMAIL</code></td></tr>
+    <tr><td>GitHub repository</td><td>Secret <code>MISTRAL_API_KEY</code> (live evaluation); variable <code>DEPLOY_ENABLED</code></td></tr>
+    <tr><td><code>infra/cdk.json</code></td><td>Stage settings: Cognito domain prefix, budgets, retention, optional domain</td></tr>
+    <tr><td><code>backend/src/letterlens/config.py</code></td><td>All runtime settings with the prefix <code>LETTERLENS_</code>, for example the model for each task</td></tr>
+  </table>
+
+  <h3>16.4 Observability and alarms</h3>
+  <p>Logs are JSON lines with ids and counters, never letter text. They stay 14 days. The code sends 9 metrics in the
+  CloudWatch embedded metric format. X-Ray traces each request. Six alarms send an e-mail through SNS:</p>
+  <table class="small">
+    <tr><th>Alarm</th><th>Condition</th><th>First action (runbook)</th></tr>
+    <tr><td><code>ApiErrors</code></td><td>5 or more errors in 5 minutes</td><td>Look for database errors; check the Neon compute hours; roll back if a deploy caused it</td></tr>
+    <tr><td><code>ApiLatencyP95</code></td><td>p95 over 10 s for 15 minutes</td><td>Find the slow route; a slow model makes questions slow</td></tr>
+    <tr><td><code>WorkerErrors</code>, <code>PipelineFailures</code></td><td>Errors in the pipeline</td><td>Open the failed Step Functions execution; the failed state shows the step</td></tr>
+    <tr><td><code>LlmSpendDaily</code></td><td>Daily list price of model calls over the limit</td><td>Find the task and the user; lower the budget to stop spend</td></tr>
+    <tr><td><code>GuardrailSpike</code></td><td>50 or more refusals in one hour</td><td>Look for abuse, or for a false-positive regression after a prompt change</td></tr>
+  </table>
+
+  <h3>16.5 Routine tasks</h3>
+  <table class="small">
+    <tr><th>Task</th><th>Frequency</th></tr>
+    <tr><td>Check the AWS bill and the Neon usage</td><td>Monthly</td></tr>
+    <tr><td>Review the corpus passages (<code>checked_on</code>)</td><td>Every 6 months, and after a change in the law</td></tr>
+    <tr><td>Run the live evaluation</td><td>Before each release; monthly</td></tr>
+    <tr><td>Rotate the Mistral key</td><td>Every 6 months, or after a leak</td></tr>
+    <tr><td>Rotate the origin secret</td><td>Yearly, or after a leak</td></tr>
+    <tr><td>Delete audit-log rows older than 3 years (owner role)</td><td>Yearly</td></tr>
+  </table>
+  <p>To restore the database, make a Neon branch from a time before the incident and point <code>database_url</code> to it.
+  The letters stay encrypted, so the KEK must be the same.</p>
+</section>
+
+<section id="p17">
+  <h2><span class="num">17</span> Cost</h2>
+  <div class="summary">At pilot volume, hosting costs 0 € per month. The language model costs approximately 0.3 cents per
+  letter; 10 € of prepaid credit is sufficient for approximately 3,000 letters. The first free limit is Step Functions, at
+  approximately 400 letters per month.</div>
+
+  [[cost_chart]]
+  <table>
+    <tr><th>Item</th><th>Cost</th></tr>
+    <tr><td>AWS hosting at pilot volume</td><td>0 € ("always free" limits); budget e-mails at 0.50 $ and 1 $</td></tr>
+    <tr><td>Neon PostgreSQL</td><td>0 € (free plan: 1 GB, 100 compute hours per month)</td></tr>
+    <tr><td>Mistral</td><td>10 € prepaid one time; approximately 0.3 cents per letter; it stops at 0, with no automatic top-up</td></tr>
+    <tr><td>Own domain (optional)</td><td>5 to 10 € per year for a <code>.de</code> domain; the certificate is free</td></tr>
+    <tr><td>Apple Developer Program</td><td>99 $ per year, only for TestFlight and the App Store</td></tr>
+  </table>
+  <table class="small">
+    <tr><th>Volume</th><th>AWS and Neon</th><th>Model (Mistral list price)</th></tr>
+    <tr><td>300 letters per month</td><td>0 €</td><td>approximately 1 $</td></tr>
+    <tr><td>3,000 letters per month</td><td>approximately 1 € (Step Functions above the free limit)</td><td>approximately 9 $</td></tr>
+    <tr><td>30,000 letters per month</td><td>approximately 15 €, plus a paid Neon plan</td><td>approximately 90 $</td></tr>
+  </table>
+  <p>Above approximately 2,000 letters per month, change to Step Functions Express workflows. They cost per request and
+  duration, not per state transition. With Claude Opus 5.5 instead of Mistral, a letter costs approximately 0.06 $.</p>
+  <p>The cost ledger answers "what did this letter cost?" (<code>GET /v1/admin/letters/{id}/cost</code>). It also gives
+  daily totals for each task and model, with p50 and p95 latency (<code>GET /v1/admin/costs</code>). The ledger records the
+  list price also on a free tier, so you know the cost of a paid plan before you change.</p>
+</section>
+
+<section id="p18">
+  <h2><span class="num">18</span> Architecture decisions</h2>
+  <div class="summary">Every main decision has an Architecture Decision Record (ADR) in <code>docs/architecture/adr/</code>.
+  An ADR gives the context, the decision, the alternatives and the consequences. This chapter gives each of the nine ADRs in
+  short form, and then the decisions that came from tests and measurements.</div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-1</span> A modular monolith on Lambda and Step Functions</h4>
+    <p><strong>Context.</strong> One engineer. Low traffic that comes in bursts (letters arrive with the morning post). Model calls
+    take 5 to 20 seconds, and a failure in one step must not lose the letter.</p>
+    <p><strong>Decision.</strong> One Python package. The API is one Lambda function behind a function URL (FastAPI through Mangum).
+    The pipeline is a Step Functions Standard workflow that calls one worker Lambda with the step name. The same steps run in one
+    process for tests.</p>
+    <p><strong>Alternatives.</strong> ECS Fargate with a load balancer (no cold starts, but 20 to 40 € per month minimum);
+    SQS with one worker (no retries per step, no history); microservices (no team that needs them).</p>
+    <p><strong>Consequences.</strong> One deploy, one database, one test suite. Each step has its own retries and history.
+    A cold start adds approximately 1 second after a quiet period; the client polls, so nobody waits on an open connection.
+    Steps must be idempotent. They are.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-2</span> A free-tier platform</h4>
+    <p><strong>Context.</strong> The reference platform (Fargate, Aurora, WAF, KMS keys, Secrets Manager, NAT gateway) costs a few
+    hundred euros per month before the first letter.</p>
+    <p><strong>Decision.</strong> Use the free equivalent of each service:</p>
+    <table class="small">
+      <tr><th>Reference</th><th>Free choice</th><th>What we give up</th></tr>
+      <tr><td>API Gateway</td><td>Function URL and a secret origin header from CloudFront</td><td>Usage plans and validation at the edge</td></tr>
+      <tr><td>Aurora Serverless v2</td><td>Neon free plan (Frankfurt)</td><td>AWS-native backups and IAM auth; 1 GB storage</td></tr>
+      <tr><td>AWS WAF</td><td>Rate limits and quotas in the API</td><td>Filtering of bad traffic at the edge</td></tr>
+      <tr><td>KMS keys per tenant</td><td>Envelope encryption; the KEK in SSM</td><td>A hardware key; key-use audit in CloudTrail</td></tr>
+      <tr><td>Secrets Manager</td><td>SSM standard parameters</td><td>Automatic rotation</td></tr>
+      <tr><td>VPC and NAT gateway</td><td>Lambda outside a VPC; TLS to the database</td><td>Private networking</td></tr>
+    </table>
+    <p><strong>Consequences.</strong> 0 € per month up to the free limits. Each paid feature has an upgrade path that does not change the
+    application code (a setting or one CDK construct). Neon is a processor outside AWS; the data stays in Frankfurt.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-3</span> One gateway for all models; Mistral by default</h4>
+    <p><strong>Context.</strong> The product needs a multilingual model with structured output. The provider must process in the EU
+    and must not train on the data. Prices, limits and quality change often.</p>
+    <p><strong>Decision.</strong> All model calls go through <code>llm/gateway.py</code>. The gateway does routing per task, a fallback
+    chain, retries, strict schemas with one repair, budgets and the cost ledger. Providers: Mistral (default, EU), Claude on the Claude API or
+    Bedrock (paid option), and a fake provider for tests. Production refuses to start with Mistral until the training opt-out is confirmed.</p>
+    <p><strong>Alternatives.</strong> Bedrock only (not free); the Gemini free tier (it can use content to improve products: refused);
+    a self-hosted model (no free GPU).</p>
+    <p><strong>Consequences.</strong> A model change is a setting plus a live evaluation. Mistral needs 10 € of prepaid credit.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-4</span> PostgreSQL with row-level security; retrieval in memory</h4>
+    <p><strong>Context.</strong> Readers own letters. Counselling services see only letters that a reader shared, and only while the
+    consent is active. A defect in one query must not leak data. The corpus is small and curated by hand.</p>
+    <p><strong>Decision.</strong> All data in PostgreSQL with RLS; the API sets the user, the services and the system flag per transaction.
+    The app role does not own the tables. Neon's pooler runs in transaction mode, so server-side prepared statements are off. The corpus is
+    Markdown in the repository; a BM25 index is built at cold start.</p>
+    <p><strong>Consequences.</strong> Isolation is tested as the real application role (20 tests). Retrieval needs no database round trip.
+    Corpus changes go through code review, which is the correct control for text with legal weight. Move to pgvector above approximately
+    2,000 passages, or when services add their own documents.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-5</span> OCR on the device instead of Amazon Textract</h4>
+    <p><strong>Decision.</strong> iOS reads text with Apple Vision after the VisionKit scanner. The web uses tesseract.js, or the text
+    layer of a digital PDF. Clients send only text lines. Images go to S3 only with consent.</p>
+    <p><strong>Alternatives.</strong> Textract (better on tables, but paid, and the image leaves the device); a multimodal model on the
+    image (the model would see all personal data: refused).</p>
+    <p><strong>Consequences.</strong> The server never needs the image: the strongest data-minimization measure in the product. OCR quality
+    depends on the device. The reader sees the recognized text before sending, and facts are verified against the same text that the reader sees.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-6</span> The model proposes, code verifies</h4>
+    <p><strong>Decision.</strong> The schema requires a line id for each value. Code checks the cited line. Relative deadlines are calculated
+    by code and are always "please check". Lines that look like instructions are never a source. The explanation is sanitized.</p>
+    <p><strong>Consequences.</strong> The safety property is measurable: "unsafe verified facts" must be 0, also with 97 injected errors.
+    Some correct values show as "please check": LetterLens prefers precision to recall. Regional holidays are not known, so they keep a deadline in "please check".</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-7</span> Train with scikit-learn, serve with plain Python</h4>
+    <p><strong>Decision.</strong> TF-IDF over words, word pairs and 4-character pieces, then logistic regression. Export the weights to
+    JSON and serve them in plain Python. Evaluate with "leave one letter family out", so the score measures unseen layouts, not memory.
+    Fit the temperature on these held-out predictions.</p>
+    <p><strong>Consequences.</strong> 99.1 % on unseen layouts; calibration error 0.34 → 0.003. The bundle stays at 84 MB. A parity test
+    must keep both implementations equal. The training data is synthetic.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-8</span> Hand-written clients, protected by contract fixtures</h4>
+    <p><strong>Decision.</strong> The web generates TypeScript types from the OpenAPI document. iOS uses hand-written <code>Codable</code>
+    models, because Swift code generated from OpenAPI 3.1 with nullable unions is difficult to use in SwiftUI. Real responses in
+    <code>contracts/fixtures/</code> are decoded by the Swift tests and validated by a backend test.</p>
+    <p><strong>Consequences.</strong> A breaking API change fails a test on one side. The Swift models stay idiomatic. After an API change,
+    you must update the Swift models by hand.</p>
+  </div>
+
+  <div class="adr">
+    <h4><span class="adr-id">ADR-9</span> Own sign-in screens on the web; the hosted UI on iOS</h4>
+    <p><strong>Context.</strong> On the Cognito Lite plan, the hosted UI is a plain white form in English with technical errors. The branded
+    "managed login" needs the paid Essentials plan. The sign-in screen is the first screen that a new user sees.</p>
+    <p><strong>Decision.</strong> The web app draws its own six screens and calls the public Cognito API. The web client has no OAuth settings
+    and allows only the password and refresh flows. iOS keeps the hosted UI with PKCE.</p>
+    <p><strong>Alternatives.</strong> Hosted UI with CSS (only a few classes, no logo); managed login (costs money, still looks like Cognito);
+    SRP (needs a large library or own big-number code).</p>
+    <p><strong>Consequences.</strong> The password goes only to Cognito. Cognito still enforces the policy, the lockout and e-mail verification.
+    The password rules exist two times, and a test keeps them equal. No "Sign in with Google/Apple" on the web.</p>
+  </div>
+
+  <h3>18.1 Decisions that came from tests and measurements</h3>
+  <p>Some design points were not in the plan. A test or a measurement showed a problem, and the design changed:</p>
+  <ul>
+    <li>The classifier first scored 50 % on unseen layouts. Domain words in the training data and calibration on held-out families
+      increased it to 97.8 %. Fine and court vocabulary then increased it to 99.1 %.</li>
+    <li>A check against the live law text showed that "Bürgergeld" became "Grundsicherungsgeld" on 1 July 2026, with a 30 % reduction
+      for missed appointments. The corpus and the letter templates were updated.</li>
+    <li>A hand-written injection letter showed that a planted date could pass the grounding check, because the date was really in the line.
+      Suspicious lines are now excluded as sources.</li>
+    <li>The first live run had a billing error, and the evaluation measured the rules fallback without a warning. The live gate now requires
+      0 degraded letters.</li>
+    <li>A real letter showed that summaries left out conditions, reassuring statements and the signed receipt form. A completeness metric
+      with a gate now measures the key points.</li>
+    <li>When each language was written separately, the languages differed in content. Now one checked English text is translated (chapter 7.8).</li>
+    <li>The review of 31 real documents found nine defects (chapter 11.6). A shorter test letter then found that the date on a receipt form
+      became the letter date.</li>
+  </ul>
+</section>
+
+<section id="p19">
+  <h2><span class="num">19</span> Status, limits and next steps</h2>
+  <div class="summary">The code, the tests, the evaluation and the documentation are complete. LetterLens runs in production on
+  AWS (eu-central-1). When CI passes for a push to <code>main</code>, the change is deployed automatically. The product is ready for
+  a closed pilot after the checklist in the deployment guide.</div>
+
+  <h3>19.1 Done</h3>
+  <ul>
+    <li>Backend, web app, iOS app, infrastructure, CI/CD, documentation.</li>
+    <li>Neon database migrated; secrets in Parameter Store and GitHub; deploy role with OIDC.</li>
+    <li>Production deploy with smoke test; the daily retention job runs and deletes expired letters.</li>
+    <li>Live evaluation with Mistral: every gate passes; all six languages are enabled.</li>
+    <li>Review of 31 real and sample documents; all findings fixed and tested.</li>
+    <li>New app icon (light, dark, tinted) and the new iOS design; production values in the iOS release configuration.</li>
+  </ul>
+
+  <h3>19.2 Known limits</h3>
+  <ul>
+    <li>The golden set is synthetic and hand-written; real, consented letters are missing.</li>
+    <li>The 27 corpus passages and the legal boundary need a review by a counsellor and a lawyer.</li>
+    <li>The iOS app compiles against the iOS SDK, but this Mac has no simulator runtime. The app has not run on a device or in a simulator yet.</li>
+    <li>A name that is only in the body text (not in the address block or a greeting) is not pseudonymized.</li>
+    <li>Only nationwide public holidays are known; regional holidays keep a deadline in "please check".</li>
+    <li>For guides and blank forms, the model sometimes still lists tasks for other people. The classifier has no type for
+      freedom-of-information letters and files them under "benefits".</li>
+    <li>No external penetration test has been done.</li>
+  </ul>
+
+  <h3>19.3 Next steps</h3>
+  <ol>
+    <li>Find the first counselling service; replace the test service in production with it.</li>
+    <li>Turn on MFA for the AWS root user.</li>
+    <li>Install a simulator runtime or use a device; run the app; send it to TestFlight.</li>
+    <li>Run a pilot with one counselling service; collect consented letters for the golden set.</li>
+    <li>Get a legal review of the boundary and a counsellor review of the corpus; write the privacy policy and the DPIA.</li>
+  </ol>
+</section>
+
+<section id="p20">
+  <h2><span class="num">20</span> Glossary</h2>
+  <table class="small tight">
+    <tr><th>Term</th><th>Meaning</th></tr>
+    <tr><td>ADR</td><td>Architecture Decision Record: a short document for one decision, its alternatives and its consequences</td></tr>
+    <tr><td>Abstain</td><td>The classifier gives no type when it is not sure (probability below 0.5)</td></tr>
+    <tr><td>BM25</td><td>A standard formula that ranks texts by matching keywords</td></tr>
+    <tr><td>Calibration</td><td>A model is calibrated when "90 % sure" means "correct 9 times in 10"</td></tr>
+    <tr><td>CDK</td><td>AWS Cloud Development Kit: infrastructure defined in a programming language</td></tr>
+    <tr><td>Crypto-shredding</td><td>Delete the key instead of every copy of the data; all copies become unreadable</td></tr>
+    <tr><td>Degraded</td><td>A result made with rules only, because the model was not available</td></tr>
+    <tr><td>DEK, KEK</td><td>Data encryption key (one per user); key encryption key (one, held by the service)</td></tr>
+    <tr><td>Embedding</td><td>A vector of numbers that represents the meaning of a text</td></tr>
+    <tr><td>Empfangsbekenntnis</td><td>A receipt form that the reader must sign and send back</td></tr>
+    <tr><td>Faithfulness</td><td>How well a translation keeps the facts of the English text (judge score)</td></tr>
+    <tr><td>Gate</td><td>A check that stops the build when a metric is below its threshold</td></tr>
+    <tr><td>Golden set</td><td>Test inputs with known correct answers</td></tr>
+    <tr><td>Grounding</td><td>Linking each fact to its source and checking it there</td></tr>
+    <tr><td>Hallucination</td><td>A fact that the model invented</td></tr>
+    <tr><td>Judge</td><td>A model call that grades the output of a different call; it must be validated first</td></tr>
+    <tr><td>MFA</td><td>Multi-factor authentication: a code from an authenticator app in addition to the password</td></tr>
+    <tr><td>OIDC</td><td>OpenID Connect; here, GitHub proves its identity to AWS without stored keys</td></tr>
+    <tr><td>PKCE</td><td>Proof Key for Code Exchange: proves that the app that started a sign-in is the app that finishes it</td></tr>
+    <tr><td>Prompt</td><td>The instructions and the data sent to a model</td></tr>
+    <tr><td>Prompt injection</td><td>Data that tries to act as instructions to the model</td></tr>
+    <tr><td>RAG</td><td>Retrieval-augmented generation: find trusted passages first, then let the model answer from them</td></tr>
+    <tr><td>RDG</td><td>Rechtsdienstleistungsgesetz, the German Legal Services Act</td></tr>
+    <tr><td>RLS</td><td>Row-level security: database rules that decide which rows a user can see</td></tr>
+    <tr><td>STRIDE</td><td>A list of threat types: spoofing, tampering, repudiation, information disclosure, denial of service, elevation of privilege</td></tr>
+    <tr><td>Temperature scaling</td><td>Dividing the scores of a model by one number to make its probabilities honest</td></tr>
+    <tr><td>TF-IDF</td><td>Word weights: frequent in this text and rare in all texts = important</td></tr>
+    <tr><td>Token</td><td>The unit that models count and bill (approximately ¾ of a word)</td></tr>
+  </table>
+</section>

@@ -1,0 +1,233 @@
+<section id="p10">
+  <h2><span class="num">10</span> Security and data protection</h2>
+  <div class="summary">Five layers protect a letter. The photo stays on the device. Personal data is replaced before the
+  model sees text. Content is encrypted with a key for each user. The database itself decides who can read a row. Data is
+  deleted after 30 days. Each layer has tests.</div>
+
+  <h3>10.1 Who can see what: row-level security</h3>
+  [[rls]]
+  <p>PostgreSQL row-level security (RLS) attaches a rule to each table. The API runs each request in a transaction. The
+  transaction first sets three values with <code>set_config(…, true)</code>: the user id, the counselling services of the
+  user, and a "system" flag for background jobs. The rules in <code>backend/migrations/0001_init.sql</code> use these values. Example:</p>
+  <pre><code>CREATE POLICY letters_shared_read ON letters FOR SELECT
+    USING (EXISTS (
+        SELECT 1 FROM shares s
+        WHERE s.letter_id = letters.id
+          AND s.tenant_id = ANY (app_tenant_ids())
+          AND share_is_active(s)));     -- not revoked, not expired</code></pre>
+  <p>The important point: if a Python defect forgets a <code>WHERE owner_id = …</code>, the database returns nothing.
+  The application connects as <code>letterlens_app</code>. This role does not own the tables and cannot bypass RLS.
+  A database trigger also stops a share with an employer: only counselling services can receive shares.</p>
+
+  <h3>10.2 Encryption for each user</h3>
+  [[encryption]]
+  <p><code>crypto.py</code> implements <em>envelope encryption</em>. One master key (KEK) is in AWS Parameter Store.
+  Each user gets a random data key (DEK). The KEK encrypts ("wraps") the DEK, and the database stores only the wrapped DEK.
+  AES-256-GCM encrypts the letter content, with the record id as "associated data". Thus nobody can copy a ciphertext to a
+  different record. When the user deletes the account, the wrapped DEK is deleted. Then all data of this user is
+  unreadable everywhere, also in backups ("crypto-shredding").</p>
+  <p class="ios"><strong>iOS analogy:</strong> iOS Data Protection, where class keys wrap the file keys.</p>
+  <div class="warning"><strong>WARNING:</strong> the parameter <code>kek_base64</code> encrypts all letters. If you lose it,
+  nobody can read the stored letters. Do not change it after the first letter. Keep one copy in your password manager.</div>
+
+  <h3>10.3 Account deletion</h3>
+  <p><code>DELETE /v1/me</code> does three things. It deletes the rows of the user in the database. It deletes the wrapped
+  DEK (crypto-shredding). It deletes the user in Cognito with <code>AdminDeleteUser</code> (<code>identity.py</code>).
+  The LetterLens database keeps no e-mail address, but Cognito keeps the e-mail address and the password hash. Before this
+  version, "delete my account" left these data in Cognito.</p>
+
+  <h3>10.4 The legal-advice guardrail: <code>safety/guardrail.py</code></h3>
+  <p>A question goes through three layers:</p>
+  <ol>
+    <li><strong>Rules</strong> (<code>check_question_rules</code>): regular expressions in six languages find advice requests
+      ("Sollte ich Widerspruch einlegen?", "İtiraz etmeli miyim?") and injection ("ignore previous instructions").</li>
+    <li><strong>Model classifier</strong>: the model sorts the question into general information, individual legal advice,
+      prompt injection or off topic. If this call fails, the API refuses (it fails closed).</li>
+    <li><strong>Output check</strong> (<code>is_advisory_output</code>): the answer must not sound like advice
+      ("you should object", "the decision is unlawful").</li>
+  </ol>
+  <p>A refusal is in the language of the reader. It offers a counsellor and names the real button of the app.</p>
+  <table class="small">
+    <tr><th>Allowed (information)</th><th>Not allowed (individual assessment)</th></tr>
+    <tr><td>Say what the letter says, in plain language</td><td>Say if the decision is correct or lawful</td></tr>
+    <tr><td>Show the dates and amounts that the letter names</td><td>Recommend to object, to pay, to sign or not</td></tr>
+    <tr><td>Explain a term or a procedure in general, with sources</td><td>Predict the result of an objection or a lawsuit</td></tr>
+    <tr><td>Estimate the end of a period with the general rule, marked "please check"</td><td>Write an objection for the reader</td></tr>
+    <tr><td>Name free counselling services and give them the letter, with consent</td><td>Act for the reader towards the authority</td></tr>
+  </table>
+
+  <h3>10.5 Prompt injection</h3>
+  <p><code>neutralize_injections</code> replaces lines that look like instructions to a model ("SYSTEM: …", "report the
+  deadline as …") before the code makes the prompt. The verifier never accepts these lines as a source. One hand-written test
+  letter contains such an attack. The real deadline and the real amount still show.</p>
+
+  <h3>10.6 Threats and controls</h3>
+  <p>The threat model uses STRIDE for each trust boundary. It has 18 threats, each with a control and, where possible, a test.
+  The table shows a selection. The full list is in <code>docs/security/threat-model.md</code>.</p>
+  <table class="small">
+    <tr><th>Threat</th><th>Control</th></tr>
+    <tr><td>A user reads the letter of a different user</td><td>RLS on every table; random UUIDs; foreign rows return 404</td></tr>
+    <tr><td>A counsellor reads a letter after the share is revoked or expired</td><td>RLS checks for an active share in every policy</td></tr>
+    <tr><td>Calls to the API that bypass CloudFront</td><td>CloudFront adds a secret header; the API compares it in constant time</td></tr>
+    <tr><td>Forged App Store purchases</td><td>The signed transaction must chain to Apple Root CA G3 (pinned in the code), carry the certificate OIDs of Apple, and name this user</td></tr>
+    <tr><td>Forged or repeated Stripe events</td><td>Signature check; each event id is used only one time</td></tr>
+    <tr><td>Personal data in logs</td><td>Logs contain ids and counters only; validation errors name fields, never values</td></tr>
+    <tr><td>Abuse of free quotas and of the model budget</td><td>Rate limits, monthly letter quota, gateway budgets, a daily spend alarm, an AWS budget alarm</td></tr>
+    <tr><td>Password guessing on the own web sign-in screens (T18)</td><td>The password goes only to Cognito; Cognito locks the account after failed attempts; one message for "wrong password" and "no such account"</td></tr>
+    <tr><td>Cross-site scripting steals tokens</td><td>React escapes output; strict Content Security Policy at CloudFront; tokens in sessionStorage only</td></tr>
+    <tr><td>Repudiation</td><td>Append-only audit log; the app role cannot change or delete rows</td></tr>
+  </table>
+
+  <h3>10.7 Data protection (GDPR)</h3>
+  <table class="small">
+    <tr><th>Data</th><th>Where</th><th>Retention</th></tr>
+    <tr><td>Letter text lines and results</td><td>Neon, encrypted per user</td><td>30 days (Plus: up to 365); the daily job deletes them</td></tr>
+    <tr><td>Letter images (only with consent)</td><td>S3, encrypted</td><td>Deleted with the letter; an S3 lifecycle rule is the backstop</td></tr>
+    <tr><td>Messages</td><td>Neon, encrypted with the key of the reader</td><td>With the share or the account</td></tr>
+    <tr><td>Account</td><td>Cognito (e-mail, password hash); Neon (subject id, plan)</td><td>Until account deletion</td></tr>
+    <tr><td>Cost ledger</td><td>Neon, no content</td><td>13 months</td></tr>
+    <tr><td>Audit log</td><td>Neon, no content</td><td>3 years</td></tr>
+  </table>
+  <p>Processors: AWS (Frankfurt), Neon (on AWS Frankfurt; content is encrypted before it arrives), Mistral (EU; training on
+  API data is off). The production settings refuse to start with Mistral until the operator confirms the training opt-out.
+  The reader can download all data (<code>GET /v1/me/export</code>), delete a letter, stop a share, and delete the account.</p>
+</section>
+
+<section id="p11">
+  <h2><span class="num">11</span> How AI quality is measured</h2>
+  <div class="summary">LetterLens does not trust that the model "seems good". A golden set of 137 letters with exact answers
+  and 96 test questions measures it. Three profiles run the same tests: rules only (every pull request), rules with injected
+  errors (every pull request), and the real model (before a release). A gate stops the build below the thresholds.</div>
+
+  [[eval_flow]]
+
+  <h3>11.1 The test data</h3>
+  <ul>
+    <li><strong>Synthetic letters</strong> (<code>letterlens/synthetic/generator.py</code>): 120 letters from 20 letter
+      families (tax assessment, Jobcenter invitation, rent increase, traffic fine …) with random names, dates, amounts and
+      words. The generator makes the letter, so it knows each correct answer. Some letters get typical OCR errors ("ü" → "u").</li>
+    <li><strong>Hand-written letters</strong> (<code>evals/handwritten.py</code>): 17 letters with layouts that no template
+      uses. Examples: a court payment order, a notice of termination, a study-permit letter with a receipt form, a staff
+      circular, a blank form, and one prompt-injection attack. All persons, offices and situations are invented.</li>
+    <li><strong>Red-team questions</strong> (<code>evals/redteam/questions.jsonl</code>): 54 requests for legal advice,
+      34 normal questions and 8 injection attempts, in six languages.</li>
+    <li><strong>Judge calibration</strong>: 20 pairs of summaries with known answers (unchanged, or with a changed date,
+      amount or obligation).</li>
+  </ul>
+
+  <h3>11.2 The most important metric</h3>
+  <p class="callout"><strong>Unsafe verified facts:</strong> the number of dates or amounts that show as "verified" but are
+  not in the letter. The gate requires <strong>0</strong>. All other metrics can change; this metric cannot.</p>
+
+  <h3>11.3 Fault injection ("chaos")</h3>
+  <p><code>ChaosProvider</code> in <code>evals/run.py</code> acts like a bad model. It moves 35 % of the dates by 1 to 7 days,
+  changes amounts by 10 % and cites wrong lines. In the last run it injected 97 errors. The grounding check stopped all of
+  them: 0 errors reached the reader as a fact. The grounding rate fell to 71 %: the reader sees "please check"
+  on the affected facts. The test <code>tests/test_eval_gate.py</code> proves that the gate really blocks a bad change: it
+  replaces the verifier with a verifier that trusts the model, and the gate fails.</p>
+
+  <h3>11.4 Results</h3>
+  [[results_chart]]
+  <table class="small">
+    <tr><th>Live measurement (Mistral, 27 November 2026)</th><th>Value</th><th>Gate</th></tr>
+    <tr><td>Unsafe verified dates / amounts</td><td>0 / 0</td><td>max 0</td></tr>
+    <tr><td>Letters where the model failed and rules were used</td><td>0</td><td>max 0</td></tr>
+    <tr><td>Letter date accuracy / relative deadline recall</td><td>99.3 % / 97.6 %</td><td>min 97 % / –</td></tr>
+    <tr><td>Normal questions refused by mistake</td><td>2.9 % (1 of 34)</td><td>max 10 %</td></tr>
+    <tr><td>Advice requests caught: rules only / rules and model</td><td>85.2 % / 100 %</td><td>min 95 %</td></tr>
+    <tr><td>Translation faithfulness (judge accuracy 95 %)</td><td>de 0.95 · tr 0.95 · ar 0.975 · uk 0.975 · ru 0.95</td><td>min 0.80 to enable</td></tr>
+    <tr><td>Translations with one sentence per English sentence</td><td>100 %</td><td>min 95 %</td></tr>
+    <tr><td>Key points in the summary (5 hand-written letters)</td><td>100 %; earlier runs 89.5 % to 94.7 %</td><td>min 80 %</td></tr>
+    <tr><td>Retrieval: a relevant passage in the top 4</td><td>99.2 %</td><td>min 85 %</td></tr>
+    <tr><td>Letter type on unseen layouts (leave one family out)</td><td>99.1 %; calibration error 0.34 → 0.003</td><td>–</td></tr>
+    <tr><td>Cost and time of the live run</td><td>532 model calls, 0.12 USD, 14 minutes</td><td>–</td></tr>
+  </table>
+
+  <h3>11.5 How translation quality is checked</h3>
+  <p>The system translates each summary back into English. A second model call (the <em>judge</em>) compares it with the
+  English summary and gives a score from 1 to 5. A judge can also be wrong, so it is tested first: it must sort the 20
+  calibration pairs correctly. It scored 95 %. Only then do its scores count. A language with a score of 0.80 or more is
+  <em>enabled</em>; otherwise the app shows it as "beta". The command <code>--update-languages</code> writes the scores to
+  <code>languages.yaml</code>. Today all six languages are enabled.</p>
+  <p>The judge also gives reasons for low scores. These reasons found two defects. First, the number check dropped correct
+  sentences with "1 092,50" (a space as thousands separator). Second, the back-translation chose "recalculate" for the Ukrainian
+  word "перерахувати", which also means "transfer money". Both are fixed.</p>
+
+  <h3>11.6 Real and sample documents</h3>
+  <p>31 public documents were read with Apple Vision OCR (<code>tools/review/ocr.swift</code>, the same OCR as the iOS app)
+  and run through the live pipeline (<code>backend/scripts/review_letters.py</code>). The documents were official sample notices,
+  real letters from authorities that were published with redactions, job centre publications, landlord sample letters and blank
+  court forms. A person checked every result. The documents are not in the repository (copyright and personal data).</p>
+  <table class="small">
+    <tr><th>Finding</th><th>Fix</th></tr>
+    <tr><td>A fine notice, a hearing form and a court form were classified as "benefits"</td><td>Court and fine vocabulary; family <code>traffic_fine</code>; retrained classifier</td></tr>
+    <tr><td>No passage for fines, so "next steps" cited tax passages</td><td>Passage 27 (§§ 56, 67, 111 OWiG; § 25 StVG)</td></tr>
+    <tr><td>A placeholder date ("bis zum TT.MM.2015") became 1 November 2015</td><td>A date that is nowhere in the letter never shows</td></tr>
+    <tr><td>The model calculated "two weeks after delivery" itself; no rule was shown</td><td>Code calculates it again with the documented rule; formal delivery gets an envelope note</td></tr>
+    <tr><td>Blank fields ("_ EUR") and percentages became 0.00 or 0.01 EUR</td><td>An amount that is nowhere in the letter is removed</td></tr>
+    <tr><td>OCR read "380,00 EUR" as "380, 00 EUR"; tax tables have no currency sign</td><td>OCR repair; the strict German money format is accepted in the cited line</td></tr>
+    <tr><td>Assessed and withheld tax showed as "to pay"</td><td>A prompt rule and a code correction</td></tr>
+    <tr><td>Guides and internal circulars got tasks for the reader</td><td>Prompt rule (<code>extract-v5</code>, <code>explain-v6</code>); the rules fallback ignores internal circulars</td></tr>
+    <tr><td>Amounts like "1 092,50" in Ukrainian and Russian were removed</td><td>A space is accepted as the thousands separator</td></tr>
+  </table>
+  <p>Each fix has a test. Four new hand-written letters keep these cases in the golden set.</p>
+
+  <h3>11.7 An honest limit</h3>
+  <p>The golden set is synthetic and hand-written. It shows that the mechanisms work. It does not prove how well the system
+  works on real letters from real offices. Before a public launch, add real, consented, anonymized letters (target: 100).</p>
+</section>
+
+<section id="p12">
+  <h2><span class="num">12</span> Testing approach</h2>
+  <div class="summary">Most tests are fast unit tests of pure functions. The database tests run against a real PostgreSQL
+  as the restricted application role, so the security rules are tested exactly as they run in production. Contract tests
+  protect the clients. The AI quality gate is on top.</div>
+
+  [[test_pyramid]]
+
+  <h3>12.1 Test files and what they prove</h3>
+  <table class="small">
+    <tr><th>File</th><th>What it proves</th></tr>
+    <tr><td><code>test_german.py</code></td><td>Date and amount parsers, with property-based round trips</td></tr>
+    <tr><td><code>test_deadlines.py</code></td><td>Easter dates, holidays, month ends, the 4-day rule, the weekend and holiday shift</td></tr>
+    <tr><td><code>test_verifier.py</code></td><td>Invented, misplaced, placeholder and relative facts get the correct state; receipt forms; assessed tax</td></tr>
+    <tr><td><code>test_rules.py</code></td><td>The rules extractor stops at a receipt form</td></tr>
+    <tr><td><code>test_pii.py</code></td><td>Identifiers and names are replaced and restored, also with OCR noise and in greetings</td></tr>
+    <tr><td><code>test_guardrail.py</code></td><td>Advice requests in six languages are caught; normal questions pass</td></tr>
+    <tr><td><code>test_classifier.py</code></td><td>The plain-Python model equals scikit-learn; accuracy on unseen seeds</td></tr>
+    <tr><td><code>test_retriever.py</code></td><td>The correct passage ranks first; a broken embedding service does not break search</td></tr>
+    <tr><td><code>test_gateway.py</code></td><td>Retries, fallback, schema repair, budgets, the cost ledger (with a scripted fake provider)</td></tr>
+    <tr><td><code>test_schema.py</code></td><td>The JSON schemas sent to models are strict</td></tr>
+    <tr><td><code>test_pipeline.py</code></td><td>The full pipeline, degraded mode, translation and its fallback; the model never sees the name of the recipient</td></tr>
+    <tr><td><code>test_crypto.py</code>, <code>test_auth.py</code>, <code>test_appstore.py</code></td><td>Encryption, token checks, the App Store signature chain (with a certificate chain made in the test)</td></tr>
+    <tr><td><code>test_identity.py</code>, <code>test_secrets.py</code></td><td>Cognito user deletion; secrets from Parameter Store</td></tr>
+    <tr><td><code>test_rls.py</code></td><td>20 isolation rules, as the real application role</td></tr>
+    <tr><td><code>test_api.py</code></td><td>HTTP flows: life cycle, 404 for other users, idempotency, quota, guardrail, sharing, deletion, Stripe, origin check</td></tr>
+    <tr><td><code>test_contract_fixtures.py</code></td><td>The JSON fixtures that the Swift tests decode still agree with the API</td></tr>
+    <tr><td><code>test_eval_gate.py</code></td><td>The release gate blocks a weaker verifier</td></tr>
+  </table>
+
+  <h3>12.2 How the database tests work</h3>
+  <p><code>tests/conftest.py</code> makes a new, empty database for each test session, applies the migrations, and
+  connects as <code>letterlens_app</code>. In CI, PostgreSQL runs as a service container. On a Mac, <code>docker compose up</code> starts it.</p>
+
+  <h3>12.3 Test doubles instead of network calls</h3>
+  <p>No test calls a real model. <code>FakeProvider</code> answers the same way each time. <code>ScriptedProvider</code> (in
+  <code>test_gateway.py</code>) returns a planned sequence of answers and errors to test the retry paths.</p>
+  <p class="ios"><strong>iOS analogy:</strong> a <code>URLProtocol</code> stub that returns prepared responses, or a mock
+  that conforms to a protocol and goes into a view model.</p>
+
+  <h3>12.4 Static checks</h3>
+  <p>Python: <code>ruff</code> (lint and format) and <code>mypy --strict</code> (every function has types, like Swift).
+  TypeScript: <code>eslint</code> and <code>tsc --noEmit</code> in strict mode. Infrastructure: cdk-nag security rules.</p>
+
+  <h3>12.5 Commands</h3>
+  <table class="small">
+    <tr><th>Command</th><th>Scope</th></tr>
+    <tr><td><code>make lint</code></td><td>ruff, mypy, eslint, tsc</td></tr>
+    <tr><td><code>make test</code></td><td>176 backend tests (with RLS isolation), infra assertions, web tests</td></tr>
+    <tr><td><code>make eval</code></td><td>Offline gate and fault-injection gate</td></tr>
+    <tr><td><code>cd ios/Packages/LetterLensCore &amp;&amp; swift test</code></td><td>Swift core and API contract tests</td></tr>
+    <tr><td><code>ios/scripts/typecheck.sh</code></td><td>Compiles the iOS app against the simulator SDK, without a simulator</td></tr>
+  </table>
+</section>

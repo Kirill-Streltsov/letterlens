@@ -1,0 +1,260 @@
+<section id="p4">
+  <h2><span class="num">4</span> Architecture</h2>
+  <div class="summary">Two clients (iOS and web) read the letter on the device and send only text. One API on AWS Lambda
+  stores the letter encrypted and starts a background workflow. The workflow uses a small local model, the Mistral
+  language model and plain code. PostgreSQL stores all data and decides who can see what.</div>
+
+  [[big_picture]]
+
+  <h3>4.1 Five constraints</h3>
+  <p>Five constraints decide the design. Each constraint has a direct effect.</p>
+  <table>
+    <tr><th>Constraint</th><th>Effect on the design</th></tr>
+    <tr><td>A wrong deadline can harm a reader.</td><td>The model proposes facts. Code verifies them. A value that is not verified shows as "please check".</td></tr>
+    <tr><td>A legal assessment of an individual case is a regulated legal service (§ 2 RDG).</td><td>The product explains. A guardrail refuses individual advice and offers a counsellor.</td></tr>
+    <tr><td>Letters are among the most sensitive documents that people have.</td><td>OCR on the device, pseudonymization before the model, encryption per user, 30-day retention, processing in the EU.</td></tr>
+    <tr><td>The hosting budget is 0 €.</td><td>Serverless services with "always free" limits, a free PostgreSQL, an EU model provider with prepaid credit. Paid upgrades are documented, not necessary.</td></tr>
+    <tr><td>One engineer builds and operates it.</td><td>A modular monolith: one Python package, one database, one deploy.</td></tr>
+  </table>
+
+  <h3>4.2 The parts and their tasks</h3>
+  <table>
+    <tr><th>Part</th><th>Technology</th><th>Task</th></tr>
+    <tr><td>iOS app</td><td>SwiftUI, VisionKit, Vision, StoreKit 2</td><td>Scan, read text on the device, show the result, reminders, purchases</td></tr>
+    <tr><td>Web app</td><td>Next.js (React, TypeScript), static files</td><td>The same reader flow in a browser; own sign-in screens; the counsellor case inbox</td></tr>
+    <tr><td>CloudFront</td><td>AWS content delivery network</td><td>One address for the web files and the API; HTTPS; security headers</td></tr>
+    <tr><td>API</td><td>Python 3.13, FastAPI, on Lambda</td><td>Authentication, quotas, letters, questions, sharing, billing</td></tr>
+    <tr><td>Pipeline</td><td>AWS Step Functions and a worker Lambda</td><td>Classify, extract, verify, retrieve, explain, translate: each step with retries</td></tr>
+    <tr><td>Database</td><td>PostgreSQL 17 on Neon (Frankfurt)</td><td>All data, encrypted per user; row-level security isolates users and services</td></tr>
+    <tr><td>Language model</td><td>Mistral (EU), behind a gateway</td><td>Extraction, explanation, translation, question answers</td></tr>
+    <tr><td>Identity</td><td>Amazon Cognito</td><td>Sign-up, sign-in, tokens; groups for counsellors and administrators</td></tr>
+  </table>
+
+  <h3>4.3 Why "a modular monolith on serverless"</h3>
+  <p>The backend is one Python package with clear modules. It runs as Lambda functions. There are no microservices.
+  One engineer operates the product, and one database and one deploy are easier to understand and to test.
+  A serverless function costs nothing when nobody uses it. This keeps the hosting inside the free limits.</p>
+  <p class="ios"><strong>iOS analogy:</strong> one app target with well-separated Swift packages, instead of several apps
+  that talk to each other.</p>
+  <p>The same pipeline steps run in two ways. In production, AWS Step Functions calls each step in a separate Lambda
+  call. In tests and local development, one Python process calls all steps. The steps do not know the difference.</p>
+
+  <h3>4.4 Where the code is</h3>
+  <table>
+    <tr><th>Folder</th><th>Content</th><th>Size</th></tr>
+    <tr><td><code>backend/src/letterlens/</code></td><td>The Python application</td><td>7,900 lines</td></tr>
+    <tr><td><code>backend/tests/</code>, <code>backend/evals/</code></td><td>Tests and the evaluation suite</td><td>3,200 lines</td></tr>
+    <tr><td><code>backend/corpus/</code></td><td>27 explanation passages with sources</td><td>27 Markdown files</td></tr>
+    <tr><td><code>backend/migrations/</code></td><td>Database schema and security rules</td><td>2 SQL files</td></tr>
+    <tr><td><code>web/src/</code></td><td>Web app</td><td>5,300 lines</td></tr>
+    <tr><td><code>ios/</code></td><td>iOS app and the <code>LetterLensCore</code> package</td><td>3,500 lines</td></tr>
+    <tr><td><code>infra/</code></td><td>AWS infrastructure as code (CDK, Python)</td><td>930 lines</td></tr>
+    <tr><td><code>contracts/</code></td><td>OpenAPI description and real API responses for client tests</td><td></td></tr>
+    <tr><td><code>tools/review/</code></td><td>Apple Vision OCR for the review of real documents</td><td></td></tr>
+    <tr><td><code>docs/</code></td><td>Decision records, threat model, runbook, deployment guide, this guide</td><td></td></tr>
+  </table>
+</section>
+
+<section id="p5">
+  <h2><span class="num">5</span> The tech stack, layer by layer</h2>
+  <div class="summary">Each technology in LetterLens has one task and one reason. Most choices follow from two
+  constraints: the budget is 0 €, and one engineer operates everything. The tables give the technology, its task in
+  LetterLens, and the reason for the choice.</div>
+
+  <h3>5.1 iOS app</h3>
+  <table class="small">
+    <tr><th>Technology</th><th>Task</th><th>Reason</th></tr>
+    <tr><td>Swift, SwiftUI, iOS 17+</td><td>All screens</td><td>Declarative UI; iOS 17 gives the Observation framework</td></tr>
+    <tr><td>Observation (<code>@Observable</code>)</td><td><code>AppModel</code>: app phase, profile, languages, errors</td><td>Less code than <code>ObservableObject</code>; views update only for the properties that they read</td></tr>
+    <tr><td>VisionKit (<code>VNDocumentCameraViewController</code>)</td><td>Find the page edges, correct the perspective</td><td>Free, on the device, the system scanner that people know</td></tr>
+    <tr><td>Vision (<code>VNRecognizeTextRequest</code>)</td><td>Read German text (accurate level)</td><td>Free; the photo never leaves the phone (ADR-5)</td></tr>
+    <tr><td>EventKit, UserNotifications</td><td>Calendar entry and a reminder 3 days before a deadline</td><td>Write-only calendar access asks for the smallest permission</td></tr>
+    <tr><td>AuthenticationServices</td><td>Sign-in with the Cognito hosted UI and PKCE</td><td>The password never goes through app code</td></tr>
+    <tr><td>Keychain (Security framework)</td><td>Tokens, "this device only"</td><td>Encrypted by iOS; not in backups to other devices</td></tr>
+    <tr><td>StoreKit 2</td><td>The Plus subscription</td><td>Signed transactions that the server can verify</td></tr>
+    <tr><td>SwiftUI <code>Canvas</code>, <code>TimelineView</code></td><td>Logo and animated illustrations</td><td>Vector drawing at every size, in light and dark mode, no image files</td></tr>
+    <tr><td>Swift package <code>LetterLensCore</code>, Swift Testing</td><td>Models, API client, logic, tests</td><td><code>swift test</code> runs on a Mac without a simulator</td></tr>
+    <tr><td>XcodeGen (<code>ios/project.yml</code>)</td><td>Generates the Xcode project</td><td>No merge conflicts in <code>project.pbxproj</code></td></tr>
+  </table>
+
+  <h3>5.2 Web app</h3>
+  <table class="small">
+    <tr><th>Technology</th><th>Task</th><th>Reason</th></tr>
+    <tr><td>Next.js 15, static export (<code>output: "export"</code>)</td><td>Pages and routing</td><td>Only static files: S3 and CloudFront serve them; no server to operate</td></tr>
+    <tr><td>React 19, TypeScript 5 (strict)</td><td>Components</td><td>Types catch errors before runtime, like Swift</td></tr>
+    <tr><td>openapi-typescript</td><td>Types from <code>contracts/openapi.json</code></td><td>The web types always agree with the API</td></tr>
+    <tr><td>tesseract.js 6 (German model)</td><td>OCR in the browser</td><td>Free; the image stays in the browser</td></tr>
+    <tr><td>pdfjs-dist 5</td><td>The text layer of digital PDFs, and page images for OCR</td><td>A digital PDF needs no OCR, so the text is exact</td></tr>
+    <tr><td>Cognito user-pool API (fetch)</td><td>Own sign-in screens (ADR-9)</td><td>The first screen looks like the product; errors in plain words</td></tr>
+    <tr><td>Vitest, Testing Library, jsdom, ESLint</td><td>Tests and lint</td><td>Fast tests without a browser</td></tr>
+  </table>
+
+  <h3>5.3 Backend</h3>
+  <table class="small">
+    <tr><th>Technology</th><th>Task</th><th>Reason</th></tr>
+    <tr><td>Python 3.13</td><td>All server code</td><td>The best ecosystem for AI and data; good type checks with mypy</td></tr>
+    <tr><td>FastAPI and Mangum</td><td>HTTP routes; Mangum connects FastAPI to Lambda</td><td>Validation and OpenAPI from the same pydantic models</td></tr>
+    <tr><td>pydantic 2, pydantic-settings</td><td>Domain types, request and response models, settings</td><td>Validation like <code>Codable</code>; one type for the schema of the model and for the API</td></tr>
+    <tr><td>psycopg 3 with a pool</td><td>PostgreSQL access</td><td>Plain SQL; no ORM that can hide the row-level security context</td></tr>
+    <tr><td>cryptography (AES-256-GCM)</td><td>Envelope encryption</td><td>An audited library; no own cryptography</td></tr>
+    <tr><td>PyJWT</td><td>Check Cognito access tokens and App Store signatures</td><td>Standard RS256 and ES256 checks</td></tr>
+    <tr><td>httpx</td><td>Calls to model providers</td><td>One small adapter for all OpenAI-compatible APIs (Mistral, Groq, Ollama, vLLM)</td></tr>
+    <tr><td>anthropic SDK</td><td>Optional provider: Claude on the Claude API or on Amazon Bedrock</td><td>A paid production profile; one setting changes the provider</td></tr>
+    <tr><td>stripe</td><td>Web subscriptions (prepared)</td><td>Signature check for webhooks</td></tr>
+    <tr><td>uv, ruff, mypy <code>--strict</code></td><td>Dependencies, lint and format, types</td><td>Locked, fast installs; every function has types</td></tr>
+    <tr><td>pytest, hypothesis</td><td>Tests, property-based tests</td><td>Hypothesis generates hundreds of dates and amounts per test</td></tr>
+    <tr><td>scikit-learn, numpy (training only)</td><td>Train the classifier offline</td><td>Not in the Lambda bundle; plain Python serves the model (ADR-7)</td></tr>
+  </table>
+
+  <h3>5.4 AI and data</h3>
+  <table class="small">
+    <tr><th>Technology</th><th>Task</th><th>Reason</th></tr>
+    <tr><td><code>mistral-small-latest</code></td><td>Extraction, the question guard, the fallback model</td><td>Fast and cheap; good at structured output</td></tr>
+    <tr><td><code>mistral-medium-latest</code></td><td>Explanations, translations, answers</td><td>Better language quality where the reader reads the text</td></tr>
+    <tr><td><code>mistral-embed</code> (optional)</td><td>Embeddings for retrieval</td><td>Ranks passages by meaning in addition to keywords</td></tr>
+    <tr><td>TF-IDF and logistic regression</td><td>Letter type</td><td>Milliseconds, free, calibrated, explainable</td></tr>
+    <tr><td>BM25 in memory</td><td>Keyword search over 27 passages</td><td>No database round trip, no vector extension</td></tr>
+    <tr><td>PostgreSQL 17 on Neon (Frankfurt)</td><td>All data</td><td>Row-level security; free plan; data stays in Frankfurt</td></tr>
+  </table>
+
+  <h3>5.5 AWS and delivery</h3>
+  <table class="small">
+    <tr><th>Technology</th><th>Task</th><th>Reason</th></tr>
+    <tr><td>CloudFront and S3</td><td>Web files, one address for web and API, security headers</td><td>Always free up to 1 TB per month</td></tr>
+    <tr><td>Lambda (arm64, Python 3.13), function URL</td><td>Four functions: API, worker, status, retention</td><td>No cost when idle; ARM is cheaper</td></tr>
+    <tr><td>Step Functions Standard</td><td>The pipeline workflow</td><td>Retries per step and an execution history</td></tr>
+    <tr><td>Cognito (Lite plan)</td><td>Accounts and tokens</td><td>Free at pilot scale; password policy, lockout, MFA</td></tr>
+    <tr><td>SSM Parameter Store</td><td>Secrets: database URL, master key, API key</td><td>Standard parameters are free</td></tr>
+    <tr><td>CloudWatch, X-Ray, SNS, AWS Budgets</td><td>Logs, 9 metrics, 6 alarms, traces, e-mail alarms</td><td>Inside the free limits</td></tr>
+    <tr><td>EventBridge</td><td>Starts the retention job every day at 03:15</td><td>Free scheduled rule</td></tr>
+    <tr><td>AWS CDK v2 (Python), cdk-nag</td><td>All AWS resources as code, with security rules</td><td>Same language as the backend; reviewed like code</td></tr>
+    <tr><td>GitHub Actions with OIDC</td><td>CI, the release gate, deploys</td><td>No stored AWS keys</td></tr>
+  </table>
+</section>
+
+<section id="p6">
+  <h2><span class="num">6</span> The life of one letter</h2>
+  <div class="summary">The upload returns at once. A background workflow then runs the pipeline steps. The app asks
+  for the status every 1.5 seconds until the status is "ready". Only three steps call the language model; the other steps are plain code.</div>
+
+  [[life_of_letter]]
+
+  <h3>6.1 Step by step</h3>
+  <ol class="steps">
+    <li><strong>On the phone.</strong> VisionKit finds the page edges. Apple Vision reads the German text.
+      <code>DocumentBuilder.build</code> (Swift) sorts the lines from top to bottom and gives each line a number, for
+      example <code>p1-l13</code> = page 1, line 13. These ids are the base of the grounding check.</li>
+    <li><strong>Upload.</strong> The app sends <code>POST /v1/letters</code> with the lines and an <code>Idempotency-Key</code>.
+      If the network sends the request two times, the server returns the first answer. It does not make a second letter.</li>
+    <li><strong>Accept.</strong> <code>LetterService.create</code> checks the rate limit (30 per minute) and the monthly quota
+      (3 letters on the free plan). Then it encrypts the letter with the key of the reader and stores it.</li>
+    <li><strong>Start.</strong> The API starts a Step Functions execution and answers <code>202 Accepted</code> at once.</li>
+    <li><strong>Pipeline.</strong> The steps run in the worker Lambda (figure 3). After each step, the worker saves the state encrypted.</li>
+    <li><strong>Ready.</strong> The status Lambda sets the status to <code>ready</code>. The app shows the result.</li>
+  </ol>
+
+  [[pipeline]]
+
+  <h3>6.2 What happens when something fails</h3>
+  <table>
+    <tr><th>Failure</th><th>Response</th></tr>
+    <tr><td>The model times out or is rate-limited</td><td>The gateway tries 3 times with longer pauses. Then it tries the fallback model.</td></tr>
+    <tr><td>All models fail, or the monthly budget is spent</td><td>A rule-based extractor and a template explanation take over. The letter is marked <em>degraded</em>, and the app shows a warning.</td></tr>
+    <tr><td>A pipeline step crashes</td><td>Step Functions tries the step two more times. Then the letter gets the status <code>failed</code>, and the reader can send it again.</td></tr>
+    <tr><td>The model returns broken JSON</td><td>The gateway asks one more time and sends the error message ("repair"). Then it uses the fallback.</td></tr>
+    <tr><td>A translation has a missing or an extra item</td><td>The step writes the explanation directly in the target language.</td></tr>
+  </table>
+</section>
+
+<section id="p7">
+  <h2><span class="num">7</span> The AI pipeline in detail</h2>
+  <div class="summary">Each step is a pure function: it reads the state, does one task, and writes the state. The model
+  writes only three things: the facts with their line ids, the English explanation, and the translations. Code checks
+  each of them before the reader sees them.</div>
+
+  <h3>7.1 Input</h3>
+  <p>The client sends a <code>LetterDocument</code>: text lines with <code>page</code>, <code>index</code>, an optional
+  bounding box and the OCR confidence. Each line has the id <code>p{page}-l{index}</code>. All facts and all summary
+  sentences refer to these ids.</p>
+
+  <h3>7.2 Classify</h3>
+  <p>A TF-IDF model with logistic regression gives the letter type: <code>tax</code>, <code>benefits</code>,
+  <code>health_insurance</code>, <code>immigration</code>, <code>landlord</code> or <code>other</code>. Below a probability
+  of 0.5, it abstains, and the type is <code>other</code>. The type selects the guidance paragraph in the extraction prompt
+  and filters the retrieval.</p>
+
+  <h3>7.3 Extract</h3>
+  <ol>
+    <li>Remove lines that look like instructions to a model (<code>neutralize_injections</code>).</li>
+    <li>Replace personal data with placeholders (<code>PiiVault</code>, chapter 8.5). The model sees <code>[TAXNO_1]</code>, not the tax number.</li>
+    <li>Call the gateway with the task <code>extract</code>, the prompt <code>extract-v5</code> and the strict schema <code>Extraction</code>.</li>
+    <li>Put the original values back into the result (<code>PiiVault.restore</code>).</li>
+    <li>If the gateway fails, use the rule-based extractor (<code>extraction/rules.py</code>) and mark the letter <code>degraded</code>.</li>
+  </ol>
+
+  <h3>7.4 Verify</h3>
+  <p>The verifier sets the trust state of each fact. Chapter 8.3 shows the code.</p>
+  <table>
+    <tr><th>Situation</th><th>State</th><th>Note for the reader</th></tr>
+    <tr><td>The cited line contains the date or the amount</td><td><code>verified</code></td><td>none</td></tr>
+    <tr><td>The value is in a different line</td><td><code>needs_check</code></td><td>"appears in the letter, but not in the quoted line"</td></tr>
+    <tr><td>The date is nowhere in the letter</td><td><code>needs_check</code>, no date</td><td>"no date for it was found in the letter". If the cited line names a period, code estimates the date with the rule.</td></tr>
+    <tr><td>The amount is nowhere in the letter</td><td>removed</td><td>The reader never sees it (for example a blank field "_ EUR" read as 0.00)</td></tr>
+    <tr><td>A date before the letter date</td><td><code>needs_check</code></td><td>"before the letter date"</td></tr>
+    <tr><td>A relative period ("within one month")</td><td><code>needs_check</code>, estimated</td><td>The rule, for example "1 month; received on …"</td></tr>
+  </table>
+
+  <h3>7.5 Retrieve</h3>
+  <p>The query contains the subject, the sender, the deadline and action texts, and the first 2,500 characters of the
+  letter. German terms such as "Widerspruch" carry most of the signal. The retriever ranks the passages with BM25 and
+  optional embeddings, fuses both rankings, filters by type, and returns up to 4 passages <code>c1</code> … <code>c4</code>.</p>
+
+  <h3>7.6 Explain</h3>
+  <p>The model writes in English (prompt <code>explain-v6</code>): a headline, the kind of letter, 3 to 10 summary
+  sentences with line ids, 1 to 4 "next steps" with passage ids, and short labels for each deadline and amount. The
+  prompt tells the model to cover five points: the decision, the conditions, the consequences, the actions and the
+  permissions. A signed receipt form is always a required action.</p>
+
+  <h3>7.7 Sanitize</h3>
+  <table>
+    <tr><th>Rule</th><th>Action</th></tr>
+    <tr><td>A sentence sounds like individual legal advice</td><td>Remove it</td></tr>
+    <tr><td>A sentence contains a number that is not in the letter or in the verified facts</td><td>Remove it</td></tr>
+    <tr><td>A next step has no valid passage id</td><td>Remove it</td></tr>
+    <tr><td>A line id does not exist</td><td>Remove the id</td></tr>
+    <tr><td>A URL</td><td>Remove it</td></tr>
+  </table>
+  <p>The log records only the counts of removed items (<code>explanation sanitized</code>), never the text.</p>
+
+  <h3>7.8 Translate</h3>
+  [[translation]]
+  <p>The other languages translate the checked English explanation (prompt <code>translate-explanation-v1</code>).
+  The model returns each summary sentence and each next step with its index, and each label with its fact id. Code puts
+  the line ids, the passage ids and the citations back from the English source. Before the call,
+  <code>PiiVault.reapply</code> hides the names again with the same placeholders.</p>
+  <p><strong>Why this design?</strong> Before, the model wrote each language directly from the letter. The languages then
+  differed in content, and the faithfulness score of Ukrainian fell to 0.75. With translation, all languages score 0.95
+  to 0.975, and 100 % of the translations keep one sentence for each English sentence.</p>
+  <p class="ios"><strong>iOS analogy:</strong> one source of truth (the checked English model) and localized views of it,
+  instead of five separate models that can drift apart.</p>
+
+  <h3>7.9 Questions about a letter</h3>
+  <p><code>POST /v1/letters/{id}/questions</code> runs three layers. First, rules in six languages find advice requests and
+  injection. Second, a model call (task <code>guard</code>) sorts the question into general information, individual legal
+  advice, prompt injection or off topic. If this call fails, the API refuses (it fails closed). Third, the model answers
+  (task <code>answer</code>), and code checks the answer for advice phrases and for numbers that are not in the letter.</p>
+
+  <h3>7.10 Prompt versions</h3>
+  <table>
+    <tr><th>Prompt</th><th>Version</th><th>Task</th></tr>
+    <tr><td>Extraction</td><td><code>extract-v5</code></td><td>Facts with line ids; placeholders, audience and direction rules</td></tr>
+    <tr><td>Explanation</td><td><code>explain-v6</code></td><td>English explanation with citations</td></tr>
+    <tr><td>Translation</td><td><code>translate-explanation-v1</code></td><td>Item-by-item translation of the checked explanation</td></tr>
+    <tr><td>Question guard</td><td><code>guard-v2</code></td><td>Sorts a question into four categories</td></tr>
+    <tr><td>Answer</td><td><code>answer-v2</code></td><td>Answers a general question about the letter</td></tr>
+    <tr><td>Reply translation</td><td><code>translate-reply-v1</code></td><td>Messages between reader and counsellor</td></tr>
+    <tr><td>Back-translation (evaluation)</td><td><code>backtranslate-v2</code></td><td>Translates back to English for the judge</td></tr>
+  </table>
+  <p>Rule: change a prompt and its version string in the same commit. Then run the live evaluation. All gates must pass.
+  The cost ledger and every report record the version.</p>
+</section>
