@@ -23,19 +23,19 @@ Reports: [live](backend/evals/reports/live.md), [offline](backend/evals/reports/
 
 | Metric | Live | Rules |
 |---|---|---|
-| Dates or amounts shown as "verified" that are not in the letter | **0** | **0** (also 0 of 91 injected hallucinations) |
-| Explicit deadline recall / precision | 99.0 % / 100 % | 98.0 % / 94.1 % |
+| Dates or amounts shown as "verified" that are not in the letter | **0** | **0** (also 0 of 97 injected hallucinations) |
+| Explicit deadline recall / precision | 99.0 % / 100 % | 98.0 % / 94.2 % |
 | Letters with every deadline exactly right | 99.3 % | 94.2 % |
-| Letter date accuracy / amount recall | 99.3 % / 98.8 % | 99.3 % / 98.2 % |
-| Amount direction (to pay / to receive) | 98.8 % | 93.4 % |
-| Legal-advice requests caught / normal questions blocked | 100 % / 0 % | 85.2 % / 0 % |
+| Letter date accuracy / amount recall | 99.3 % / 97.6 % | 99.3 % / 98.2 % |
+| Amount direction (to pay / to receive) | 99.4 % | 93.4 % |
+| Legal-advice requests caught / normal questions blocked | 100 % / 2.9 % (1 of 34) | 85.2 % / 0 % |
 | Prompt-injection attempts caught | 100 % | 100 % |
-| Translation faithfulness (judge, per language) | 0.925 to 1.00; judge accuracy 95 % | – |
+| Translation faithfulness (judge, per language) | 0.95 to 0.975; judge accuracy 95 % | – |
 | Translations with one sentence per English sentence | 100 % | – |
-| Key points in the summary (5 hand-written letters, 19 points) | 89.5 % to 94.7 % (three runs); judge false positives 0 % | – |
+| Key points in the summary (5 hand-written letters, 19 points) | 100 % in the last run (earlier runs 89.5 % to 94.7 %); judge false positives 0 % | – |
 | Real and sample documents reviewed by a person | 31 (findings and fixes: [evaluation.md, section 8](docs/ai/evaluation.md)) | – |
-| Retrieval recall@4 | 99.1 % | 99.1 % |
-| Letter type on unseen layouts (leave-one-template-out) | 97.8 %, calibration error 0.32 → 0.01 | same model |
+| Retrieval recall@4 | 99.2 % | 99.2 % |
+| Letter type on unseen layouts (leave-one-template-out) | 99.1 %, calibration error 0.34 → 0.003 | same model |
 
 The test letters are synthetic and hand-written. Real, consented letters must be
 added before these numbers describe real use; see [docs/ai/evaluation.md](docs/ai/evaluation.md).
@@ -94,7 +94,7 @@ More: [docs/development.md](docs/development.md).
 
 ```bash
 make lint   # ruff, mypy --strict, eslint, tsc
-make test   # 173 backend tests (with RLS isolation), infra assertions, web tests
+make test   # 176 backend tests (with RLS isolation), infra assertions, web tests
 make eval   # offline gate and fault-injection gate
 cd ios/Packages/LetterLensCore && swift test   # Swift core and API contract tests
 ```

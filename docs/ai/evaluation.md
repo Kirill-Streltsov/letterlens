@@ -7,7 +7,7 @@ gate (`backend/evals/thresholds.yaml`) blocks a change that fails a threshold.
 
 | Set | Size | Source | Labels |
 |---|---|---|---|
-| Golden letters | 126 | 95 synthetic letters (19 template families, unseen seeds), 19 OCR-noise variants, 12 hand-written letters with layouts that no template uses (one is a prompt-injection letter) | sender, letter date, references, every deadline (explicit or relative), every amount with direction |
+| Golden letters | 137 | 120 synthetic letters (20 template families, unseen seeds, some with OCR noise), 17 hand-written letters with layouts that no template uses (one is a prompt-injection letter) | sender, letter date, references, every deadline (explicit or relative), every amount with direction |
 | Red-team questions | 96 | 54 requests for individual legal advice and 34 general questions in English, German, Turkish, Arabic, Ukrainian and Russian; 8 injection attempts | advice / benign / injection |
 | Retrieval labels | 114 letters | expected corpus passages per letter family (`EXPECTED_PASSAGES` in `evals/run.py`) | relevant passage ids |
 | Judge calibration | 20 pairs | controlled perturbations of reference summaries (changed date, amount, obligation) | faithful / unfaithful |
@@ -47,20 +47,20 @@ Offline profile (rules baseline). Report: `backend/evals/reports/offline.md`.
 | Metric | Value | Gate |
 |---|---|---|
 | unsafe verified dates / amounts | 0 / 0 | max 0 |
-| explicit deadline recall / precision | 0.980 / 0.941 | min 0.85 / – |
-| letter date accuracy | 1.000 | min 0.95 |
-| amount recall / direction accuracy | 1.000 / 0.934 | min 0.90 / – |
-| classification, synthetic / hand-written | 1.000 / 0.917 | min 0.95 / 0.75 |
-| classification ECE | 0.007 | max 0.10 |
-| retrieval recall@4 | 0.991 | min 0.85 |
+| explicit deadline recall / precision | 0.980 / 0.942 | min 0.85 / – |
+| letter date accuracy | 0.993 | min 0.95 |
+| amount recall / direction accuracy | 0.982 / 0.934 | min 0.90 / – |
+| classification, synthetic / hand-written | 1.000 / 1.000 | min 0.95 / 0.75 |
+| classification ECE | 0.000 | max 0.10 |
+| retrieval recall@4 | 0.992 | min 0.85 |
 | advice catch rate / false positives | 0.852 / 0.000 | min 0.85 / max 0.05 |
 | injection catch rate | 1.000 | min 0.90 |
 
-Chaos profile: 91 errors injected, **0** shown as verified. The grounding rate
-drops to 0.62, so the reader sees "please check" on the affected facts.
+Chaos profile: 97 errors injected, **0** shown as verified. The grounding rate
+drops to 0.71, so the reader sees "please check" on the affected facts.
 
 Classifier training report (`backend/evals/reports/classifier.json`):
-leave-one-template-out accuracy 0.978; ECE 0.322 before and 0.010 after temperature scaling.
+leave-one-template-out accuracy 0.991; ECE 0.342 before and 0.003 after temperature scaling.
 
 Live profile (Mistral: `mistral-small-latest` for extraction and the guard,
 `mistral-medium-latest` for explanations and translations; prompts `extract-v5`, `explain-v6`, `translate-explanation-v1`; 27 November 2026; 532 calls; 0.12 USD
@@ -72,13 +72,13 @@ list price; report `backend/evals/reports/live.md`):
 | degraded letters (model failed, rules used) | 0 | max 0 |
 | explicit deadline recall / precision | 0.990 / 1.000 | min 0.95 / 0.95 |
 | letters with every deadline exact | 0.993 | – |
-| letter date accuracy / amount recall / direction | 0.993 / 0.988 / 0.988 | min 0.97 / 0.95 / 0.90 |
-| advice catch rate (rules + model) / false positives | 1.000 / 0.000 | min 0.95 / max 0.10 |
+| letter date accuracy / amount recall / direction | 0.993 / 0.976 / 0.994 | min 0.97 / 0.95 / 0.90 |
+| advice catch rate (rules + model) / false positives | 1.000 / 0.029 | min 0.95 / max 0.10 |
 | injection catch rate | 1.000 | min 0.95 |
 | judge accuracy on the calibration set | 0.95 | min 0.90 |
-| faithfulness de / tr / ar / uk / ru | 0.975 / 0.925 / 1.00 / 0.975 / 0.95 | min 0.80 to enable |
+| faithfulness de / tr / ar / uk / ru | 0.95 / 0.95 / 0.975 / 0.975 / 0.95 | min 0.80 to enable |
 | translations aligned (one sentence per English sentence) | 1.000 | min 0.95 |
-| key-point recall / judge false positives | 0.895 / 0.000 | min 0.80 / max 0.10 |
+| key-point recall / judge false positives | 1.000 / 0.000 | min 0.80 / max 0.10 |
 
 History of the translation results:
 
@@ -100,9 +100,9 @@ defects, both fixed:
 - The back-translation chose "recalculate" for Ukrainian "перерахувати" (also
   "transfer money"). `backtranslate-v2` chooses the meaning that fits official letters.
 
-Key-point recall varies between runs of the same prompt (0.895, 0.947 and 0.895): the English
+Key-point recall varies between runs (0.895, 0.947 and 0.895 in earlier runs, 1.000 in the last run): the English
 summary sometimes leaves out the general work permission in the study letter.
-Other weaknesses: in earlier runs the model guard refused about 3 % of normal questions (0 % in the last run).
+Other weaknesses: the model guard refuses about 3 % of normal questions (1 of 34 in the last run; 0 in the run before).
 
 ## 5. The gate blocks bad changes
 

@@ -98,7 +98,7 @@ and the app offers "Talk to a counsellor".
 ## 4. Prompts
 
 Prompts live in `llm/prompts.py`. Each prompt has a version string
-(`extract-v4`, `explain-v5`, `translate-explanation-v1`, `answer-v2`, `guard-v2`, `backtranslate-v2`). The cost ledger and every
+(`extract-v5`, `explain-v6`, `translate-explanation-v1`, `answer-v2`, `guard-v2`, `backtranslate-v2`). The cost ledger and every
 evaluation report record the version. Rules for prompt changes:
 
 1. Change the prompt and its version string in the same commit.

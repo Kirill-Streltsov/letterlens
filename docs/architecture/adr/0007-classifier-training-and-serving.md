@@ -21,6 +21,6 @@ explainable model is enough. numpy, scipy and scikit-learn would add about
 
 ## Consequences
 
-- Leave-one-template-out accuracy rose from 50 % (templates only) to 97.8 %. Calibration error fell from 0.32 to 0.01.
+- Leave-one-template-out accuracy rose from 50 % (templates only) to 97.8 %, and to 99.1 % after fine and court vocabulary was added (27 November 2026). Calibration error fell from 0.34 to 0.003.
 - The Lambda bundle stays at 84 MB.
 - The training data is synthetic. Real, consented letters must be added before the numbers are representative.

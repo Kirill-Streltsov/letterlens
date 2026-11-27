@@ -6,7 +6,7 @@ Status: accepted · Date: 2026-11-16
 
 Readers own letters. Counselling services see only letters that a reader shared
 with them, and only while the consent is active. A bug in one query must not leak
-data. The explanation corpus is small (24 passages) and curated by hand.
+data. The explanation corpus is small (27 passages) and curated by hand.
 
 ## Decision
 
@@ -21,9 +21,9 @@ data. The explanation corpus is small (24 passages) and curated by hand.
 
 ## Consequences
 
-- Isolation is tested as the real application role (`tests/test_rls.py`, 19 tests).
+- Isolation is tested as the real application role (`tests/test_rls.py`, 20 tests).
 - A counsellor can read the owner's wrapped data key only through an active share; without the KEK, the wrapped key is useless.
-- Retrieval needs no database round trip and no vector extension. At 24 passages, BM25 + type filter reaches recall@4 of 99 %.
+- Retrieval needs no database round trip and no vector extension. At 27 passages, BM25 + type filter reaches recall@4 of 99 %.
 - Corpus changes go through code review, which is the right control for content with legal weight.
 
 ## When to change

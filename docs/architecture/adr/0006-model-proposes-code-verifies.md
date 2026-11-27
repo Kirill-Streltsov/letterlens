@@ -23,6 +23,6 @@ tries to instruct the model.
 
 ## Consequences
 
-- The safety property is measurable: "unsafe verified facts" must be 0. The release gate checks it, also with 91 injected hallucinations.
-- Some correct values show as "please check" (precision over recall). The verified share is 94 % on the golden set.
+- The safety property is measurable: "unsafe verified facts" must be 0. The release gate checks it, also with 97 injected hallucinations.
+- Some correct values show as "please check" (precision over recall). With the rules baseline, 94 % of the dates on the golden set are verified; with the live model, 100 %.
 - The deadline estimate covers only nationwide holidays. Regional holidays are a reason the state stays `needs_check`.
