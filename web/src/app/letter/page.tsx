@@ -179,12 +179,21 @@ function Letter({ me }: { me: Me }) {
   const id = useSearchParams().get("id") ?? "";
   const router = useRouter();
   const [language, setLanguage] = useState(me.preferred_language);
+  // Until the reader picks a language, show the language of the explanation that exists.
+  const userPicked = useRef(false);
   const [letter, setLetter] = useState<LetterView | null>(null);
   const [languages, setLanguages] = useState<Language[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(() => {
-    api.letter(id, language).then(setLetter).catch((e: Error) => setError(e.message));
+    api
+      .letter(id, language)
+      .then((loaded) => {
+        setLetter(loaded);
+        const shown = loaded.explanation?.language;
+        if (!userPicked.current && shown && shown !== language) setLanguage(shown);
+      })
+      .catch((e: Error) => setError(e.message));
   }, [id, language]);
 
   useEffect(() => {
@@ -202,6 +211,7 @@ function Letter({ me }: { me: Me }) {
   if (!letter) return <div className="skeleton" style={{ height: 240, marginTop: 32 }} />;
 
   const switchLanguage = (code: string) => {
+    userPicked.current = true;
     setLanguage(code);
     if (!letter.explanation_languages.includes(code)) {
       api.explain(letter.id, code).then(() => setLetter({ ...letter, status: "processing" }));

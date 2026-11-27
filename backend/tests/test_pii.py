@@ -68,3 +68,39 @@ def test_restore_nested() -> None:
 
 def test_scrub_for_logs() -> None:
     assert "4711" not in scrub_for_logs("Kundennummer: 4711-0815 Frau Müller")
+
+
+def test_name_with_ocr_noise_and_greeting_is_hidden_everywhere() -> None:
+    # Regression from a real letter: OCR appended "c 030" to the name line, and the
+    # name appeared again in the greeting. Both must be replaced.
+    vault = PiiVault()
+    redacted = vault.redact_document(
+        doc(
+            "Stadt Dortmund 38/2-2 44122 Dortmund",
+            "Max Mustermann c 030",
+            "Saarbrücker Straße 21",
+            "44135 Dortmund Herr Beispiel",
+            "Guten Tag Max Mustermann, |",
+            "Sie haben die Verlängerung beantragt. Herr Mustermann, bitte beachten Sie:",
+        )
+    ).plain_text()
+    assert "Mustermann" not in redacted
+    assert "Saarbrücker" not in redacted
+    assert "Stadt Dortmund" in redacted  # the sender stays
+    assert vault.restore("[NAME_1]") == "Max Mustermann"
+
+
+def test_greeting_without_address_block() -> None:
+    vault = PiiVault()
+    redacted = vault.redact_document(
+        doc("Sehr geehrter Herr Demir,", "Ihr Antrag, Herr Demir, ist eingegangen.")
+    ).plain_text()
+    assert "Demir" not in redacted
+
+
+def test_generic_greeting_is_not_a_name() -> None:
+    vault = PiiVault()
+    redacted = vault.redact_document(
+        doc("Sehr geehrte Damen und Herren,", "Mit freundlichen Grüßen")
+    ).plain_text()
+    assert redacted == "Sehr geehrte Damen und Herren,\nMit freundlichen Grüßen"

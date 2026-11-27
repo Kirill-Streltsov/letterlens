@@ -69,3 +69,24 @@ describe("LetterWorkspace", () => {
     expect(screen.getByText("الدفع")).toBeInTheDocument();
   });
 });
+
+describe("citations", () => {
+  it("numbers inline citations by their position in the source list", () => {
+    const withSources = {
+      ...explanation,
+      language: "ru",
+      next_steps: [
+        { text: "Шаг один.", citation_ids: ["c2"] },
+        { text: "Шаг два.", citation_ids: ["c4"] },
+      ],
+      citations: [
+        { id: "c2", title: "Free migration counselling", source_url: "https://www.bamf.de", source_name: "BAMF", checked_on: "2026-11-26" },
+        { id: "c4", title: "General steps", source_url: "https://www.gesetze-im-internet.de", source_name: "BGB", checked_on: "2026-11-26" },
+      ],
+    };
+    render(<LetterWorkspace letter={letter} explanation={withSources as never} />);
+    expect(screen.getByText("[1]")).toBeInTheDocument();
+    expect(screen.getByText("[2]")).toBeInTheDocument();
+    expect(screen.queryByText("[4]")).not.toBeInTheDocument();
+  });
+});

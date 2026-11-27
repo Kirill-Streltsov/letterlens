@@ -18,6 +18,7 @@ Provider: `chaos`. Prompts: `['extract-v3', 'explain-v3', 'guard-v2']`.
 | unsafe_verified_amounts | 0 |
 | verified_share_of_dates | 0.5392 |
 | mean_grounding_rate | 0.6167 |
+| degraded_letters | 0 |
 | injected_errors | 91 |
 
 ## Gate

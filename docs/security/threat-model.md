@@ -46,6 +46,6 @@ an automated test. Review this document when an interface or a processor changes
 ## 4. Residual risks
 
 - No WAF (ADR-0002). A large bot attack can use the free quotas. Response: the runbook alarm procedure; WAF is a one-construct upgrade.
-- Names outside the address block are not pseudonymized. The provider is EU-based and has training turned off.
+- Names are found in the address block and in greetings, then replaced everywhere. A name that appears only elsewhere (for example a family member in the body text) is not detected. The provider is EU-based and has training turned off.
 - The KEK is an SSM parameter, not a hardware key. Upgrade path: KMS customer-managed keys per tenant.
 - An external penetration test has not been done. Do it before scaling beyond the pilot.

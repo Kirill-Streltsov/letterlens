@@ -7,6 +7,9 @@ struct LetterDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var letter: LetterView?
     @State private var language = "en"
+    /// Set while the app (not the reader) changes `language`, so onChange does not start a new run.
+    @State private var syncingLanguage = false
+    @State private var userPickedLanguage = false
     @State private var highlighted: Set<String> = []
     @State private var showOriginal = false
     @State private var showShare = false
@@ -56,7 +59,11 @@ struct LetterDetailView: View {
                     .task { try? await Task.sleep(for: .seconds(2.5)); self.toast = nil }
             }
         }
-        .onChange(of: language) { _, code in Task { await switchLanguage(code) } }
+        .onChange(of: language) { _, code in
+            if syncingLanguage { syncingLanguage = false; return }
+            userPickedLanguage = true
+            Task { await switchLanguage(code) }
+        }
         .task {
             language = model.me?.preferredLanguage ?? "en"
             await load()
@@ -128,7 +135,15 @@ struct LetterDetailView: View {
     }
 
     private func load() async {
-        do { letter = try await model.api.letter(id: letterId, language: language) } catch {
+        do {
+            let loaded = try await model.api.letter(id: letterId, language: language)
+            letter = loaded
+            // Until the reader picks a language, show the language of the explanation that exists.
+            if !userPickedLanguage, let shown = loaded.explanation?.language, shown != language {
+                syncingLanguage = true
+                language = shown
+            }
+        } catch {
             model.error = error.localizedDescription
         }
     }
@@ -227,15 +242,20 @@ struct DeadlineCard: View {
 struct NextStepsCard: View {
     let explanation: Explanation
 
+    /// Citation number = position in the source list (not the internal passage id).
+    private func number(_ id: String) -> Int? {
+        explanation.citations.firstIndex { $0.id == id }.map { $0 + 1 }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("What people usually do next").font(Theme.title(20))
             ForEach(Array(explanation.nextSteps.enumerated()), id: \.offset) { _, step in
-                Text("• \(step.text) " + step.citationIds.map { "[\($0.dropFirst())]" }.joined())
+                Text("• \(step.text) " + step.citationIds.compactMap { id in number(id).map { "[\($0)]" } }.joined())
             }
             ForEach(explanation.citations) { citation in
                 if let url = URL(string: citation.sourceUrl) {
-                    Link("[\(citation.id.dropFirst())] \(citation.title) (\(citation.sourceName))", destination: url)
+                    Link("[\(number(citation.id) ?? 0)] \(citation.title) (\(citation.sourceName))", destination: url)
                         .font(.caption)
                 }
             }

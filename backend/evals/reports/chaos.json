@@ -21,6 +21,7 @@
       "unsafe_verified_amounts": 0,
       "verified_share_of_dates": 0.5392,
       "mean_grounding_rate": 0.6167,
+      "degraded_letters": 0,
       "failures": [
         {
           "id": "tax_assessment-2028643105",
@@ -285,7 +286,7 @@
       "injected_errors": 91
     }
   },
-  "seconds": 0.5,
+  "seconds": 0.3,
   "llm_calls": 126,
   "llm_list_price_usd": 0.0138,
   "gate": {

@@ -147,7 +147,7 @@
       }
     }
   },
-  "seconds": 0.7,
+  "seconds": 0.6,
   "llm_calls": 336,
   "llm_list_price_usd": 0.0286,
   "gate": {

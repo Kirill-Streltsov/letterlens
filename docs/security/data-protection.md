@@ -32,7 +32,7 @@ If you switch the model provider to Anthropic or Bedrock, update this table.
 ## 3. Technical and organizational measures
 
 - **Data minimization:** OCR on the device; images only with consent; no e-mail in the database.
-- **Pseudonymization:** identifiers and the address block are replaced before text reaches the model (`safety/pii.py`).
+- **Pseudonymization:** identifiers, the recipient's street, and the recipient's name are replaced before text reaches the model (`safety/pii.py`). A name found in the address block or in a greeting is replaced everywhere in the letter, the surname alone too.
 - **Encryption at rest:** AES-256-GCM per user (envelope encryption); S3 server-side encryption.
 - **Encryption in transit:** TLS everywhere; HSTS at CloudFront.
 - **Access control:** RLS; consent-bound shares that expire after 30 days by default; counsellor access is audited (`case.view`).

@@ -176,11 +176,15 @@ export function LetterWorkspace({
               {explanation.next_steps.map((s, i) => (
                 <li key={i}>
                   {s.text}{" "}
-                  {s.citation_ids.map((c) => (
-                    <sup key={c}>
-                      <a href={`#${c}`}>[{c.slice(1)}]</a>
-                    </sup>
-                  ))}
+                  {s.citation_ids.map((c) => {
+                    // Number by position in the source list below, not by the internal passage id.
+                    const n = explanation.citations.findIndex((x) => x.id === c) + 1;
+                    return n > 0 ? (
+                      <sup key={c}>
+                        <a href={`#${c}`}>[{n}]</a>
+                      </sup>
+                    ) : null;
+                  })}
                 </li>
               ))}
             </ul>

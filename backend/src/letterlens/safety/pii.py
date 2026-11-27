@@ -5,7 +5,8 @@ vault puts the original values back. The vault lives only in memory for the
 duration of one pipeline step and is never stored or logged.
 
 Limitations (documented in docs/security/data-protection.md): person names
-are detected only in the address block, by heuristics.
+are found in the address block and in greetings, by heuristics; every occurrence of a
+found name is then replaced. Names that appear only elsewhere are not detected.
 """
 
 from __future__ import annotations
@@ -58,7 +59,15 @@ RULES: list[Rule] = [
 
 _POSTCODE_CITY = re.compile(r"^\d{5}\s+[A-ZÄÖÜ][\wäöüß. -]+$")
 _STREET = re.compile(r"^[A-ZÄÖÜ][\wäöüß. -]+\s\d{1,4}\s?[a-zA-Z]?$")
-_PERSON = re.compile(r"^(?:[A-ZÄÖÜÇŞİ][\w'-]+)(?:\s+[A-ZÄÖÜÇŞİ][\w'-]+){1,3}$")
+_NAME_WORD = r"[A-ZÄÖÜÇŞİ][\w'-]+"
+# The leading name words of a line; OCR often appends noise ("Kirill Streltsov c 030").
+_NAME_PREFIX = re.compile(rf"^({_NAME_WORD}(?:\s+{_NAME_WORD}){{1,3}})(?=\s|$|[,;])")
+# Names in greetings: "Guten Tag Ayşe Yılmaz,", "Sehr geehrter Herr Demir".
+_GREETING = re.compile(
+    rf"(?i:guten\s+tag|sehr\s+geehrte[rs]?|hallo|liebe[rs]?)\s+(?:(?i:frau|herrn?)\s+)?"
+    rf"({_NAME_WORD}(?:\s+{_NAME_WORD}){{0,3}})"
+)
+_NOT_NAMES = frozenset({"Damen", "Herren", "Kunde", "Kundin", "Mieter", "Mieterin", "Mitglied", "Eltern"})
 _ORG_WORDS = re.compile(
     r"(?i)finanzamt|jobcenter|\bstadt\b|\bkreis\b|gmbh|\beg\b|kasse|behörde|amt\b|service|"
     r"versicherung|aok|barmer|dak|ikk|stadtwerke|inkasso|hausverwaltung|postfach|abteilung"
@@ -96,13 +105,31 @@ class PiiVault:
 
     def redact_document(self, doc: LetterDocument) -> LetterDocument:
         texts = [line.text for line in doc.lines]
-        flags = _address_block_flags(texts)
+        address_lines, names = _address_block(texts)
+        names += [n for n in _greeting_names(texts) if n not in names]
+        name_patterns = self._name_patterns(names)
         new_lines: list[OcrLine] = []
-        for line, flag in zip(doc.lines, flags, strict=True):
-            text = line.text
-            text = self.placeholder(flag, text.strip()) if flag else self.redact_text(text)
+        for i, line in enumerate(doc.lines):
+            if i in address_lines:
+                text = self.placeholder("ADDRESS", line.text.strip())
+            else:
+                text = line.text
+                for pattern, token in name_patterns:
+                    text = pattern.sub(token, text)
+                text = self.redact_text(text)
             new_lines.append(line.model_copy(update={"text": text}))
         return doc.model_copy(update={"lines": new_lines})
+
+    def _name_patterns(self, names: list[str]) -> list[tuple[re.Pattern[str], str]]:
+        """Every found name is replaced everywhere in the letter; the surname alone too."""
+        patterns: list[tuple[re.Pattern[str], str]] = []
+        for name in sorted(names, key=len, reverse=True):
+            token = self.placeholder("NAME", name)
+            patterns.append((re.compile(rf"(?<!\w){re.escape(name)}(?!\w)"), token))
+            parts = name.split()
+            if len(parts) > 1 and len(parts[-1]) >= 4:
+                patterns.append((re.compile(rf"(?<!\w){re.escape(parts[-1])}(?!\w)"), token))
+        return patterns
 
     def restore(self, value: Any) -> Any:
         """Replace placeholders in strings, lists, dicts and pydantic models."""
@@ -134,19 +161,35 @@ def _substitute(rule: Rule, text: str, make: Callable[[str, str], str]) -> str:
     return rule.pattern.sub(repl, text)
 
 
-def _address_block_flags(texts: list[str]) -> list[str | None]:
-    """Mark the recipient name and street that stand above a postcode line."""
-    flags: list[str | None] = [None] * len(texts)
-    for i, text in enumerate(texts[:25]):
-        if not _POSTCODE_CITY.match(text.strip()) or i < 2:
+def _address_block(texts: list[str]) -> tuple[set[int], list[str]]:
+    """Find the recipient's street line and name above a postcode line.
+
+    Returns the indexes of street lines (replaced as a whole) and the names found.
+    """
+    address: set[int] = set()
+    names: list[str] = []
+    for i, text in enumerate(texts[:30]):
+        if i < 2 or not _POSTCODE_CITY.match(text.strip()):
             continue
-        street, name = texts[i - 1].strip(), texts[i - 2].strip()
+        street, name_line = texts[i - 1].strip(), texts[i - 2].strip()
         if not _STREET.match(street) or _ORG_WORDS.search(street):
             continue
-        flags[i - 1] = "ADDRESS"
-        if _PERSON.match(name) and not _ORG_WORDS.search(name):
-            flags[i - 2] = "NAME"
-    return flags
+        address.add(i - 1)
+        match = _NAME_PREFIX.match(name_line)
+        if match and not _ORG_WORDS.search(name_line) and match[1] not in names:
+            names.append(match[1])
+    return address, names
+
+
+def _greeting_names(texts: list[str]) -> list[str]:
+    found: list[str] = []
+    for text in texts[:60]:
+        for match in _GREETING.finditer(text):
+            words = [w for w in match[1].split() if w not in _NOT_NAMES]
+            name = " ".join(words)
+            if len(name) >= 3 and name not in found and not _ORG_WORDS.search(name):
+                found.append(name)
+    return found
 
 
 def scrub_for_logs(text: str, limit: int = 200) -> str:
