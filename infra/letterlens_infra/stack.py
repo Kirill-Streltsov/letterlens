@@ -163,8 +163,11 @@ class LetterLensStack(Stack):
             fn.add_to_role_policy(
                 iam.PolicyStatement(
                     actions=["ssm:GetParametersByPath"],
+                    # GetParametersByPath is authorized against the path as requested, with the
+                    # trailing slash ("parameter/letterlens/prod/"); list both spellings.
                     resources=[
-                        f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter{ssm_prefix.rstrip('/')}"
+                        f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter{ssm_prefix.rstrip('/')}",
+                        f"arn:aws:ssm:{Aws.REGION}:{Aws.ACCOUNT_ID}:parameter{ssm_prefix}",
                     ],
                 )
             )
