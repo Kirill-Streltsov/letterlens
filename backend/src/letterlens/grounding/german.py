@@ -49,7 +49,14 @@ def normalize(text: str) -> str:
     """Normalize Unicode, whitespace and common OCR quirks for matching."""
     text = unicodedata.normalize("NFKC", text)
     text = text.replace(" ", " ").replace(" ", " ")
-    return re.sub(r"\s+", " ", text).strip()
+    text = re.sub(r"\s+", " ", text).strip()
+    return _OCR_DECIMAL_SPACE.sub(r"\1,\2", text)
+
+
+# OCR often reads "380,00 EUR" as "380, 00 EUR".
+_OCR_DECIMAL_SPACE = re.compile(r"(\d),\s(\d{2})(?=\s?(?:€|EUR|Euro)\b)", re.IGNORECASE)
+# A German money number without a currency marker, as in tax tables: 52.112,00 | 651,81
+_BARE_MONEY = re.compile(r"(?<![\d.,])\d{1,3}(?:\.\d{3})*,\d{2}(?![\d,])(?!\s?%)")
 
 
 def _two_digit_year(year: int) -> int:
@@ -98,6 +105,20 @@ def find_amounts(text: str) -> list[Decimal]:
         if value is not None:
             amounts.append(value)
     return amounts
+
+
+def find_money_numbers(text: str) -> list[Decimal]:
+    """Amounts with a currency marker, plus bare numbers in strict German money format.
+
+    Tables in tax assessments put "EUR" only in the column head, so "52.112,00" stands alone.
+    Two decimals after a comma are required, so dates, counts and percentages do not match.
+    """
+    found = find_amounts(text)
+    for match in _BARE_MONEY.finditer(normalize(text)):
+        value = parse_amount(match.group(0))
+        if value is not None:
+            found.append(value)
+    return found
 
 
 def parse_decimal_value(value: str) -> Decimal | None:

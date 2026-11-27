@@ -13,7 +13,7 @@ languages:
     name: Turkish
     native_name: Türkçe
     status: enabled
-    faithfulness: 0.95
+    faithfulness: 0.925
   ar:
     name: Arabic
     native_name: العربية
@@ -24,7 +24,7 @@ languages:
     name: Ukrainian
     native_name: Українська
     status: enabled
-    faithfulness: 1.0
+    faithfulness: 0.975
   ru:
     name: Russian
     native_name: Русский

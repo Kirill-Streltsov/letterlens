@@ -71,6 +71,7 @@ EXPECTED_PASSAGES: dict[str, set[str]] = {
     "landlord_reminder": {"rent-arrears"},
     "broadcast_fee": {"broadcast-fee"},
     "collection_agency": {"debt-collection"},
+    "traffic_fine": {"traffic-fine"},
     "handwritten-court-order": {"court-payment-order"},
     "handwritten-termination": {"tenancy-termination"},
     "handwritten-jobcenter-change": {"benefits-repayment", "benefits-objection"},
@@ -78,6 +79,8 @@ EXPECTED_PASSAGES: dict[str, set[str]] = {
     "handwritten-sick-pay": {"benefits-objection"},
     "handwritten-injection": {"rent-arrears"},
     "handwritten-study-warning": {"residence-for-study", "acknowledgement-of-receipt"},
+    "handwritten-fine-ocr-spacing": {"traffic-fine"},
+    "handwritten-tax-table": {"tax-objection"},
 }
 
 

@@ -1,11 +1,11 @@
 {
-  "version": "lt-20261126-8426",
-  "trained_at": "2026-07-02T18:05:07+00:00",
-  "samples": 3360,
-  "features": 8426,
+  "version": "lt-20261127-8582",
+  "trained_at": "2026-11-27T01:21:50+00:00",
+  "samples": 3480,
+  "features": 8582,
   "leave_one_template_out": {
-    "accuracy": 0.9776315789473684,
-    "macro_f1": 0.9788869520476551,
+    "accuracy": 0.9908333333333333,
+    "macro_f1": 0.9910130194503936,
     "per_template_accuracy": {
       "broadcast_fee": 1.0,
       "collection_agency": 1.0,
@@ -15,7 +15,7 @@
       "immigration_hearing": 1.0,
       "insurance_arrears": 1.0,
       "insurance_questionnaire": 1.0,
-      "insurance_rejection": 0.575,
+      "insurance_rejection": 0.8166666666666667,
       "jobcenter_approval": 1.0,
       "jobcenter_documents": 1.0,
       "jobcenter_invitation": 1.0,
@@ -25,16 +25,17 @@
       "tax_arrears": 1.0,
       "tax_assessment": 1.0,
       "tax_reminder": 1.0,
+      "traffic_fine": 1.0,
       "utility_installment": 1.0
     },
     "abstain_rate": 0.0,
-    "accuracy_when_answered": 0.9776315789473684
+    "accuracy_when_answered": 0.9908333333333333
   },
   "calibration": {
-    "temperature": 0.15517853021607156,
-    "nll_before": 0.454594621075944,
-    "nll_after": 0.03704066243867566,
-    "ece_before": 0.3223312622673916,
-    "ece_after": 0.009634240621100252
+    "temperature": 0.08022049616234095,
+    "nll_before": 0.4621977897522,
+    "nll_after": 0.01753811243591765,
+    "ece_before": 0.3424431697879921,
+    "ece_after": 0.003377578965942539
   }
 }

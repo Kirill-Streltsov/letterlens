@@ -287,6 +287,101 @@ HANDWRITTEN: list[SyntheticLetter] = [
         [DeadlineLabel("explicit_date", date="2026-10-15")],
         [AmountLabel("640.00", "to_pay")],
     ),
+    # --- From real and sample letters (November 2026). Wording and layout follow public
+    # sample notices; names, places and numbers are invented. Each case locks in one finding.
+    _l(
+        "fine-ocr-spacing",  # OCR read "380,00 EUR" as "380, 00 EUR"; formal delivery period
+        "other",
+        "Stadt Kleinhausen - Bußgeldstelle",
+        "2026-02-09",
+        """
+        Stadt Kleinhausen  Datum  09.02.2026
+        Die Oberbürgermeisterin  Fachbereich Recht und Ordnung, Bußgeldstelle
+        Aktenzeichen  KH-7741 000335  Bei Zahlung unbedingt angeben!
+        Bußgeldbescheid
+        Ihnen wird vorgeworfen, am 03.02.2026 als Führer des PKW die zulässige
+        Höchstgeschwindigkeit außerhalb geschlossener Ortschaften um 51 km/h überschritten zu haben.
+        Wegen dieser Ordnungswidrigkeit wird gegen Sie eine Geldbuße festgesetzt (§ 17 OWiG)  Geldbuße  380, 00  EUR
+        Außerdem haben Sie die Kosten des Verfahrens zu tragen  Gebühr  25,00 EUR
+        Auslagen der Bußgeldstelle  3,50  EUR
+        Gesamt  388,50 EUR
+        Fahrverbot: 1 Monat. Eintragung im Fahreignungsregister: 2 Punkte.
+        Dieser Bußgeldbescheid wird rechtskräftig und vollstreckbar, wenn Sie nicht innerhalb von zwei Wochen nach seiner Zustellung
+        schriftlich oder zur Niederschrift bei der Bußgeldstelle Einspruch einlegen.
+    """,
+        [DeadlineLabel("relative", relative_expression="innerhalb von zwei Wochen nach seiner Zustellung")],
+        [
+            AmountLabel("380.00", "to_pay"),
+            AmountLabel("25.00", "to_pay"),
+            AmountLabel("3.50", "to_pay"),
+            AmountLabel("388.50", "to_pay"),
+        ],
+    ),
+    _l(
+        "tax-table",  # amounts in a table without a currency sign; assessed and withheld are not "to pay"
+        "tax",
+        "Finanzamt Lindenhagen",
+        "2026-06-15",
+        """
+        Finanzamt Lindenhagen
+        Am Rathaus 4, 33100 Lindenhagen
+        Datum: 15.06.2026
+        Steuernummer: 331/5512/0742
+        Bescheid für 2025 über Einkommensteuer und Solidaritätszuschlag
+        Festsetzung  Einkommensteuer  Solidaritätszuschlag
+        Festgesetzt werden  6.418,00  0,00
+        ab Steuerabzug vom Lohn  5.977,00  0,00
+        demnach zu wenig gezahlt  441,00  0,00
+        Bitte zahlen Sie den Betrag von 441,00 € bis zum 20.07.2026.
+        Rechtsbehelfsbelehrung: Der Bescheid kann mit dem Einspruch angefochten werden.
+        Der Einspruch ist innerhalb eines Monats nach Bekanntgabe dieses Bescheids einzulegen.
+    """,
+        [
+            DeadlineLabel("explicit_date", date="2026-07-20"),
+            DeadlineLabel("relative", relative_expression="innerhalb eines Monats nach Bekanntgabe"),
+        ],
+        [
+            AmountLabel("6418.00", "info"),
+            AmountLabel("5977.00", "info"),
+            AmountLabel("441.00", "to_pay"),
+            AmountLabel("0.00", "info"),  # the solidarity surcharge column
+        ],
+    ),
+    _l(
+        "blank-template",  # an unfilled sample letter: placeholders are not dates or amounts
+        "landlord",
+        "",
+        "",
+        """
+        [Vorname] [Nachname]
+        [Straße] [Hausnummer], [PLZ] [Ort]
+        [Ort], den TT.MM.JJJJ
+        Mieterhöhungsverlangen nach § 558 BGB
+        Sehr geehrte Mieterin, sehr geehrter Mieter,
+        ich bitte Sie, einer Erhöhung der Nettokaltmiete von ____ € auf ____ € zuzustimmen.
+        Die neue Miete ist ab dem TT.MM.JJJJ zu zahlen.
+        Bitte senden Sie die unterschriebene Zustimmungserklärung bis zum TT.MM.JJJJ zurück.
+    """,
+        [],
+        [],
+    ),
+    _l(
+        "staff-circular",  # an internal instruction: its dates are not the reader's deadlines
+        "benefits",
+        "Jobcenter Talstadt",
+        "2026-06-29",
+        """
+        Jobcenter Talstadt - Geschäftsführung
+        Rundbrief 3/2026 an alle Teams der Leistungsgewährung, 29.06.2026
+        Einladungen und Rechtsfolgenbelehrungen in der neuen Grundsicherung
+        Einladungen, die bis zum 30.06.2026 terminiert sind, sind mit der bisherigen Rechtsfolgenbelehrung zu versehen.
+        Einladungen, die ab dem 01.07.2026 terminiert sind, erhalten die neue Rechtsfolgenbelehrung.
+        Die Teams prüfen die Vordrucke in der Fachanwendung bis zum 15.07.2026.
+        Dieser Rundbrief richtet sich an die Mitarbeitenden des Jobcenters.
+    """,
+        [],
+        [],
+    ),
 ]
 
 

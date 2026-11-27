@@ -56,6 +56,10 @@ LEXICON: dict[LetterType, list[str]] = {
     ],
     LetterType.OTHER: [
         "Rundfunkbeitrag", "Beitragsservice", "Inkasso", "Forderung", "Mandantin",
+        "Bußgeldbescheid", "Bußgeldstelle", "Ordnungswidrigkeit", "Geldbuße", "Verwarnungsgeld",
+        "Anhörungsbogen", "Fahrverbot", "Fahreignungsregister", "Geschwindigkeitsüberschreitung", "OWiG",
+        "Fahrzeughalter", "Mahnbescheid", "Vollstreckungsbescheid", "Mahngericht", "Amtsgericht",
+        "Antragsgegner", "Antragsteller", "Hauptforderung", "Gerichtsvollzieher", "Zwangsvollstreckung",
         "Stadtwerke", "Abschlag", "Strom", "Gas", "Mobilfunkvertrag", "Rechnung",
         "Vertragsverlängerung", "Kundenservice", "Bank", "Kontoauszug", "Fitnessstudio",
         "Versandhandel", "Bestellung", "Lieferung", "Gutschein", "Zeitschriftenabo",

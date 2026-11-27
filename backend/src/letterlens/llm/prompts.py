@@ -11,8 +11,8 @@ from typing import Any
 
 from letterlens.domain import LetterType, Passage
 
-EXTRACT_VERSION = "extract-v4"
-EXPLAIN_VERSION = "explain-v5"
+EXTRACT_VERSION = "extract-v5"
+EXPLAIN_VERSION = "explain-v6"
 ANSWER_VERSION = "answer-v2"
 GUARD_VERSION = "guard-v2"
 BACKTRANSLATE_VERSION = "backtranslate-v2"
@@ -65,7 +65,13 @@ Rules:
 - For every value, list the ids of the lines that contain it. Never give a value that you cannot point to. If a field is not in the letter, use null or an empty list.
 - deadlines: dates by which the reader must pay, send, reply, decide or attend. For a period such as "innerhalb eines Monats nach Bekanntgabe", use kind "relative", date null, and copy the German period text into relative_expression. For a fixed date, use kind "explicit_date".
 - Validity periods, approval periods and effective dates are not deadlines.
-- amounts: every money amount with its direction: to_pay, to_receive or info.
+- Deadlines and required_actions are only for the person the letter is addressed to. A guide, an information
+  sheet, an internal instruction for staff, a law text or an empty form has no deadlines and no required_actions
+  for the reader; rules that it describes for other people are not the reader's tasks.
+- A placeholder such as "TT.MM.JJJJ", "__.__.____", "[Datum]" or "_ EUR" is not a value. Use null.
+- amounts: every money amount with its direction: to_pay, to_receive or info. to_pay is only what the reader
+  still has to pay. An assessed total, an amount already paid or withheld (for example "ab Steuerabzug vom
+  Lohn"), and amounts used only for a calculation are info.
 - reference_numbers: case numbers such as Steuernummer, Aktenzeichen, BG-Nummer, Kundennummer.
 - required_actions: everything the reader must do, in short English. Include returning forms: a letter
   sent "gegen Empfangsbekenntnis" asks the reader to sign and return the acknowledgement of receipt.
@@ -89,7 +95,9 @@ Write for a reader with basic reading skills: short sentences, common words, one
 
 Rules:
 - headline: one sentence that says what the letter is about.
-- letter_kind: what kind of letter it is and who sent it.
+- letter_kind: what kind of letter it is and who sent it. If the document is not a letter to the reader (an
+  information sheet, a guide, an internal instruction for staff, a law text or an empty form), say so here and in
+  the headline, and describe its content without telling the reader that they must do something.
 - summary: 3 to 10 sentences about what the letter says. Short letters need few sentences; a letter with several
   conditions or permissions needs more. Each sentence lists the ids of the letter lines it is based on.
   Cover each of these points if the letter contains it, in this order:

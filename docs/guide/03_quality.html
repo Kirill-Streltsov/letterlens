@@ -59,7 +59,7 @@
 
 <section id="p7">
   <h2><span class="num">7</span> How AI quality is measured</h2>
-  <div class="summary">LetterLens does not trust that the model "seems good". A golden set of 127 letters with exact answers
+  <div class="summary">LetterLens does not trust that the model "seems good". A golden set of 137 letters with exact answers
   and 96 test questions measures it. Three profiles run the same tests: rules only (every pull request), with injected
   errors (every pull request), and with the real model (before a release). A gate fails the build below the thresholds.</div>
 
@@ -70,7 +70,7 @@
     <li><strong>Synthetic letters</strong> (<code>letterlens/synthetic/generator.py</code>): 19 letter families (tax assessment,
       Jobcenter invitation, rent increase …) with random names, dates, amounts and phrasing. Because the generator creates the
       letter, it knows every correct answer. Some letters get typical OCR errors ("ü" → "u").</li>
-    <li><strong>Hand-written letters</strong> (<code>evals/handwritten.py</code>): 13 letters with layouts that no template uses:
+    <li><strong>Hand-written letters</strong> (<code>evals/handwritten.py</code>): 17 letters with layouts that no template uses:
       a court payment order, a traffic fine, a notice of termination, and one prompt-injection attack.</li>
     <li><strong>Red-team questions</strong> (<code>evals/redteam/questions.jsonl</code>): 54 requests for legal advice,
       34 normal questions and 8 injection attempts, in six languages.</li>
@@ -90,12 +90,12 @@
   [[results_chart]]
   <table>
     <tr><th>Other measurements</th><th>Value</th></tr>
-    <tr><td>Normal questions wrongly refused (live)</td><td>2.9 % (1 of 34)</td></tr>
-    <tr><td>Translation faithfulness per language (live; judge accuracy 95 %)</td><td>de 0.975 · tr 0.95 · ar 1.00 · uk 1.00 · ru 0.95; every translation keeps one sentence per English sentence</td></tr>
-    <tr><td>Key points in the summary (5 hand-written letters, 19 points; live)</td><td>89.5 % to 94.7 % in two runs; the judge never found points in an empty summary</td></tr>
+    <tr><td>Normal questions wrongly refused (live)</td><td>0 % (0 of 34) in the last run; 2.9 % before</td></tr>
+    <tr><td>Translation faithfulness per language (live; judge accuracy 95 %)</td><td>de 0.975 · tr 0.925 · ar 1.00 · uk 0.975 · ru 0.95; every translation keeps one sentence per English sentence</td></tr>
+    <tr><td>Key points in the summary (5 hand-written letters, 19 points; live)</td><td>89.5 % to 94.7 % in three runs; the judge never found points in an empty summary</td></tr>
     <tr><td>Letter type on unseen layouts</td><td>97.8 %; calibration error 0.32 before, 0.01 after temperature scaling</td></tr>
     <tr><td>Retrieval: a relevant passage in the top 4</td><td>99.1 %</td></tr>
-    <tr><td>Cost of the live run</td><td>514 model calls, 0.11 USD</td></tr>
+    <tr><td>Cost of the live run</td><td>532 model calls, 0.12 USD</td></tr>
   </table>
 
   <h3>7.5 How translation quality is checked</h3>
@@ -110,7 +110,15 @@
   <p class="ios">iOS analogy: one source of truth (the checked English model) and localized views of it, instead of five
   separate models that can drift apart.</p>
 
-  <h3>7.6 An honest limit</h3>
+  <h3>7.6 Real and sample documents</h3>
+  <p>31 public documents were read with Apple Vision OCR and run through the live pipeline: official sample notices, real
+  letters from authorities that were published with redactions, job centre publications, landlord sample letters and blank
+  court forms. A person checked every result. The review found nine defects, for example a placeholder date
+  ("TT.MM.2015") shown as a real date, a fine notice classified as "benefits", and assessed tax shown as "to pay". Each
+  defect has a fix and a test; four new hand-written letters keep the cases in the golden set. The documents themselves are
+  not in the repository (copyright and personal data).</p>
+
+  <h3>7.7 An honest limit</h3>
   <p>The test letters are synthetic and hand-written. They show that the mechanisms work; they do not prove how the system
   performs on real letters from real offices. Real, consented, anonymized letters must be added before a public launch.</p>
 </section>

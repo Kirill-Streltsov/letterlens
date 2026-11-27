@@ -725,6 +725,44 @@ def collection_agency(ctx: Ctx) -> Built:
     )
 
 
+def traffic_fine(ctx: Ctx) -> Built:
+    """A fine notice from a municipal fine office (Bußgeldbescheid), modelled on public sample notices."""
+    r = ctx.rnd
+    city = r.pick(["Bochum", "Dortmund", "Essen", "Hagen"])
+    sender = f"Stadt {city} - Bußgeldstelle"
+    case = f"{r.digits(2)}.{r.digits(6)}.{r.digits(1)}"
+    fine = r.pick([Decimal("70.00"), Decimal("100.00"), Decimal("160.00"), Decimal("320.00")])
+    fee, costs = Decimal("25.00"), Decimal("3.50")
+    total = fine + fee + costs
+    rel = r.pick(["innerhalb von zwei Wochen nach Zustellung", "binnen zwei Wochen nach Zustellung"])
+    speed = r.pick([21, 26, 31, 41])
+    lines = _header(ctx, [sender, f"{r.digits(5)} {city}"], [f"Aktenzeichen: {case}"])
+    lines += [
+        "Bußgeldbescheid",
+        "",
+        f"Ihnen wird vorgeworfen, als Führer des Pkw die zulässige Höchstgeschwindigkeit um {speed} km/h",
+        "überschritten zu haben. Ordnungswidrigkeit nach §§ 41, 49 StVO, § 24 StVG.",
+        f"Wegen dieser Ordnungswidrigkeit wird gegen Sie eine Geldbuße von {ctx.m(fine)} festgesetzt.",
+        f"Gebühr {ctx.m(fee)}, Auslagen {ctx.m(costs)}, zu zahlender Gesamtbetrag {ctx.m(total)}.",
+        "Die Eintragung im Fahreignungsregister erfolgt mit 1 Punkt.",
+        f"Dieser Bescheid wird rechtskräftig, wenn Sie nicht {rel} Einspruch einlegen.",
+        "Der Einspruch ist schriftlich oder zur Niederschrift bei der Bußgeldstelle einzulegen.",
+        "Zahlen Sie den Gesamtbetrag spätestens zwei Wochen nach Rechtskraft.",
+    ]
+    return (
+        lines,
+        sender,
+        {"Aktenzeichen": case},
+        [DeadlineLabel("relative", relative_expression=rel)],
+        [
+            AmountLabel(str(fine), "to_pay"),
+            AmountLabel(str(fee), "to_pay"),
+            AmountLabel(str(costs), "to_pay"),
+            AmountLabel(str(total), "to_pay"),
+        ],
+    )
+
+
 def utility_installment(ctx: Ctx) -> Built:
     r = ctx.rnd
     sender = r.pick(["Stadtwerke Bochum", "DEW21 Dortmund", "Stadtwerke Essen"])
@@ -779,6 +817,7 @@ TEMPLATES: dict[LetterType, dict[str, Template]] = {
         "broadcast_fee": broadcast_fee,
         "collection_agency": collection_agency,
         "utility_installment": utility_installment,
+        "traffic_fine": traffic_fine,
     },
 }
 

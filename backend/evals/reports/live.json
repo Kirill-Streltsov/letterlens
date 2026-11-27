@@ -2,61 +2,71 @@
   "profile": "live",
   "provider": "mistral",
   "prompt_versions": [
-    "extract-v4",
-    "explain-v5",
+    "extract-v5",
+    "explain-v6",
     "translate-explanation-v1",
     "guard-v2",
     "backtranslate-v2"
   ],
-  "golden_letters": 127,
+  "golden_letters": 137,
   "suites": {
     "classification": {
       "synthetic_accuracy": 1.0,
-      "handwritten_accuracy": 0.9230769230769231,
-      "macro_recall": 0.9920634920634921,
+      "handwritten_accuracy": 1.0,
+      "macro_recall": 1.0,
       "per_class_recall": {
         "tax": 1.0,
         "benefits": 1.0,
         "health_insurance": 1.0,
         "immigration": 1.0,
         "landlord": 1.0,
-        "other": 0.9523809523809523
+        "other": 1.0
       },
-      "ece": 0.0067,
-      "model_version": "lt-20261126-8426"
+      "ece": 0.0,
+      "model_version": "lt-20261127-8582"
     },
     "extraction": {
-      "letters": 127,
-      "letter_date_accuracy": 0.9921,
-      "explicit_deadline_recall": 1.0,
-      "explicit_deadline_precision": 0.9899,
-      "deadline_exact_match_letters": 0.9921,
-      "relative_deadline_recall": 1.0,
-      "amount_recall": 1.0,
-      "amount_direction_accuracy": 0.9781,
+      "letters": 137,
+      "letter_date_accuracy": 0.9927,
+      "explicit_deadline_recall": 0.9899,
+      "explicit_deadline_precision": 1.0,
+      "deadline_exact_match_letters": 0.9927,
+      "relative_deadline_recall": 0.9762,
+      "amount_recall": 0.9882,
+      "amount_direction_accuracy": 0.988,
       "unsafe_verified_dates": 0,
       "unsafe_verified_amounts": 0,
-      "verified_share_of_dates": 0.9899,
-      "mean_grounding_rate": 0.9974,
+      "verified_share_of_dates": 1.0,
+      "mean_grounding_rate": 0.9976,
       "degraded_letters": 0,
       "failures": [
         {
-          "id": "hw-termination",
+          "id": "hw-care-insurance",
           "expected_dates": [
-            "2026-12-31"
+            "2026-03-17"
+          ],
+          "shown_dates": [],
+          "missing_amounts": []
+        },
+        {
+          "id": "hw-energy-reminder",
+          "expected_dates": [
+            "2026-11-16"
           ],
           "shown_dates": [
-            "2026-10-31",
-            "2026-12-31"
+            "2026-11-16"
           ],
-          "missing_amounts": []
+          "missing_amounts": [
+            "2.50",
+            "87.00"
+          ]
         }
       ]
     },
     "retrieval": {
-      "letters": 115,
-      "recall_at_4": 0.9913,
-      "mrr": 0.9913,
+      "letters": 123,
+      "recall_at_4": 0.9919,
+      "mrr": 0.9919,
       "misses": [
         {
           "id": "hw-kindergeld-school",
@@ -76,7 +86,7 @@
       "questions": 96,
       "advice_catch_rate": 1.0,
       "advice_catch_rate_rules_only": 0.8519,
-      "benign_false_positive_rate": 0.0294,
+      "benign_false_positive_rate": 0.0,
       "injection_catch_rate": 1.0,
       "per_language_advice_catch": {
         "ar": 1.0,
@@ -92,7 +102,7 @@
         "en": 0.0,
         "ru": 0.0,
         "tr": 0.0,
-        "uk": 0.2
+        "uk": 0.0
       }
     },
     "faithfulness": {
@@ -100,12 +110,12 @@
       "letters": 8,
       "per_language": {
         "de": 0.975,
-        "tr": 0.95,
+        "tr": 0.925,
         "ar": 1.0,
-        "uk": 1.0,
+        "uk": 0.975,
         "ru": 0.95
       },
-      "min_language_score": 0.95,
+      "min_language_score": 0.925,
       "aligned_share": 1.0,
       "low_scores": []
     },
@@ -114,21 +124,21 @@
       "keypoint_recall": 0.8947,
       "judge_false_positive_rate": 0.0,
       "per_letter": {
-        "hw-study-warning": 0.833,
-        "hw-court-order": 0.667,
+        "hw-study-warning": 0.667,
+        "hw-court-order": 1.0,
         "hw-jobcenter-change": 1.0,
         "hw-termination": 1.0,
         "hw-fine": 1.0
       },
       "missed": [
-        "hw-study-warning: Employment of up to 140 days per year (plus student jobs) is allowed.",
-        "hw-court-order: It is a court payment order (Mahnbescheid)."
+        "hw-study-warning: Studies should be completed within a total stay of ten years, or the average duration should not be exceeded by more than 3 semesters.",
+        "hw-study-warning: Employment of up to 140 days per year (plus student jobs) is allowed."
       ]
     }
   },
-  "seconds": 771.3,
-  "llm_calls": 514,
-  "llm_list_price_usd": 0.1146,
+  "seconds": 762.2,
+  "llm_calls": 532,
+  "llm_list_price_usd": 0.1191,
   "gate": {
     "passed": true,
     "failures": []

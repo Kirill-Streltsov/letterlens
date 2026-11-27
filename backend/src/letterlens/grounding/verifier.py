@@ -20,10 +20,11 @@ from letterlens.domain import (
     VerifiedDeadline,
     VerifiedFacts,
 )
+from letterlens.extraction.rules import is_internal_document
 from letterlens.grounding.deadlines import estimate_deadline, parse_relative_period
 from letterlens.grounding.german import (
-    find_amounts,
     find_dates,
+    find_money_numbers,
     parse_decimal_value,
     parse_iso_date,
 )
@@ -33,6 +34,20 @@ NOTE_OTHER_LINE = "This value appears in the letter, but not in the quoted line.
 NOTE_ESTIMATE = "Estimated from the period in the letter. Please check the exact date."
 NOTE_NO_LETTER_DATE = "The letter date is unknown, so the end of the period cannot be estimated."
 NOTE_BEFORE_LETTER = "This date is before the letter date. Please check."
+NOTE_NO_DATE = (
+    "The letter names a deadline, but no date for it was found in the letter. Please check the original."
+)
+NOTE_DELIVERY = (
+    "The period starts on the delivery date that is written on the envelope (formal delivery). "
+    "This estimate uses the letter date. Please check the envelope."
+)
+_DELIVERY = re.compile(r"\bzustellung\b|\bzugestellt\b", re.IGNORECASE)
+# Lines that state an assessed total or an amount already withheld or paid. OCR often garbles
+# "festgesetzt werden" (for example "restgesetzt weraen"), so the first letter is not checked.
+_ASSESSED_LINE = re.compile(
+    r"\w?estgesetzt\s+wer\w*|ab\s+steuerabzug|bereits\s+gezahlt|anzurechnen|geleistete\s+vorauszahlung",
+    re.IGNORECASE,
+)
 
 # Whole words only: "den" must not match inside "Studierenden".
 _LETTER_DATE_HINT = re.compile(r"\b(?:datum|den|vom)\b", re.IGNORECASE)
@@ -53,6 +68,7 @@ def _verify_letter_date(
 ) -> tuple[date | None, FactStatus]:
     proposed = parse_iso_date(extraction.letter_date.value)
     ids = _valid_ids(extraction.letter_date.line_ids, lines)
+    doc_dates = set(find_dates("\n".join(line.text for line in lines.values())))
     if proposed is not None and proposed in find_dates(_text(ids, lines)):
         return proposed, FactStatus.VERIFIED
     # Fallback: a header line with a date hint, for example "Datum: 03.11.2026".
@@ -61,7 +77,8 @@ def _verify_letter_date(
         dates = find_dates(line.text)
         if dates and (_LETTER_DATE_HINT.search(lowered) or _PLACE_DATE.match(line.text)):
             return dates[0], FactStatus.NEEDS_CHECK
-    return proposed, FactStatus.NEEDS_CHECK
+    # A date that is nowhere in the letter is not shown, not even as "please check".
+    return (proposed if proposed in doc_dates else None), FactStatus.NEEDS_CHECK
 
 
 def _verify_deadline(
@@ -81,6 +98,15 @@ def _verify_deadline(
     }
 
     explicit = parse_iso_date(item.date) if item.kind != "relative" else None
+    if explicit is not None and explicit not in doc_dates:
+        # The model wrote a date that is nowhere in the letter, for example "bis zum TT.MM.2015"
+        # read as a real date, or a period it computed itself. Never show it. If the cited line
+        # names a period, estimate it with the documented rule instead.
+        if parse_relative_period(cited) is None:
+            return VerifiedDeadline(
+                due_date=None, status=FactStatus.NEEDS_CHECK, is_estimate=False, note=NOTE_NO_DATE, **common
+            )
+        explicit = None
     if explicit is not None:
         if explicit in find_dates(cited):
             status, note = FactStatus.VERIFIED, None
@@ -118,7 +144,7 @@ def _verify_deadline(
         status=FactStatus.NEEDS_CHECK,
         is_estimate=True,
         rule=estimate.rule,
-        note=NOTE_ESTIMATE,
+        note=NOTE_DELIVERY if _DELIVERY.search(cited) else NOTE_ESTIMATE,
         **common,
     )
 
@@ -131,8 +157,13 @@ def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
     lines = {k: v for k, v in doc.line_map().items() if k not in suspicious}
     trusted_text = "\n".join(line.text for line in lines.values())
     doc_dates = set(find_dates(trusted_text))
-    doc_amounts = set(find_amounts(trusted_text))
+    doc_amounts = set(find_money_numbers(trusted_text))
     letter_date, letter_date_status = _verify_letter_date(extraction, doc, lines)
+
+    if is_internal_document(doc):
+        # A staff circular names dates and tasks for employees. The model does not always see
+        # this (live evaluation, November 2026), so the code removes them for every extractor.
+        extraction = extraction.model_copy(update={"deadlines": [], "required_actions": []})
 
     deadlines: list[VerifiedDeadline] = []
     seen_deadlines: set[tuple[object, str]] = set()
@@ -151,13 +182,21 @@ def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
         if value is None:
             continue
         ids = _valid_ids(amt.line_ids, lines)
-        if value in find_amounts(_text(ids, lines)):
+        if value in find_money_numbers(_text(ids, lines)):
             status, note = FactStatus.VERIFIED, None
         elif value in doc_amounts:
             status, note = FactStatus.NEEDS_CHECK, NOTE_OTHER_LINE
         else:
-            status, note = FactStatus.NEEDS_CHECK, NOTE_NOT_IN_SOURCE
-        amount_key = (value, amt.direction)
+            # An amount that is nowhere in the letter (a blank "_ EUR" read as 0.00, a percentage
+            # read as money, a sum the model computed) is not shown at all.
+            continue
+        direction = amt.direction if amt.direction in {"to_pay", "to_receive"} else "info"
+        source_lines = [lines[i].text for i in ids if value in find_money_numbers(lines[i].text)]
+        if direction == "to_pay" and source_lines and all(_ASSESSED_LINE.search(t) for t in source_lines):
+            # An assessed total or a withheld amount is not a payment request. Saying "pay 52,112 EUR"
+            # when 441 EUR are due would frighten the reader, so the code corrects the model here.
+            direction = "info"
+        amount_key = (value, direction)
         if amount_key in seen_amounts:
             continue
         seen_amounts.add(amount_key)
@@ -166,7 +205,7 @@ def verify(extraction: Extraction, doc: LetterDocument) -> VerifiedFacts:
                 id=f"a{len(amounts) + 1}",
                 value=value,
                 currency=(amt.currency or "EUR").upper()[:3],
-                direction=amt.direction if amt.direction in {"to_pay", "to_receive"} else "info",
+                direction=direction,
                 status=status,
                 description=amt.description.strip()[:300],
                 line_ids=ids,

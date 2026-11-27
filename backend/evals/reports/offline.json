@@ -2,40 +2,42 @@
   "profile": "offline",
   "provider": "fake",
   "prompt_versions": [
-    "extract-v4",
-    "explain-v5",
-    "guard-v2"
+    "extract-v5",
+    "explain-v6",
+    "translate-explanation-v1",
+    "guard-v2",
+    "backtranslate-v2"
   ],
-  "golden_letters": 127,
+  "golden_letters": 137,
   "suites": {
     "classification": {
       "synthetic_accuracy": 1.0,
-      "handwritten_accuracy": 0.9230769230769231,
-      "macro_recall": 0.9920634920634921,
+      "handwritten_accuracy": 1.0,
+      "macro_recall": 1.0,
       "per_class_recall": {
         "tax": 1.0,
         "benefits": 1.0,
         "health_insurance": 1.0,
         "immigration": 1.0,
         "landlord": 1.0,
-        "other": 0.9523809523809523
+        "other": 1.0
       },
-      "ece": 0.0067,
-      "model_version": "lt-20261126-8426"
+      "ece": 0.0,
+      "model_version": "lt-20261127-8582"
     },
     "extraction": {
-      "letters": 127,
-      "letter_date_accuracy": 1.0,
-      "explicit_deadline_recall": 0.9796,
-      "explicit_deadline_precision": 0.9412,
-      "deadline_exact_match_letters": 0.937,
+      "letters": 137,
+      "letter_date_accuracy": 0.9927,
+      "explicit_deadline_recall": 0.9798,
+      "explicit_deadline_precision": 0.9417,
+      "deadline_exact_match_letters": 0.9416,
       "relative_deadline_recall": 1.0,
-      "amount_recall": 1.0,
-      "amount_direction_accuracy": 0.9343,
+      "amount_recall": 0.9822,
+      "amount_direction_accuracy": 0.9337,
       "unsafe_verified_dates": 0,
       "unsafe_verified_amounts": 0,
-      "verified_share_of_dates": 0.9412,
-      "mean_grounding_rate": 0.9882,
+      "verified_share_of_dates": 0.9417,
+      "mean_grounding_rate": 0.9891,
       "degraded_letters": 0,
       "failures": [
         {
@@ -101,13 +103,27 @@
           ],
           "shown_dates": [],
           "missing_amounts": []
+        },
+        {
+          "id": "hw-tax-table",
+          "expected_dates": [
+            "2026-07-20"
+          ],
+          "shown_dates": [
+            "2026-07-20"
+          ],
+          "missing_amounts": [
+            "0.00",
+            "5977.00",
+            "6418.00"
+          ]
         }
       ]
     },
     "retrieval": {
-      "letters": 115,
-      "recall_at_4": 0.9913,
-      "mrr": 0.9913,
+      "letters": 123,
+      "recall_at_4": 0.9919,
+      "mrr": 0.9919,
       "misses": [
         {
           "id": "hw-kindergeld-school",
@@ -147,9 +163,9 @@
       }
     }
   },
-  "seconds": 0.7,
-  "llm_calls": 338,
-  "llm_list_price_usd": 0.0301,
+  "seconds": 1.2,
+  "llm_calls": 312,
+  "llm_list_price_usd": 0.0306,
   "gate": {
     "passed": true,
     "failures": []

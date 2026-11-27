@@ -12,18 +12,41 @@ from typing import Any
 import pytest
 
 from evals import run as ev
-from letterlens.domain import FactStatus
+from letterlens.domain import FactStatus, VerifiedAmount, VerifiedDeadline
 from letterlens.grounding import verifier
+from letterlens.grounding.german import parse_decimal_value, parse_iso_date
 
 
 def trusting_verify(extraction: Any, doc: Any) -> Any:
+    """A bad verifier: it takes the model's dates and amounts as they are and marks them verified."""
     facts = ORIGINAL_VERIFY(extraction, doc)
-    return facts.model_copy(
-        update={
-            "deadlines": [d.model_copy(update={"status": FactStatus.VERIFIED}) for d in facts.deadlines],
-            "amounts": [a.model_copy(update={"status": FactStatus.VERIFIED}) for a in facts.amounts],
-        }
-    )
+    deadlines = [
+        VerifiedDeadline(
+            id=f"d{i}",
+            due_date=parse_iso_date(d.date),
+            status=FactStatus.VERIFIED,
+            is_estimate=False,
+            description=d.description,
+            line_ids=d.line_ids,
+            source_text=None,
+        )
+        for i, d in enumerate(extraction.deadlines, 1)
+        if d.date
+    ]
+    amounts = [
+        VerifiedAmount(
+            id=f"a{i}",
+            value=v,
+            currency="EUR",
+            direction=a.direction if a.direction in {"to_pay", "to_receive"} else "info",
+            status=FactStatus.VERIFIED,
+            description=a.description,
+            line_ids=a.line_ids,
+        )
+        for i, a in enumerate(extraction.amounts, 1)
+        if (v := parse_decimal_value(a.value)) is not None
+    ]
+    return facts.model_copy(update={"deadlines": deadlines, "amounts": amounts})
 
 
 ORIGINAL_VERIFY = verifier.verify

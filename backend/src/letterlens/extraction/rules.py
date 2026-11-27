@@ -40,15 +40,30 @@ _APPOINTMENT = re.compile(r"\b(termin|am\s.+\bum\s+\d{1,2}[:.]\d{2})", re.IGNORE
 _VALID_FROM = re.compile(r"\b(ab dem|ab|vom|gültig bis|für die zeit)\b", re.IGNORECASE)
 # "Datum: 03.11.2026", "Bochum, den 03.11.2026", "Hagen, 12.10.2026", "Bochum, 30. Juni 2026"
 _LETTER_DATE = re.compile(r"^(datum\b|.*,\s*den\b|[A-ZÄÖÜ][\wäöüß .-]{1,40},\s*\d{1,2}\.)", re.IGNORECASE)
+# Assessed totals and amounts already withheld or paid are information, not a payment request.
+_INFO = re.compile(
+    r"festgesetzt\s+werden|ab\s+steuerabzug|bereits\s+gezahlt|geleistete\s+vorauszahlung", re.IGNORECASE
+)
 _TO_RECEIVE = re.compile(r"erstattung|guthaben|bewilligt|gesamtbetrag:?\s*$|monatlicher", re.IGNORECASE)
 _TO_PAY = re.compile(
-    r"zahlen|überweisen|rückstand|nachzahlung|forderung|säumnis|gebühr|kosten|"
+    r"zu wenig gezahlt|geldbuße|verwarnungsgeld|zahlen|überweisen|rückstand|nachzahlung|forderung|säumnis|gebühr|kosten|"
     r"zu erstatten|offen|gesamtbetrag|insgesamt|erhöhung|auf\s",
     re.IGNORECASE,
 )
 _ACTION = re.compile(r"^(bitte|reichen sie|senden sie|zahlen sie|bringen sie|überweisen sie)", re.IGNORECASE)
 _RECEIPT_FORM = re.compile(r"gegen\s+empfangsbekenntnis|^empfangsbekenntnis\b", re.IGNORECASE)
+# An internal document for staff (a circular or an instruction) has no deadlines for the reader.
+_INTERNAL = re.compile(
+    r"\b(?:rundbrief|rundschreiben|dienstanweisung|fachliche\s+weisung|"
+    r"an\s+alle\s+(?:teams|mitarbeitenden|beschäftigten)|richtet\s+sich\s+an\s+die\s+mitarbeitenden)\b",
+    re.IGNORECASE,
+)
 _SKIP_SUBJECT = re.compile(r"^(sehr geehrte|liebe|anbei|datum)", re.IGNORECASE)
+
+
+def is_internal_document(doc: LetterDocument) -> bool:
+    """True for a circular or an instruction for staff. Its dates and tasks are not the reader's."""
+    return any(_INTERNAL.search(line.text) for line in doc.lines)
 
 
 def extract_with_rules(doc: LetterDocument) -> Extraction:
@@ -119,7 +134,9 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
                 )
             )
         for value in find_amounts(text):
-            if _TO_RECEIVE.search(text):
+            if _INFO.search(text):
+                direction = "info"
+            elif _TO_RECEIVE.search(text):
                 direction = "to_receive"
             elif _TO_PAY.search(text):
                 direction = "to_pay"
@@ -144,6 +161,8 @@ def extract_with_rules(doc: LetterDocument) -> Extraction:
                 )
             )
 
+    if is_internal_document(doc):
+        deadlines, actions = [], []
     return Extraction(
         sender=sender,
         subject=subject,

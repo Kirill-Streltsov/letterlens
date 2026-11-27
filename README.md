@@ -15,24 +15,25 @@ the letter over to a free counselling service, with the reader's consent.
 
 ## Results
 
-Measured on the golden set of 127 letters (synthetic letters with unseen seeds,
-OCR-noise variants and 13 hand-written letters) and on 96 red-team questions in
-6 languages. "Live" is the production model (Mistral, 25 November 2026, 514 calls,
-0.11 USD); "rules" is the offline fallback that runs when the model is not available.
+Measured on the golden set of 137 letters (synthetic letters with unseen seeds,
+OCR-noise variants and 17 hand-written letters) and on 96 red-team questions in
+6 languages. "Live" is the production model (Mistral, 27 November 2026, 532 calls,
+0.12 USD); "rules" is the offline fallback that runs when the model is not available.
 Reports: [live](backend/evals/reports/live.md), [offline](backend/evals/reports/offline.md).
 
 | Metric | Live | Rules |
 |---|---|---|
 | Dates or amounts shown as "verified" that are not in the letter | **0** | **0** (also 0 of 91 injected hallucinations) |
-| Explicit deadline recall / precision | 100 % / 99.0 % | 98.0 % / 94.1 % |
-| Letters with every deadline exactly right | 99.2 % | 93.7 % |
-| Letter date accuracy / amount recall | 99.2 % / 100 % | 100 % / 100 % |
-| Amount direction (to pay / to receive) | 97.8 % | 93.4 % |
-| Legal-advice requests caught / normal questions blocked | 100 % / 2.9 % | 85.2 % / 0 % |
+| Explicit deadline recall / precision | 99.0 % / 100 % | 98.0 % / 94.1 % |
+| Letters with every deadline exactly right | 99.3 % | 94.2 % |
+| Letter date accuracy / amount recall | 99.3 % / 98.8 % | 99.3 % / 98.2 % |
+| Amount direction (to pay / to receive) | 98.8 % | 93.4 % |
+| Legal-advice requests caught / normal questions blocked | 100 % / 0 % | 85.2 % / 0 % |
 | Prompt-injection attempts caught | 100 % | 100 % |
-| Translation faithfulness (judge, per language) | 0.95 to 1.00; judge accuracy 95 % | – |
+| Translation faithfulness (judge, per language) | 0.925 to 1.00; judge accuracy 95 % | – |
 | Translations with one sentence per English sentence | 100 % | – |
-| Key points in the summary (5 hand-written letters, 19 points) | 89.5 % to 94.7 % (two runs); judge false positives 0 % | – |
+| Key points in the summary (5 hand-written letters, 19 points) | 89.5 % to 94.7 % (three runs); judge false positives 0 % | – |
+| Real and sample documents reviewed by a person | 31 (findings and fixes: [evaluation.md, section 8](docs/ai/evaluation.md)) | – |
 | Retrieval recall@4 | 99.1 % | 99.1 % |
 | Letter type on unseen layouts (leave-one-template-out) | 97.8 %, calibration error 0.32 → 0.01 | same model |
 
@@ -93,7 +94,7 @@ More: [docs/development.md](docs/development.md).
 
 ```bash
 make lint   # ruff, mypy --strict, eslint, tsc
-make test   # 168 backend tests (with RLS isolation), infra assertions, web tests
+make test   # 173 backend tests (with RLS isolation), infra assertions, web tests
 make eval   # offline gate and fault-injection gate
 cd ios/Packages/LetterLensCore && swift test   # Swift core and API contract tests
 ```

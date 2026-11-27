@@ -12,7 +12,7 @@
     <tr><td><strong>ADR-3</strong> One gateway, several model providers; Mistral by default</td><td>Call one SDK directly</td>
       <td>EU processing; a model change is configuration plus an evaluation run</td><td>Mistral needs prepaid credit (10 €)</td></tr>
     <tr><td><strong>ADR-4</strong> PostgreSQL with RLS; search in memory</td><td>DynamoDB; pgvector</td>
-      <td>Isolation inside the database; 26 passages do not need a vector database</td><td>Neon is a sub-processor outside AWS (data stays in Frankfurt)</td></tr>
+      <td>Isolation inside the database; 27 passages do not need a vector database</td><td>Neon is a sub-processor outside AWS (data stays in Frankfurt)</td></tr>
     <tr><td><strong>ADR-5</strong> OCR on the device</td><td>Amazon Textract</td>
       <td>Free; the photo never leaves the phone</td><td>OCR quality depends on the device; the reader checks the text</td></tr>
     <tr><td><strong>ADR-6</strong> The model proposes, code verifies</td><td>Trust the model's JSON</td>
@@ -58,7 +58,7 @@
   <h3>Known limits</h3>
   <ul>
     <li>Test letters are synthetic and hand-written; real consented letters are missing.</li>
-    <li>The 26 corpus passages and the legal boundary need a review by a counsellor and a lawyer.</li>
+    <li>The 27 corpus passages and the legal boundary need a review by a counsellor and a lawyer.</li>
     <li>The iOS app compiles against the iOS SDK but has not run on a device yet (no simulator runtime on this Mac).</li>
     <li>Names that appear only in the body text (not in the address block or a greeting) are not pseudonymized.</li>
     <li>Only nationwide public holidays are known; regional ones keep deadlines in "please check".</li>
