@@ -99,3 +99,17 @@ def test_budget_and_alarms_exist(template: Template) -> None:
 
 def test_cognito_lite_plan(template: Template) -> None:
     template.has_resource_properties("AWS::Cognito::UserPool", {"UserPoolTier": "LITE"})
+
+
+def test_functions_may_read_their_ssm_path_with_trailing_slash(template: Template) -> None:
+    # Regression: the first deploy failed because only ".../parameter/letterlens/prod" was allowed,
+    # while GetParametersByPath is checked against ".../parameter/letterlens/prod/".
+    policies = template.find_resources("AWS::IAM::Policy")
+    resources = [
+        str(res)
+        for policy in policies.values()
+        for stmt in policy["Properties"]["PolicyDocument"]["Statement"]
+        if "ssm:GetParametersByPath" in str(stmt["Action"])
+        for res in (stmt["Resource"] if isinstance(stmt["Resource"], list) else [stmt["Resource"]])
+    ]
+    assert any("parameter/letterlens/prod/" in r for r in resources), resources
