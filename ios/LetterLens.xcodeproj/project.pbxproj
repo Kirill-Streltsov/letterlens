@@ -10,11 +10,13 @@
 		0FF3C9AD55E196568BFFF449 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A858ADA69DC347092245AD0 /* Theme.swift */; };
 		342FDCC9DE09BEFED4A8E091 /* LetterLensCore in Frameworks */ = {isa = PBXBuildFile; productRef = 3861C37D078A05F56F70AF49 /* LetterLensCore */; };
 		39A5EFEEA89FAA2E8A73BAF6 /* DeviceServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94F48A1AE1FEBDCC4D894DFB /* DeviceServices.swift */; };
+		42D9A83FEA182E65F654BF3A /* Illustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4C12322C830073ED6EC89B7 /* Illustrations.swift */; };
 		550F2E27C993146B8ED256CF /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64805763CDAC9EC329EF9F9A /* AppModel.swift */; };
 		55F34A191E84AF4442EA1C4B /* LetterLensApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F79B60AB04D1490A02F3B02 /* LetterLensApp.swift */; };
 		5C5B3177FFE11339A99C722C /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4AD1AAFA2468B079AEC827A /* SettingsView.swift */; };
 		6437D627DC38826773E8A43B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F909FC77F12F165290294A1B /* Assets.xcassets */; };
 		79667A9DB14FB0E1190B2308 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2AAC6F10F8683AC20633D15A /* AuthService.swift */; };
+		8CFA3FE74C3A160BEF33C5C9 /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6140D6B93E90EADCC36E561C /* Components.swift */; };
 		90747DC069508774617A383F /* NewLetterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31441BD66908DAF7F872FF79 /* NewLetterView.swift */; };
 		A1C8AE8361301EA10069AE47 /* LetterLens.storekit in Resources */ = {isa = PBXBuildFile; fileRef = 1404D13E13736180C1117517 /* LetterLens.storekit */; };
 		C8395A83F0635943C0B543CB /* LetterDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8FED439E87EFDDF27B57E5C /* LetterDetailView.swift */; };
@@ -30,10 +32,12 @@
 		3D05288ED1082706C1B89FE0 /* LetterLens.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = LetterLens.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		40DD0C9D3A465E445B6F83DF /* Debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
 		5A858ADA69DC347092245AD0 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		6140D6B93E90EADCC36E561C /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Components.swift; sourceTree = "<group>"; };
 		64805763CDAC9EC329EF9F9A /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
 		7F79B60AB04D1490A02F3B02 /* LetterLensApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterLensApp.swift; sourceTree = "<group>"; };
 		7FAF15545DC7216F18D2C102 /* LetterLensCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LetterLensCore; path = Packages/LetterLensCore; sourceTree = SOURCE_ROOT; };
 		94F48A1AE1FEBDCC4D894DFB /* DeviceServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceServices.swift; sourceTree = "<group>"; };
+		B4C12322C830073ED6EC89B7 /* Illustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Illustrations.swift; sourceTree = "<group>"; };
 		BE06B20FB1A35F173C14E4D0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		C8FED439E87EFDDF27B57E5C /* LetterDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterDetailView.swift; sourceTree = "<group>"; };
 		D4AD1AAFA2468B079AEC827A /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
@@ -74,6 +78,8 @@
 		51B42C1413F3896452136756 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				6140D6B93E90EADCC36E561C /* Components.swift */,
+				B4C12322C830073ED6EC89B7 /* Illustrations.swift */,
 				C8FED439E87EFDDF27B57E5C /* LetterDetailView.swift */,
 				39084761FA5CCA9820D3B7C4 /* LettersView.swift */,
 				31441BD66908DAF7F872FF79 /* NewLetterView.swift */,
@@ -213,7 +219,9 @@
 			files = (
 				550F2E27C993146B8ED256CF /* AppModel.swift in Sources */,
 				79667A9DB14FB0E1190B2308 /* AuthService.swift in Sources */,
+				8CFA3FE74C3A160BEF33C5C9 /* Components.swift in Sources */,
 				39A5EFEEA89FAA2E8A73BAF6 /* DeviceServices.swift in Sources */,
+				42D9A83FEA182E65F654BF3A /* Illustrations.swift in Sources */,
 				C8395A83F0635943C0B543CB /* LetterDetailView.swift in Sources */,
 				55F34A191E84AF4442EA1C4B /* LetterLensApp.swift in Sources */,
 				EEC133BEE71A1CEC8758EA6A /* LettersView.swift in Sources */,
